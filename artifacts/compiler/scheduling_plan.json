@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "scheduling_plan",
+  "scheduler": "continuous_batching",
+  "queues": [
+    {
+      "name": "prefill_queue",
+      "policy": "fcfs"
+    },
+    {
+      "name": "decode_queue",
+      "policy": "round_robin"
+    }
+  ],
+  "max_batch_size": 8,
+  "decode_step_tokens": 1,
+  "preemption_enabled": false,
+  "workload_shape": {
+    "batch_size": 8,
+    "prefill_tokens_per_request": 512,
+    "decode_tokens_per_request": 128,
+    "target_concurrent_requests": 32
+  },
+  "dashboard_signals": [
+    "prefill_queue_depth",
+    "decode_queue_depth",
+    "active_sequences",
+    "tokens_scheduled_per_step",
+    "kv_blocks_allocated"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "model": "tiny-gpt",
+  "prompt_tokens": 1024,
+  "generated_tokens": 128,
+  "prefill_latency_ms": 185.464,
+  "avg_decode_latency_ms": 13.114,
+  "p50_decode_latency_ms": 13.24,
+  "p95_decode_latency_ms": 15.63,
+  "p99_decode_latency_ms": 15.869,
+  "tokens_per_second": 76.254
+}

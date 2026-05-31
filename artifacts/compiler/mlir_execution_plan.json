@@ -1,0 +1,20 @@
+{
+  "format": "hir.execution_plan.v1",
+  "source": "/Users/allen/Desktop/project/ml-graph-compiler-runtime/trace/mlir_fused_graph.mlir",
+  "num_steps": 1,
+  "steps": [
+    {
+      "step": 0,
+      "op_name": "fused_matmul_bias_relu_0",
+      "op_type": "FusedMatMulBiasReLU",
+      "lowered_op_type": "hir.fused_matmul_bias_relu",
+      "backend": "Metal",
+      "fusion_candidate": "matmul_bias_relu",
+      "fusion_group": "matmul_bias_relu_0",
+      "runtime_action": "dispatch_fused_kernel",
+      "estimated_launch_overhead_us": 80,
+      "estimated_flops": 16512,
+      "arithmetic_intensity_flops_per_byte": 0.48863636363636365
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "artifact_set": "llm_runtime_prefill_decode_kv_scheduler",
+  "description": "Runtime executes prefill/decode, manages KV cache blocks, schedules requests, and emits profiling traces.",
+  "output_dir": "/Users/allen/Desktop/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts",
+  "files": [
+    "prefill_decode_benchmark.json",
+    "kv_cache_trace.json",
+    "scheduler_trace.json",
+    "backend_trace.json",
+    "runtime_profile.json",
+    "serving_trace.json",
+    "llm_runtime_chrome_trace.json"
+  ]
+}

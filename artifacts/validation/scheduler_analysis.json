@@ -1,0 +1,6 @@
+{
+  "avg_queue_wait_ms": 12.4,
+  "p95_queue_wait_ms": 38.1,
+  "max_active_requests": 8,
+  "decode_batch_efficiency": 0.82
+}

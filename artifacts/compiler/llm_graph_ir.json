@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "llm_graph_ir",
+  "model": "tiny-gpt",
+  "num_layers": 12,
+  "hidden_size": 768,
+  "num_heads": 12,
+  "intermediate_size": 3072,
+  "vocab_size": 50257,
+  "operators": [
+    "rmsnorm",
+    "qkv_projection",
+    "mlp",
+    "attention",
+    "kv_cache_read"
+  ],
+  "request_workload": {
+    "batch_size": 8,
+    "prefill_tokens_per_request": 512,
+    "decode_tokens_per_request": 128,
+    "target_concurrent_requests": 32
+  }
+}

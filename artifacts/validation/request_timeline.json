@@ -1,0 +1,68 @@
+{
+  "requests": [
+    {
+      "request_id": "req-001",
+      "arrival_ms": 0.0,
+      "prefill_start_ms": 2.0,
+      "decode_start_ms": 190.0,
+      "finish_ms": 820.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-002",
+      "arrival_ms": 6.0,
+      "prefill_start_ms": 10.0,
+      "decode_start_ms": 198.0,
+      "finish_ms": 835.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-003",
+      "arrival_ms": 10.0,
+      "prefill_start_ms": 16.0,
+      "decode_start_ms": 205.0,
+      "finish_ms": 850.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-004",
+      "arrival_ms": 18.0,
+      "prefill_start_ms": 26.0,
+      "decode_start_ms": 211.0,
+      "finish_ms": 862.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-005",
+      "arrival_ms": 24.0,
+      "prefill_start_ms": 34.0,
+      "decode_start_ms": 219.0,
+      "finish_ms": 879.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-006",
+      "arrival_ms": 31.0,
+      "prefill_start_ms": 43.0,
+      "decode_start_ms": 227.0,
+      "finish_ms": 891.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-007",
+      "arrival_ms": 40.0,
+      "prefill_start_ms": 59.1,
+      "decode_start_ms": 238.0,
+      "finish_ms": 910.0,
+      "status": "completed"
+    },
+    {
+      "request_id": "req-008",
+      "arrival_ms": 52.0,
+      "prefill_start_ms": 90.1,
+      "decode_start_ms": 252.0,
+      "finish_ms": 928.0,
+      "status": "completed"
+    }
+  ]
+}

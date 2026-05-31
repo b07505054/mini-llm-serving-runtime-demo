@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MLIR Compiler Runtime Workbench</title>
+  <style>
+    :root {
+      --bg: #101214;
+      --panel: #181b1f;
+      --panel-2: #20242a;
+      --text: #f2f4f7;
+      --muted: #aab2bf;
+      --line: #323842;
+      --green: #7ee787;
+      --blue: #79c0ff;
+      --yellow: #f2cc60;
+      --red: #ff7b72;
+      --purple: #d2a8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      padding: 24px 28px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #14171a;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: 0; }
+    .subtitle { color: var(--muted); max-width: 1120px; }
+    main { padding: 22px 28px 32px; max-width: 1440px; margin: 0 auto; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    button, input {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 11px;
+      font: inherit;
+    }
+    button { cursor: pointer; min-width: 116px; }
+    button.primary { background: #1f6feb; border-color: #388bfd; }
+    button.danger { background: #3a1818; border-color: #7d2a2a; }
+    label { color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+    input { width: 96px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 120px;
+    }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    .panel h2 { margin: 0 0 12px; font-size: 15px; color: #d8dee9; letter-spacing: 0; }
+    .metric {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .metric:last-child { border-bottom: 0; }
+    .metric span:first-child { color: var(--muted); }
+    .metric strong { font-size: 15px; text-align: right; }
+    .pass { color: var(--green); }
+    .warn { color: var(--yellow); }
+    .fail { color: var(--red); }
+    .blue { color: var(--blue); }
+    .purple { color: var(--purple); }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .flow button {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px;
+      text-align: center;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+    .flow button.active {
+      border-color: #388bfd;
+      background: #17345d;
+      color: #f2f8ff;
+    }
+    .stage-copy {
+      color: var(--muted);
+      margin: 0 0 12px;
+      max-width: 980px;
+    }
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .compare-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px;
+    }
+    .compare-card h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td {
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 7px 6px;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    pre {
+      margin: 0;
+      overflow: auto;
+      background: #0c0e11;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      max-height: 360px;
+      color: #d8dee9;
+      font-size: 12px;
+    }
+    .small { color: var(--muted); font-size: 12px; }
+    @media (max-width: 980px) {
+      .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+      .flow, .compare { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MLIR Compiler-to-Runtime Optimization Workbench</h1>
+    <div class="subtitle">
+      A TinyGPT MLIR block is used as the workload. The demo shows how an MLIR fusion pass
+      annotates the graph, lowers it into HIR JSON, and feeds a heterogeneous runtime execution plan.
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <button class="primary" id="run-one">Run Workload</button>
+      <button id="run-burst">Run Batch</button>
+      <button class="danger" id="reset">Reset</button>
+      <label>Prompt tokens <input id="prompt" type="number" value="1024" min="16" step="16"></label>
+      <label>Output tokens <input id="output" type="number" value="128" min="1" step="1"></label>
+      <span class="small" id="status">Loading compiler artifacts...</span>
+    </div>
+
+    <section class="grid">
+      <div class="panel span-12">
+        <h2>Compiler + Runtime Pipeline</h2>
+        <div class="flow">
+          <button class="stage-button active" data-stage="source">MLIR Source</button>
+          <button class="stage-button" data-stage="fusion">Fusion Pass</button>
+          <button class="stage-button" data-stage="annotated">Annotated MLIR</button>
+          <button class="stage-button" data-stage="lowered">Lowered HIR JSON</button>
+          <button class="stage-button" data-stage="runtime">Runtime Plan</button>
+          <button class="stage-button" data-stage="validation">Validation</button>
+        </div>
+      </div>
+
+      <div class="panel span-12">
+        <h2 id="stage-title">MLIR Source</h2>
+        <p class="stage-copy" id="stage-copy"></p>
+        <pre id="stage-artifact"></pre>
+      </div>
+
+      <div class="panel span-4">
+        <h2>Workload</h2>
+        <div id="workload-metrics"></div>
+      </div>
+
+      <div class="panel span-4">
+        <h2>MLIR Fusion</h2>
+        <div id="fusion-metrics"></div>
+      </div>
+
+      <div class="panel span-4">
+        <h2>Runtime Lowering</h2>
+        <div id="lowering-metrics"></div>
+      </div>
+
+      <div class="panel span-12">
+        <h2>Baseline vs Compiler-Lowered Runtime</h2>
+        <div class="compare">
+          <div class="compare-card">
+            <h3>Unfused Baseline</h3>
+            <div id="baseline-metrics"></div>
+          </div>
+          <div class="compare-card">
+            <h3>MLIR-Lowered Runtime</h3>
+            <div id="optimized-metrics"></div>
+          </div>
+          <div class="compare-card">
+            <h3>Delta</h3>
+            <div id="delta-metrics"></div>
+          </div>
+        </div>
+        <div class="small" id="comparison-note" style="margin-top:10px"></div>
+      </div>
+
+      <div class="panel span-6">
+        <h2>Runtime Events</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>t(ms)</th>
+              <th>Event</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody id="events"></tbody>
+        </table>
+      </div>
+
+      <div class="panel span-6">
+        <h2>Workload Runs</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Status</th>
+              <th>Prompt</th>
+              <th>Output</th>
+              <th>Blocks</th>
+              <th>E2E</th>
+              <th>Baseline E2E</th>
+            </tr>
+          </thead>
+          <tbody id="requests"></tbody>
+        </table>
+      </div>
+
+      <div class="panel span-4">
+        <h2>MLIR Source</h2>
+        <pre id="mlir-source"></pre>
+      </div>
+
+      <div class="panel span-4">
+        <h2>Annotated MLIR</h2>
+        <pre id="mlir-fused"></pre>
+      </div>
+
+      <div class="panel span-4">
+        <h2>Lowered HIR + Runtime Plan</h2>
+        <pre id="hir-json"></pre>
+      </div>
+
+      <div class="panel span-6">
+        <h2>Runtime Artifact Snapshot</h2>
+        <pre id="runtime-json"></pre>
+      </div>
+
+      <div class="panel span-6">
+        <h2>Validation Artifact Snapshot</h2>
+        <pre id="validation-json"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let snapshot = null;
+    let selectedStage = "source";
+
+    const fmt = (value, suffix = "") => {
+      if (value === undefined || value === null) return "n/a";
+      if (typeof value === "number") return `${Number(value.toFixed ? value.toFixed(3) : value)}${suffix}`;
+      return `${value}${suffix}`;
+    };
+
+    const metric = (name, value, cls = "") =>
+      `<div class="metric"><span>${name}</span><strong class="${cls}">${value}</strong></div>`;
+
+    const stageLabel = {
+      source: "MLIR Source",
+      fusion: "Fusion Pass",
+      annotated: "Annotated MLIR",
+      lowered: "Lowered HIR JSON",
+      runtime: "Runtime Plan",
+      validation: "Validation"
+    };
+
+    async function api(path, options = {}) {
+      const res = await fetch(path, options);
+      if (!res.ok) throw new Error(`${path}: ${res.status}`);
+      return res.json();
+    }
+
+    async function refresh() {
+      snapshot = await api("/api/snapshot");
+      render(snapshot);
+      document.getElementById("status").textContent = "Compiler/runtime artifacts loaded";
+    }
+
+    function render(data) {
+      const m = data.live.metrics;
+      const cr = data.live.compiler_runtime || m.compiler_runtime || {};
+      const comparison = m.comparison || {};
+      const baseline = comparison.baseline || {};
+      const optimized = comparison.optimized || {};
+      const improvement = comparison.improvement || {};
+      const val = data.validation.llm_validation_report || {};
+      renderStage(data);
+
+      document.getElementById("workload-metrics").innerHTML = [
+        metric("Workload", cr.workload || "TinyGPT MLIR block", "blue"),
+        metric("Source pattern", cr.source_pattern || "linalg.matmul + bias_add + relu"),
+        metric("Runs", fmt(cr.compiler_runs || 0)),
+        metric("Completed", fmt(m.completed_requests)),
+        metric("Rejected", fmt(m.rejected_requests), m.rejected_requests > 0 ? "warn" : "pass"),
+      ].join("");
+
+      document.getElementById("fusion-metrics").innerHTML = [
+        metric("Fusion candidate", cr.fusion_candidate || "matmul_bias_relu", "purple"),
+        metric("Fusion group", cr.fusion_group || "matmul_bias_relu_0"),
+        metric("Matched op", "linalg.matmul"),
+        metric("Annotated output", "fusion.candidate", "pass"),
+        metric("Lowering target", cr.lowered_op_type || "hir.fused_matmul_bias_relu"),
+      ].join("");
+
+      document.getElementById("lowering-metrics").innerHTML = [
+        metric("Backend", cr.backend || "Metal", "blue"),
+        metric("Runtime action", cr.runtime_action || "dispatch_fused_kernel", "pass"),
+        metric("Lowered ops", fmt(cr.num_lowered_ops)),
+        metric("Plan steps", fmt(cr.num_execution_steps)),
+        metric("FLOPs", fmt(cr.estimated_flops)),
+        metric("Arithmetic intensity", fmt(cr.arithmetic_intensity)),
+        metric("Launch overhead", fmt(cr.estimated_launch_overhead_us, " us")),
+      ].join("");
+
+      document.getElementById("baseline-metrics").innerHTML = [
+        metric("TTFT P95", fmt(baseline.ttft_p95_ms, " ms")),
+        metric("TPOT", fmt(baseline.tpot_ms, " ms/token")),
+        metric("E2E P95", fmt(baseline.e2e_p95_ms, " ms")),
+        metric("KV memory", fmt(baseline.kv_cache_used_mb, " MB")),
+      ].join("");
+      document.getElementById("optimized-metrics").innerHTML = [
+        metric("TTFT P95", fmt(optimized.ttft_p95_ms, " ms"), "pass"),
+        metric("TPOT", fmt(optimized.tpot_ms, " ms/token"), "pass"),
+        metric("E2E P95", fmt(optimized.e2e_p95_ms, " ms"), "pass"),
+        metric("KV memory", fmt(optimized.kv_cache_used_mb, " MB"), "pass"),
+      ].join("");
+      document.getElementById("delta-metrics").innerHTML = [
+        metric("E2E P95 gain", fmt(improvement.end_to_end_p95_pct, "%"), improvement.end_to_end_p95_pct > 0 ? "pass" : ""),
+        metric("KV memory saved", fmt(improvement.kv_memory_saved_mb, " MB"), improvement.kv_memory_saved_mb > 0 ? "pass" : ""),
+        metric("Correctness", val.correctness_passed ? "passed" : "n/a", val.correctness_passed ? "pass" : ""),
+        metric("Max logit diff", fmt(val.max_logit_diff)),
+      ].join("");
+      document.getElementById("comparison-note").textContent = improvement.assumption || "";
+
+      document.getElementById("events").innerHTML = data.live.events.slice().reverse().slice(0, 18).map(e => {
+        const detail = e.lowered_op || e.pattern || e.backend || e.reason || e.generated_tokens || e.allocated_blocks || "";
+        return `
+          <tr>
+            <td>${e.time_ms}</td>
+            <td>${e.event}</td>
+            <td><code>${detail}</code></td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("requests").innerHTML = data.live.requests.slice().reverse().map(r => `
+        <tr>
+          <td><code>${r.request_id}</code></td>
+          <td class="${r.status === "completed" ? "pass" : "warn"}">${r.status}</td>
+          <td>${r.prompt_tokens || "-"}</td>
+          <td>${r.generated_tokens || "-"}</td>
+          <td>${r.allocated_blocks || r.required_blocks || "-"}</td>
+          <td>${r.e2e_latency_ms ? `${r.e2e_latency_ms} ms` : "-"}</td>
+          <td>${r.baseline_e2e_latency_ms ? `${r.baseline_e2e_latency_ms} ms` : "-"}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("mlir-source").textContent = data.compiler.mlir_source || "No MLIR source snapshot found.";
+      document.getElementById("mlir-fused").textContent = data.compiler.mlir_fused_graph || "No annotated MLIR snapshot found.";
+      document.getElementById("hir-json").textContent = JSON.stringify({
+        lowered_graph: data.compiler.mlir_lowered_graph,
+        execution_plan: data.compiler.mlir_execution_plan,
+      }, null, 2);
+      document.getElementById("runtime-json").textContent = JSON.stringify({
+        runtime_profile: data.runtime_artifacts.runtime_profile,
+        prefill_decode_benchmark: data.runtime_artifacts.prefill_decode,
+      }, null, 2);
+      document.getElementById("validation-json").textContent = JSON.stringify({
+        llm_validation_report: data.validation.llm_validation_report,
+        slo_report: data.validation.slo_report,
+      }, null, 2);
+    }
+
+    function renderStage(data) {
+      const cr = data.live.compiler_runtime || data.live.metrics.compiler_runtime || {};
+      const stageCopy = {
+        source: "The compiler starts from a TinyGPT-shaped MLIR workload. This is the input IR that downstream passes inspect.",
+        fusion: `The fusion pass detects ${cr.source_pattern || "linalg.matmul + bias_add + relu"} and tags it as ${cr.fusion_candidate || "matmul_bias_relu"} in fusion group ${cr.fusion_group || "matmul_bias_relu_0"}.`,
+        annotated: "The annotated MLIR is the pass output. The important part is the fusion metadata attached before runtime lowering.",
+        lowered: `The bridge converts annotated MLIR into runtime-facing HIR. The lowered op is ${cr.lowered_op_type || "hir.fused_matmul_bias_relu"}.`,
+        runtime: `The runtime consumes the execution plan and dispatches ${cr.runtime_action || "dispatch_fused_kernel"} on ${cr.backend || "Metal"}.`,
+        validation: "Validation artifacts check SLO/correctness and provide the report that makes the optimization claim auditable."
+      };
+      const stageArtifact = {
+        source: data.compiler.mlir_source || "No MLIR source snapshot found.",
+        fusion: JSON.stringify({
+          matched_pattern: cr.source_pattern,
+          fusion_candidate: cr.fusion_candidate,
+          fusion_group: cr.fusion_group,
+          annotated_output: "fusion.candidate",
+          lowering_target: cr.lowered_op_type
+        }, null, 2),
+        annotated: data.compiler.mlir_fused_graph || "No annotated MLIR snapshot found.",
+        lowered: JSON.stringify(data.compiler.mlir_lowered_graph, null, 2),
+        runtime: JSON.stringify(data.compiler.mlir_execution_plan, null, 2),
+        validation: JSON.stringify({
+          llm_validation_report: data.validation.llm_validation_report,
+          slo_report: data.validation.slo_report
+        }, null, 2)
+      };
+      document.getElementById("stage-title").textContent = stageLabel[selectedStage];
+      document.getElementById("stage-copy").textContent = stageCopy[selectedStage];
+      document.getElementById("stage-artifact").textContent = stageArtifact[selectedStage];
+      document.querySelectorAll(".stage-button").forEach(button => {
+        button.classList.toggle("active", button.dataset.stage === selectedStage);
+      });
+    }
+
+    async function generate(promptTokens, outputTokens) {
+      await api("/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt_tokens: promptTokens, max_output_tokens: outputTokens })
+      });
+      await refresh();
+    }
+
+    document.getElementById("run-one").addEventListener("click", async () => {
+      await generate(Number(document.getElementById("prompt").value), Number(document.getElementById("output").value));
+    });
+
+    document.getElementById("run-burst").addEventListener("click", async () => {
+      const workload = [
+        [256, 64], [512, 128], [1024, 64], [2048, 128],
+        [128, 32], [4096, 64], [512, 256], [1024, 128]
+      ];
+      for (const [p, o] of workload) await generate(p, o);
+    });
+
+    document.getElementById("reset").addEventListener("click", async () => {
+      await api("/reset", { method: "POST" });
+      await refresh();
+    });
+
+    document.querySelectorAll(".stage-button").forEach(button => {
+      button.addEventListener("click", () => {
+        selectedStage = button.dataset.stage;
+        if (snapshot) renderStage(snapshot);
+      });
+    });
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

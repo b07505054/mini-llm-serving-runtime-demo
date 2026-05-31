@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "serving_execution_plan",
+  "model": "tiny-gpt",
+  "phases": [
+    {
+      "name": "prefill",
+      "ops": [
+        "embed",
+        "rmsnorm",
+        "qkv_projection",
+        "mlp",
+        "attention_prefill"
+      ],
+      "preferred_backend": "gpu",
+      "source_analysis": "trace/llm_serving_compiler_analysis.json"
+    },
+    {
+      "name": "decode",
+      "ops": [
+        "embed",
+        "rmsnorm",
+        "qkv_projection",
+        "mlp",
+        "attention_decode",
+        "kv_cache_read"
+      ],
+      "preferred_backend": "cpu_or_gpu",
+      "source_analysis": "trace/llm_serving_compiler_analysis.json"
+    }
+  ],
+  "runtime_contract": {
+    "prefill_produces_kv_blocks": true,
+    "decode_consumes_kv_blocks": true,
+    "scheduler_plan": "scheduling_plan.json",
+    "kv_cache_plan": "kv_cache_plan.json",
+    "memory_plan": "memory_plan.json"
+  }
+}

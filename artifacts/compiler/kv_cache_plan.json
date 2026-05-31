@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "kv_cache_plan",
+  "model": "tiny-gpt",
+  "block_size_tokens": 16,
+  "num_blocks": 1024,
+  "max_context_tokens": 4096,
+  "total_token_capacity": 16384,
+  "kv_dtype": "fp16",
+  "bytes_per_token": 36864,
+  "bytes_per_block": 589824,
+  "memory_mb_at_full_capacity": 576,
+  "eviction_policy": "none",
+  "allocation_strategy": "block_based",
+  "paged_attention_enabled": true,
+  "block_table_enabled": true,
+  "prefix_cache_enabled": false,
+  "sliding_window_enabled": false
+}

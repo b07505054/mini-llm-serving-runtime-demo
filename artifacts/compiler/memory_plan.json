@@ -1,0 +1,17 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "memory_plan",
+  "model": "tiny-gpt",
+  "peak_prefill_memory_mb": 210,
+  "peak_decode_memory_mb": 673,
+  "kv_cache_memory_mb_at_2048_tokens": 72,
+  "kv_cache_memory_mb_at_target_concurrency": 576,
+  "activation_memory_mb": {
+    "prefill": 114,
+    "decode_step": 1
+  },
+  "temporary_buffer_mb": 96,
+  "reuse_enabled": true,
+  "memory_budget_mb": 8192,
+  "fits_memory_budget": true
+}

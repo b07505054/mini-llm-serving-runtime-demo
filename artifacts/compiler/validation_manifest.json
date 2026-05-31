@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "validation_manifest",
+  "model": "tiny-gpt",
+  "expected_outputs": [
+    "llm_graph_ir.json",
+    "serving_execution_plan.json",
+    "kv_cache_plan.json",
+    "memory_plan.json",
+    "scheduling_plan.json",
+    "validation_manifest.json"
+  ],
+  "checks": [
+    "artifact_schema_valid",
+    "prefill_decode_phase_present",
+    "kv_cache_capacity_valid",
+    "kv_cache_block_size_positive",
+    "memory_budget_not_exceeded",
+    "scheduling_queues_present"
+  ],
+  "demo_contract": {
+    "apple_demo_entry_artifacts": [
+      "llm_graph_ir.json",
+      "serving_execution_plan.json",
+      "kv_cache_plan.json",
+      "memory_plan.json",
+      "scheduling_plan.json",
+      "validation_manifest.json"
+    ],
+    "primary_dashboard_views": [
+      "model_graph",
+      "prefill_decode_timeline",
+      "kv_cache_blocks",
+      "memory_breakdown",
+      "scheduler_behavior",
+      "validation_status"
+    ]
+  }
+}

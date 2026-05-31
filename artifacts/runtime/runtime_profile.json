@@ -1,0 +1,13 @@
+{
+  "model": "tiny-gpt",
+  "total_requests": 32,
+  "completed_requests": 32,
+  "rejected_requests": 0,
+  "p50_latency_ms": 849.537,
+  "p95_latency_ms": 1628.828,
+  "p99_latency_ms": 1661.568,
+  "peak_memory_mb": 986.75,
+  "peak_kv_cache_mb": 218.75,
+  "oom_events": 0,
+  "tokens_per_second": 76.254
+}

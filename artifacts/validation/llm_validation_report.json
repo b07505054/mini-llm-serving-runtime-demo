@@ -1,0 +1,9 @@
+{
+  "job_id": "llm-runtime-demo-001",
+  "passed": true,
+  "latency_budget_ms": 20.0,
+  "p95_decode_latency_ms": 15.9,
+  "correctness_passed": true,
+  "max_logit_diff": 0.0008,
+  "peak_memory_mb": 1240.0
+}
