@@ -219,6 +219,11 @@
       </div>
 
       <div class="panel span-8">
+        <h2>KV Runtime Policy</h2>
+        <div id="kv-policy-metrics"></div>
+      </div>
+
+      <div class="panel span-8">
         <h2>Plan Comparison</h2>
         <table>
           <thead>
@@ -334,6 +339,7 @@
               <th>Prompt</th>
               <th>Output</th>
               <th>Blocks</th>
+              <th>Prefix</th>
               <th>E2E</th>
               <th>Baseline E2E</th>
             </tr>
@@ -457,6 +463,20 @@
         metric("Artifacts hashed", fmt((provenance.outputs || []).length)),
       ].join("");
 
+      const kvPolicy = cr.kv_policy || {};
+      document.getElementById("kv-policy-metrics").innerHTML = [
+        metric("Prefix cache", m.prefix_cache_enabled ? "enabled" : "disabled", m.prefix_cache_enabled ? "pass" : "warn"),
+        metric("Admission", cr.admission_policy || "capacity_only", "blue"),
+        metric("Eviction", cr.eviction_policy || "none"),
+        metric("Cache entries", fmt(m.prefix_cache_entries)),
+        metric("Hit rate", fmt((m.prefix_cache_hit_rate || 0) * 100, "%"), m.prefix_cache_hit_rate > 0 ? "pass" : ""),
+        metric("Blocks reused", fmt(m.kv_blocks_reused), m.kv_blocks_reused > 0 ? "pass" : ""),
+        metric("Blocks evicted", fmt(m.kv_blocks_evicted), m.kv_blocks_evicted > 0 ? "warn" : ""),
+        metric("Admission rejects", fmt((m.admission_rejection_rate || 0) * 100, "%"), m.admission_rejection_rate > 0 ? "warn" : "pass"),
+        metric("Prefill saved", fmt(m.prefill_latency_saved_ms, " ms"), m.prefill_latency_saved_ms > 0 ? "pass" : ""),
+        metric("Min prefix", fmt(kvPolicy.min_prefix_tokens || 0, " tokens")),
+      ].join("");
+
       const measuredByPlan = {};
       (planBenchmarks.results || []).forEach(row => { measuredByPlan[row.plan_id] = row; });
       document.getElementById("plan-comparison").innerHTML = (candidatePlans.plans || []).map(plan => {
@@ -547,7 +567,7 @@
       document.getElementById("comparison-note").textContent = improvement.assumption || "";
 
       document.getElementById("events").innerHTML = data.live.events.slice().reverse().slice(0, 18).map(e => {
-        const detail = e.lowered_op || e.pattern || e.backend || e.reason || e.generated_tokens || e.allocated_blocks || "";
+        const detail = e.prefix_hash || e.lowered_op || e.pattern || e.backend || e.reason || e.generated_tokens || e.allocated_blocks || e.reused_blocks || "";
         return `
           <tr>
             <td>${e.time_ms}</td>
@@ -564,6 +584,7 @@
           <td>${r.prompt_tokens || "-"}</td>
           <td>${r.generated_tokens || "-"}</td>
           <td>${r.allocated_blocks || r.required_blocks || "-"}</td>
+          <td class="${r.prefix_cache === "hit" ? "pass" : ""}">${r.prefix_cache || "-"}</td>
           <td>${r.e2e_latency_ms ? `${r.e2e_latency_ms} ms` : "-"}</td>
           <td>${r.baseline_e2e_latency_ms ? `${r.baseline_e2e_latency_ms} ms` : "-"}</td>
         </tr>
@@ -576,6 +597,8 @@
         execution_plan: data.compiler.mlir_execution_plan,
       }, null, 2);
       document.getElementById("runtime-json").textContent = JSON.stringify({
+        kv_cache_plan: data.compiler.kv_cache_plan,
+        live_prefix_cache: data.live.prefix_cache,
         runtime_profile: data.runtime_artifacts.runtime_profile,
         prefill_decode_benchmark: data.runtime_artifacts.prefill_decode,
         real_llama_profile: data.runtime_artifacts.real_llama_profile,
@@ -593,7 +616,7 @@
         fusion: `The fusion pass detects ${cr.source_pattern || "linalg.matmul + bias_add + relu"} and tags it as ${cr.fusion_candidate || "matmul_bias_relu"} in fusion group ${cr.fusion_group || "matmul_bias_relu_0"}.`,
         annotated: "The annotated MLIR is the pass output. The important part is the fusion metadata attached before runtime lowering.",
         lowered: `The bridge converts annotated MLIR into runtime-facing HIR. The lowered op is ${cr.lowered_op_type || "hir.fused_matmul_bias_relu"}.`,
-        runtime: `The runtime consumes the execution plan and dispatches ${cr.runtime_action || "dispatch_fused_kernel"} on ${cr.backend || "Metal"}.`,
+        runtime: `The runtime consumes the execution plan, enforces ${cr.admission_policy || "capacity_only"} admission, and dispatches ${cr.runtime_action || "dispatch_fused_kernel"} on ${cr.backend || "Metal"}.`,
         provenance: "Provenance records the compiler version, git commit, pass pipeline, and hashes for emitted artifacts.",
         plans: "Candidate plans compare Metal, CPU, and Hybrid execution choices using compiler estimates and runtime benchmark artifacts.",
         memory: "The memory timeline exposes allocation, reuse, and free events so peak memory and buffer reuse are auditable.",
@@ -610,7 +633,11 @@
         }, null, 2),
         annotated: data.compiler.mlir_fused_graph || "No annotated MLIR snapshot found.",
         lowered: JSON.stringify(data.compiler.mlir_lowered_graph, null, 2),
-        runtime: JSON.stringify(data.compiler.mlir_execution_plan, null, 2),
+        runtime: JSON.stringify({
+          execution_plan: data.compiler.mlir_execution_plan,
+          kv_cache_plan: data.compiler.kv_cache_plan,
+          live_prefix_cache: data.live.prefix_cache
+        }, null, 2),
         provenance: JSON.stringify(data.compiler.artifact_provenance, null, 2),
         plans: JSON.stringify({
           candidate_execution_plans: data.compiler.candidate_execution_plans,

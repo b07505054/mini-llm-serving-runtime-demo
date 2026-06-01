@@ -26,6 +26,10 @@
     "decode_queue_depth",
     "active_sequences",
     "tokens_scheduled_per_step",
-    "kv_blocks_allocated"
+    "kv_blocks_allocated",
+    "prefix_cache_hit_rate",
+    "kv_blocks_reused",
+    "kv_blocks_evicted",
+    "admission_rejection_rate"
   ]
 }

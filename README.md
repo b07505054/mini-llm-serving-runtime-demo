@@ -16,6 +16,7 @@ TinyGPT MLIR block
   -> annotated MLIR
   -> lowered HIR JSON
   -> runtime execution plan
+  -> KV prefix-cache admission policy
   -> heterogeneous runtime metrics
   -> validation report
 ```
@@ -89,11 +90,15 @@ curl -X POST http://127.0.0.1:8765/reset
 - Runtime lowering: `hir.fused_matmul_bias_relu` dispatched to the configured backend
 - Artifact provenance: compiler version, git commit, pass pipeline, artifact hashes
 - Plan comparison: Metal, CPU, and Hybrid candidate plans with estimated and measured metrics
+- KV runtime policy: prefix-cache hit rate, reused/evicted KV blocks, admission rejects,
+  and prefill latency saved from cached prefixes
 - Memory timeline: allocation, reuse, and free events with validation status
 - Real backend profiling: HuggingFace LlamaForCausalLM profiling on available PyTorch backends
   with TTFT, TPOT, batch/sequence scaling, and operator bottleneck breakdown
 - Baseline vs compiler-lowered runtime comparison: TTFT, TPOT, E2E, KV memory
 - Runtime events: `mlir_pattern_matched`, `lowered_to_hir`, prefill/decode events, completion
+- KV policy events: `prefix_cache_hit`, `prefix_cache_miss`, `kv_blocks_evicted`,
+  `admission_rejected`, and `prefix_cache_inserted`
 - Validation status: correctness pass/fail, SLO status, max logit diff
 - Raw artifact snapshots from compiler, runtime, and validation layers
 
@@ -110,7 +115,13 @@ The committed artifacts currently demonstrate:
 - Lightweight cost metadata: estimated FLOPs, memory traffic, arithmetic intensity,
   and launch overhead
 - TinyGPT-style planning artifacts: prefill/decode phase split, KV-cache block
-  plan, memory budget, and scheduling contract
+  plan, prefix-cache/admission policy, memory budget, and scheduling contract
+
+The demo consumes `kv_cache_plan.json` from `ml-graph-compiler-runtime` and
+enforces the KV policy at request time. Requests compute a prefix hash, reuse
+resident prefix KV blocks on cache hit, evict finished prefixes with LRU when
+capacity is tight, and reject admission only after eviction cannot free enough
+blocks.
 
 The strongest compiler claim in this snapshot is the MLIR fusion-to-runtime
 bridge:

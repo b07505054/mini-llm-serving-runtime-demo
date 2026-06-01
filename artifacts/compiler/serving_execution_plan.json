@@ -10,8 +10,7 @@
         "attention_prefill",
         "mlp"
       ],
-      "preferred_backend": "gpu",
-      "source": "mlir/tiny_gpt_serving.mlir"
+      "preferred_backend": "gpu"
     },
     {
       "name": "decode",
@@ -20,8 +19,7 @@
         "kv_cache_read",
         "mlp"
       ],
-      "preferred_backend": "cpu_or_gpu",
-      "source": "mlir/tiny_gpt_serving.mlir"
+      "preferred_backend": "cpu_or_gpu"
     }
   ],
   "runtime_contract": {
@@ -29,6 +27,11 @@
     "decode_consumes_kv_blocks": true,
     "scheduler_plan": "scheduling_plan.json",
     "kv_cache_plan": "kv_cache_plan.json",
-    "memory_plan": "memory_plan.json"
+    "memory_plan": "memory_plan.json",
+    "kv_policy_contract": {
+      "prefix_cache_enabled": true,
+      "eviction_policy": "lru_finished_prefix",
+      "admission_policy": "prefix_aware_capacity"
+    }
   }
 }

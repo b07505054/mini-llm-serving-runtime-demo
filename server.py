@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
+import hashlib
 import json
 import math
 import os
@@ -22,6 +24,98 @@ RUNTIME_ARTIFACTS = Path(
 VALIDATION_ARTIFACTS = Path(
     os.environ.get("VALIDATION_ARTIFACTS", ARTIFACT_ROOT / "validation")
 )
+
+
+@dataclass
+class PrefixCacheEntry:
+    prefix_hash: str
+    blocks: list
+    tokens: int
+    ref_count: int
+    last_used_ms: float
+    model_version: str
+
+
+class PrefixCacheManager:
+    def __init__(self, total_blocks, block_size_tokens, policy, now_ms):
+        self.total_blocks = total_blocks
+        self.block_size_tokens = block_size_tokens
+        self.policy = policy or {}
+        self.now_ms = now_ms
+        self.enabled = bool(self.policy.get("enabled", False))
+        self.model_version = self.policy.get("model_version", "tiny-gpt")
+        self.max_entries = int(self.policy.get("max_prefix_entries", 128))
+        self.free_blocks = list(range(total_blocks))
+        self.entries = {}
+
+    def used_blocks(self):
+        return self.total_blocks - len(self.free_blocks)
+
+    def available_blocks(self):
+        return len(self.free_blocks)
+
+    def lookup(self, prefix_hash, model_version):
+        if not self.enabled:
+            return None
+        entry = self.entries.get(prefix_hash)
+        if not entry or entry.model_version != model_version:
+            return None
+        entry.ref_count += 1
+        entry.last_used_ms = self.now_ms()
+        return entry
+
+    def allocate_blocks(self, count):
+        if count <= 0:
+            return []
+        if count > len(self.free_blocks):
+            return []
+        blocks = self.free_blocks[:count]
+        del self.free_blocks[:count]
+        return blocks
+
+    def release_blocks(self, blocks):
+        self.free_blocks.extend(blocks)
+        self.free_blocks.sort()
+
+    def insert(self, prefix_hash, blocks, tokens, model_version):
+        if not self.enabled or not blocks:
+            self.release_blocks(blocks)
+            return None
+        old = self.entries.pop(prefix_hash, None)
+        if old:
+            self.release_blocks(old.blocks)
+        entry = PrefixCacheEntry(
+            prefix_hash=prefix_hash,
+            blocks=blocks,
+            tokens=tokens,
+            ref_count=0,
+            last_used_ms=self.now_ms(),
+            model_version=model_version,
+        )
+        self.entries[prefix_hash] = entry
+        return entry
+
+    def evict_lru(self, required_blocks):
+        evicted = []
+        while self.available_blocks() < required_blocks and self.entries:
+            victim_hash, victim = min(
+                self.entries.items(),
+                key=lambda item: (item[1].ref_count > 0, item[1].last_used_ms),
+            )
+            if victim.ref_count > 0:
+                break
+            self.entries.pop(victim_hash)
+            self.release_blocks(victim.blocks)
+            evicted.append(victim)
+        while len(self.entries) > self.max_entries:
+            victim_hash, victim = min(
+                self.entries.items(),
+                key=lambda item: item[1].last_used_ms,
+            )
+            self.entries.pop(victim_hash)
+            self.release_blocks(victim.blocks)
+            evicted.append(victim)
+        return evicted
 
 
 def load_json(path: Path, fallback):
@@ -77,7 +171,18 @@ class MiniServingRuntime:
         self.block_size_tokens = int(kv_plan.get("block_size_tokens", 16))
         self.total_blocks = int(kv_plan.get("num_blocks", 1024))
         self.bytes_per_block = int(kv_plan.get("bytes_per_block", 589824))
-        self.used_blocks = 0
+        self.prefix_cache_policy = kv_plan.get("prefix_cache_policy", {
+            "enabled": bool(kv_plan.get("prefix_cache_enabled", False)),
+            "model_version": kv_plan.get("model", "tiny-gpt"),
+            "min_prefix_tokens": self.block_size_tokens,
+            "max_prefix_entries": 128,
+        })
+        self.prefix_cache = PrefixCacheManager(
+            self.total_blocks,
+            self.block_size_tokens,
+            self.prefix_cache_policy,
+            self._now_ms,
+        )
         self.events = []
         self.requests = []
         self.rejected_requests = 0
@@ -85,6 +190,11 @@ class MiniServingRuntime:
         self.generated_tokens = 0
         self.started_at = time.time()
         self.compiler_runs = 0
+        self.prefix_cache_hits = 0
+        self.prefix_cache_misses = 0
+        self.kv_blocks_reused = 0
+        self.kv_blocks_evicted = 0
+        self.prefill_latency_saved_ms = 0.0
 
     def _now_ms(self):
         return round((time.time() - self.started_at) * 1000, 3)
@@ -99,6 +209,20 @@ class MiniServingRuntime:
         self.events.append(row)
         return row
 
+    def _prefix_fingerprint(self, payload, prompt_tokens):
+        min_prefix_tokens = int(
+            self.prefix_cache_policy.get("min_prefix_tokens", self.block_size_tokens)
+        )
+        if not self.prefix_cache.enabled or prompt_tokens < min_prefix_tokens:
+            return None, 0
+
+        prefix_tokens = int(payload.get("prefix_tokens", max(min_prefix_tokens, prompt_tokens // 2)))
+        prefix_tokens = min(prefix_tokens, prompt_tokens)
+        prefix_label = payload.get("prefix") or payload.get("prompt") or "shared-system-prefix-v1"
+        model_version = self.prefix_cache_policy.get("model_version", "tiny-gpt")
+        raw = f"{model_version}|{prefix_label}|{prefix_tokens}".encode("utf-8")
+        return hashlib.sha256(raw).hexdigest(), prefix_tokens
+
     def generate(self, payload):
         prompt_tokens = int(payload.get("prompt_tokens", 512))
         max_output_tokens = int(payload.get("max_output_tokens", 64))
@@ -107,7 +231,16 @@ class MiniServingRuntime:
 
         required_tokens = prompt_tokens + max_output_tokens
         required_blocks = math.ceil(required_tokens / self.block_size_tokens)
-        available_blocks = self.total_blocks - self.used_blocks
+        prefix_hash, prefix_tokens = self._prefix_fingerprint(payload, prompt_tokens)
+        model_version = self.prefix_cache_policy.get("model_version", "tiny-gpt")
+        prefix_entry = (
+            self.prefix_cache.lookup(prefix_hash, model_version)
+            if prefix_hash
+            else None
+        )
+        prefix_block_count = math.ceil(prefix_tokens / self.block_size_tokens) if prefix_tokens else 0
+        reused_blocks = len(prefix_entry.blocks) if prefix_entry else 0
+        required_new_blocks = max(0, required_blocks - reused_blocks)
 
         self._event(
             "request_arrived",
@@ -115,7 +248,26 @@ class MiniServingRuntime:
             prompt_tokens=prompt_tokens,
             max_output_tokens=max_output_tokens,
             required_blocks=required_blocks,
+            prefix_hash=prefix_hash[:12] if prefix_hash else None,
         )
+        if prefix_entry:
+            self.prefix_cache_hits += 1
+            self.kv_blocks_reused += reused_blocks
+            self._event(
+                "prefix_cache_hit",
+                request_id,
+                prefix_hash=prefix_hash[:12],
+                reused_blocks=reused_blocks,
+                reused_tokens=prefix_entry.tokens,
+            )
+        elif prefix_hash:
+            self.prefix_cache_misses += 1
+            self._event(
+                "prefix_cache_miss",
+                request_id,
+                prefix_hash=prefix_hash[:12],
+                cacheable_prefix_tokens=prefix_tokens,
+            )
         self._event(
             "mlir_pattern_matched",
             request_id,
@@ -129,31 +281,52 @@ class MiniServingRuntime:
             backend="Metal",
         )
 
-        if required_blocks > available_blocks:
+        evicted_entries = []
+        if required_new_blocks > self.prefix_cache.available_blocks():
+            evicted_entries = self.prefix_cache.evict_lru(required_new_blocks)
+            evicted_blocks = sum(len(entry.blocks) for entry in evicted_entries)
+            if evicted_blocks:
+                self.kv_blocks_evicted += evicted_blocks
+                self._event(
+                    "kv_blocks_evicted",
+                    request_id,
+                    evicted_blocks=evicted_blocks,
+                    evicted_entries=len(evicted_entries),
+                    policy=self.compiler["kv_cache_plan"].get("eviction_policy", "lru"),
+                )
+
+        available_blocks = self.prefix_cache.available_blocks()
+        if required_new_blocks > available_blocks:
             self.rejected_requests += 1
             result = {
                 "request_id": request_id,
                 "status": "rejected",
-                "reason": "kv_cache_capacity_exceeded",
+                "reason": "admission_rejected_kv_capacity",
                 "required_blocks": required_blocks,
+                "required_new_blocks": required_new_blocks,
+                "reused_blocks": reused_blocks,
                 "available_blocks": available_blocks,
             }
             self.requests.append(result)
             self._event(
-                "request_rejected",
+                "admission_rejected",
                 request_id,
                 reason=result["reason"],
                 required_blocks=required_blocks,
+                required_new_blocks=required_new_blocks,
                 available_blocks=available_blocks,
             )
+            if prefix_entry:
+                prefix_entry.ref_count = max(0, prefix_entry.ref_count - 1)
             return result
 
-        self.used_blocks += required_blocks
+        allocated_blocks = self.prefix_cache.allocate_blocks(required_new_blocks)
         self._event(
             "request_admitted",
             request_id,
-            allocated_blocks=required_blocks,
-            used_blocks=self.used_blocks,
+            allocated_blocks=len(allocated_blocks),
+            reused_blocks=reused_blocks,
+            resident_prefix_blocks=self.prefix_cache.used_blocks(),
         )
 
         base_prefill = float(
@@ -162,7 +335,16 @@ class MiniServingRuntime:
         base_decode = float(
             self.runtime_artifacts["prefill_decode"].get("avg_decode_latency_ms", 13.0)
         )
-        prefill_latency_ms = round(base_prefill * (prompt_tokens / 1024), 3)
+        full_prefill_latency_ms = base_prefill * (prompt_tokens / 1024)
+        saved_latency_ms = 0.0
+        if prefix_entry and prompt_tokens:
+            saved_latency_ms = full_prefill_latency_ms * min(
+                0.9,
+                prefix_entry.tokens / prompt_tokens,
+            )
+        prefill_latency_ms = round(max(0.0, full_prefill_latency_ms - saved_latency_ms), 3)
+        saved_latency_ms = round(saved_latency_ms, 3)
+        self.prefill_latency_saved_ms += saved_latency_ms
         decode_latency_ms = round(base_decode * max_output_tokens, 3)
         ttft_ms = round(prefill_latency_ms + 2.0, 3)
         tpot_ms = round(base_decode, 3)
@@ -176,7 +358,12 @@ class MiniServingRuntime:
         baseline_blocks = math.ceil(required_blocks * 1.18)
 
         self._event("prefill_start", request_id, backend="gpu")
-        self._event("prefill_end", request_id, latency_ms=prefill_latency_ms)
+        self._event(
+            "prefill_end",
+            request_id,
+            latency_ms=prefill_latency_ms,
+            saved_ms=saved_latency_ms,
+        )
         self._event("decode_start", request_id, backend="gpu")
         self._event(
             "decode_end",
@@ -187,12 +374,39 @@ class MiniServingRuntime:
 
         self.completed_requests += 1
         self.generated_tokens += max_output_tokens
+        retained_prefix_blocks = []
+        released_blocks = allocated_blocks
+        if prefix_hash and not prefix_entry and prefix_block_count > 0:
+            retained_prefix_blocks = allocated_blocks[:prefix_block_count]
+            released_blocks = allocated_blocks[prefix_block_count:]
+            self.prefix_cache.insert(
+                prefix_hash,
+                retained_prefix_blocks,
+                prefix_tokens,
+                model_version,
+            )
+            self._event(
+                "prefix_cache_inserted",
+                request_id,
+                prefix_hash=prefix_hash[:12],
+                retained_blocks=len(retained_prefix_blocks),
+                prefix_tokens=prefix_tokens,
+            )
+        self.prefix_cache.release_blocks(released_blocks)
+        if prefix_entry:
+            prefix_entry.ref_count = max(0, prefix_entry.ref_count - 1)
+
         result = {
             "request_id": request_id,
             "status": "completed",
             "prompt_tokens": prompt_tokens,
             "generated_tokens": max_output_tokens,
-            "allocated_blocks": required_blocks,
+            "allocated_blocks": len(allocated_blocks),
+            "required_blocks": required_blocks,
+            "reused_blocks": reused_blocks,
+            "evicted_blocks": sum(len(entry.blocks) for entry in evicted_entries),
+            "prefix_cache": "hit" if prefix_entry else "miss" if prefix_hash else "disabled",
+            "prefill_latency_saved_ms": saved_latency_ms,
             "ttft_ms": ttft_ms,
             "tpot_ms": tpot_ms,
             "e2e_latency_ms": e2e_latency_ms,
@@ -203,7 +417,12 @@ class MiniServingRuntime:
             "text": "simulated token stream",
         }
         self.requests.append(result)
-        self._event("request_finished", request_id, e2e_latency_ms=e2e_latency_ms)
+        self._event(
+            "request_finished",
+            request_id,
+            e2e_latency_ms=e2e_latency_ms,
+            resident_prefix_blocks=self.prefix_cache.used_blocks(),
+        )
         return result
 
     def metrics(self):
@@ -220,7 +439,20 @@ class MiniServingRuntime:
             idx = min(len(values) - 1, math.ceil((p / 100) * len(values)) - 1)
             return round(values[idx], 3)
 
-        used_mb = round(self.used_blocks * self.bytes_per_block / (1024 * 1024), 3)
+        used_blocks = self.prefix_cache.used_blocks()
+        total_admission_requests = self.completed_requests + self.rejected_requests
+        prefix_lookups = self.prefix_cache_hits + self.prefix_cache_misses
+        prefix_hit_rate = (
+            round(self.prefix_cache_hits / prefix_lookups, 4)
+            if prefix_lookups
+            else 0
+        )
+        admission_rejection_rate = (
+            round(self.rejected_requests / total_admission_requests, 4)
+            if total_admission_requests
+            else 0
+        )
+        used_mb = round(used_blocks * self.bytes_per_block / (1024 * 1024), 3)
         baseline_blocks_used = sum(r.get("baseline_blocks", 0) for r in completed)
         baseline_used_mb = round(
             baseline_blocks_used * self.bytes_per_block / (1024 * 1024),
@@ -248,10 +480,19 @@ class MiniServingRuntime:
             "ttft_p95_ms": percentile(ttfts, 95),
             "e2e_p95_ms": optimized_e2e_p95,
             "tpot_ms": optimized_tpot,
-            "kv_blocks_used": self.used_blocks,
+            "kv_blocks_used": used_blocks,
             "kv_blocks_total": self.total_blocks,
             "kv_cache_used_mb": used_mb,
-            "kv_cache_utilization": round(self.used_blocks / self.total_blocks, 4),
+            "kv_cache_utilization": round(used_blocks / self.total_blocks, 4),
+            "prefix_cache_enabled": self.prefix_cache.enabled,
+            "prefix_cache_entries": len(self.prefix_cache.entries),
+            "prefix_cache_hits": self.prefix_cache_hits,
+            "prefix_cache_misses": self.prefix_cache_misses,
+            "prefix_cache_hit_rate": prefix_hit_rate,
+            "kv_blocks_reused": self.kv_blocks_reused,
+            "kv_blocks_evicted": self.kv_blocks_evicted,
+            "prefill_latency_saved_ms": round(self.prefill_latency_saved_ms, 3),
+            "admission_rejection_rate": admission_rejection_rate,
             "slo_passed": self.validation["llm_validation_report"].get("passed", False),
             "comparison": {
                 "baseline": {
@@ -267,7 +508,7 @@ class MiniServingRuntime:
                     "ttft_p95_ms": percentile(ttfts, 95),
                     "tpot_ms": optimized_tpot,
                     "e2e_p95_ms": optimized_e2e_p95,
-                    "kv_blocks_used": self.used_blocks,
+                    "kv_blocks_used": used_blocks,
                     "kv_cache_used_mb": used_mb,
                 },
                 "improvement": {
@@ -310,6 +551,15 @@ class MiniServingRuntime:
             "compiler_runs": self.compiler_runs,
             "num_lowered_ops": lowered.get("num_ops", len(ops)),
             "num_execution_steps": plan.get("num_steps", len(steps)),
+            "kv_policy": self.compiler.get("kv_cache_plan", {}).get("prefix_cache_policy", {}),
+            "admission_policy": self.compiler.get("kv_cache_plan", {}).get(
+                "admission_policy",
+                "capacity_only",
+            ),
+            "eviction_policy": self.compiler.get("kv_cache_plan", {}).get(
+                "eviction_policy",
+                "none",
+            ),
         }
 
     def snapshot(self):
@@ -322,6 +572,17 @@ class MiniServingRuntime:
                 "compiler_runtime": self.compiler_runtime_summary(),
                 "requests": self.requests[-20:],
                 "events": self.events[-80:],
+                "prefix_cache": [
+                    {
+                        "prefix_hash": entry.prefix_hash[:12],
+                        "blocks": entry.blocks,
+                        "tokens": entry.tokens,
+                        "ref_count": entry.ref_count,
+                        "last_used_ms": entry.last_used_ms,
+                        "model_version": entry.model_version,
+                    }
+                    for entry in self.prefix_cache.entries.values()
+                ],
             },
             "artifact_paths": {
                 "compiler": str(COMPILER_ARTIFACTS),

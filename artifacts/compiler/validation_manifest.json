@@ -18,6 +18,7 @@
     "prefill_decode_phase_present",
     "kv_cache_capacity_valid",
     "kv_cache_block_size_positive",
+    "kv_cache_policy_present",
     "memory_budget_not_exceeded",
     "scheduling_queues_present",
     "artifact_provenance_present",
