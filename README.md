@@ -90,6 +90,8 @@ curl -X POST http://127.0.0.1:8765/reset
 - Artifact provenance: compiler version, git commit, pass pipeline, artifact hashes
 - Plan comparison: Metal, CPU, and Hybrid candidate plans with estimated and measured metrics
 - Memory timeline: allocation, reuse, and free events with validation status
+- Real backend profiling: TinyLlama-style block profiling on available PyTorch backends
+  with TTFT, TPOT, batch/sequence scaling, and operator bottleneck breakdown
 - Baseline vs compiler-lowered runtime comparison: TTFT, TPOT, E2E, KV memory
 - Runtime events: `mlir_pattern_matched`, `lowered_to_hir`, prefill/decode events, completion
 - Validation status: correctness pass/fail, SLO status, max logit diff
@@ -135,10 +137,15 @@ This snapshot also includes three production-style artifact groups:
   results
 - `memory_timeline.json` and `memory_validation_report.json`: allocation,
   reuse, free events, peak memory, budget utilization, and validation status
+- `real_llama_profile.json`: real PyTorch backend execution profile for a
+  TinyLlama-style block, including MPS/CPU availability, TTFT/TPOT across
+  batch and sequence shapes, and per-operator bottleneck breakdown
 
 These artifacts make the demo auditable: the dashboard can show which compiler
 produced the plan, which backend plan was selected, and how memory was allocated
-and reused over the workload.
+and reused over the workload. Real backend profiling is separated from the
+deterministic demo estimates so the dashboard can distinguish measured backend
+evidence from simulated serving-path estimates.
 
 ## Baseline Comparison
 

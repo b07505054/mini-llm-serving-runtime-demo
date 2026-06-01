@@ -271,6 +271,45 @@
         </table>
       </div>
 
+      <div class="panel span-4">
+        <h2>Real Llama Profiling</h2>
+        <div id="real-profile-metrics"></div>
+      </div>
+
+      <div class="panel span-8">
+        <h2>Batch / Sequence Scaling</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Backend</th>
+              <th>Batch</th>
+              <th>Seq</th>
+              <th>TTFT P95</th>
+              <th>TPOT P95</th>
+              <th>Tokens/sec</th>
+            </tr>
+          </thead>
+          <tbody id="real-scaling"></tbody>
+        </table>
+      </div>
+
+      <div class="panel span-12">
+        <h2>Kernel / Operator Bottleneck Breakdown</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Backend</th>
+              <th>Batch</th>
+              <th>Seq</th>
+              <th>Op</th>
+              <th>Latency</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody id="operator-breakdown"></tbody>
+        </table>
+      </div>
+
       <div class="panel span-6">
         <h2>Runtime Events</h2>
         <table>
@@ -378,6 +417,7 @@
       const provenance = data.compiler.artifact_provenance || {};
       const candidatePlans = data.compiler.candidate_execution_plans || {};
       const planBenchmarks = data.runtime_artifacts.plan_benchmark_results || {};
+      const realProfile = data.runtime_artifacts.real_llama_profile || {};
       const memoryTimeline = data.compiler.memory_timeline || {};
       const memoryValidation = data.validation.memory_validation_report || {};
       renderStage(data);
@@ -445,6 +485,44 @@
         </tr>
       `).join("");
 
+      const realRows = (realProfile.backends || []).flatMap(backend =>
+        (backend.rows || []).map(row => ({...row, backend: backend.backend}))
+      );
+      const opRows = (realProfile.backends || []).flatMap(backend =>
+        (backend.operator_breakdown || []).map(row => ({...row, backend: backend.backend}))
+      );
+      document.getElementById("real-profile-metrics").innerHTML = [
+        metric("Source", realProfile.profile_source || "n/a", "blue"),
+        metric("Model", realProfile.model || "n/a"),
+        metric("Backends", (realProfile.available_devices || []).join(", ") || "n/a"),
+        metric("Unavailable", (realProfile.unavailable_backends || []).join(", ") || "none", (realProfile.unavailable_backends || []).length ? "warn" : "pass"),
+        metric("Torch", realProfile.torch_version || "n/a"),
+      ].join("");
+      document.getElementById("real-scaling").innerHTML = realRows.map(row => `
+        <tr>
+          <td>${row.backend}</td>
+          <td>${row.batch_size}</td>
+          <td>${row.sequence_length}</td>
+          <td>${fmt(row.ttft_ms && row.ttft_ms.p95, " ms")}</td>
+          <td>${fmt(row.tpot_ms && row.tpot_ms.p95, " ms")}</td>
+          <td>${fmt(row.tokens_per_second, " tok/s")}</td>
+        </tr>
+      `).join("");
+      document.getElementById("operator-breakdown").innerHTML = opRows
+        .slice()
+        .sort((a, b) => (b.latency_ms || 0) - (a.latency_ms || 0))
+        .slice(0, 16)
+        .map(row => `
+          <tr>
+            <td>${row.backend}</td>
+            <td>${row.batch_size}</td>
+            <td>${row.sequence_length}</td>
+            <td><code>${row.op}</code></td>
+            <td>${fmt(row.latency_ms, " ms")}</td>
+            <td>${fmt(row.percent, "%")}</td>
+          </tr>
+        `).join("");
+
       document.getElementById("baseline-metrics").innerHTML = [
         metric("TTFT P95", fmt(baseline.ttft_p95_ms, " ms")),
         metric("TPOT", fmt(baseline.tpot_ms, " ms/token")),
@@ -498,6 +576,7 @@
       document.getElementById("runtime-json").textContent = JSON.stringify({
         runtime_profile: data.runtime_artifacts.runtime_profile,
         prefill_decode_benchmark: data.runtime_artifacts.prefill_decode,
+        real_llama_profile: data.runtime_artifacts.real_llama_profile,
       }, null, 2);
       document.getElementById("validation-json").textContent = JSON.stringify({
         llm_validation_report: data.validation.llm_validation_report,

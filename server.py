@@ -60,6 +60,7 @@ class MiniServingRuntime:
             "scheduler_trace": load_json(RUNTIME_ARTIFACTS / "scheduler_trace.json", {}),
             "kv_cache_trace": load_json(RUNTIME_ARTIFACTS / "kv_cache_trace.json", {}),
             "plan_benchmark_results": load_json(RUNTIME_ARTIFACTS / "plan_benchmark_results.json", {}),
+            "real_llama_profile": load_json(RUNTIME_ARTIFACTS / "real_llama_profile.json", {}),
         }
         self.validation = {
             "llm_validation_report": load_json(VALIDATION_ARTIFACTS / "llm_validation_report.json", {}),
