@@ -1,7 +1,8 @@
 {
   "artifact_type": "real_llama_profile",
-  "model": "tiny-llama-block-random-weights",
-  "profile_source": "torch_real_backend_execution",
+  "model": "hf-internal-testing/tiny-random-LlamaForCausalLM",
+  "profile_mode": "hf",
+  "profile_source": "hf_causal_lm_real_backend_execution",
   "platform": "macOS-26.5-arm64-arm-64bit",
   "torch_version": "2.12.0",
   "requested_devices": [
@@ -33,17 +34,17 @@
           "sequence_length": 64,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 1.4531,
-            "p95": 1.5413,
-            "p99": 1.5413
+            "p50": 2.9264,
+            "p95": 3.4447,
+            "p99": 3.4447
           },
           "tpot_ms": {
-            "p50": 1.1268,
-            "p95": 4.991,
-            "p99": 4.991
+            "p50": 2.3162,
+            "p95": 164.1802,
+            "p99": 164.1802
           },
-          "tokens_per_second": 508.406,
-          "model_size_mb": 11.252
+          "tokens_per_second": 43.8089,
+          "model_size_mb": 1.9689
         },
         {
           "backend": "mps",
@@ -51,17 +52,17 @@
           "sequence_length": 128,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 0.7002,
-            "p95": 0.71,
-            "p99": 0.71
+            "p50": 2.6928,
+            "p95": 3.4565,
+            "p99": 3.4565
           },
           "tpot_ms": {
-            "p50": 0.5015,
-            "p95": 2.8088,
-            "p99": 2.8088
+            "p50": 2.6373,
+            "p95": 90.2238,
+            "p99": 90.2238
           },
-          "tokens_per_second": 757.5936,
-          "model_size_mb": 11.252
+          "tokens_per_second": 70.4204,
+          "model_size_mb": 1.9689
         },
         {
           "backend": "mps",
@@ -69,17 +70,17 @@
           "sequence_length": 64,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 1.659,
-            "p95": 1.667,
-            "p99": 1.667
+            "p50": 2.2923,
+            "p95": 2.4156,
+            "p99": 2.4156
           },
           "tpot_ms": {
-            "p50": 0.7994,
-            "p95": 5.725,
-            "p99": 5.725
+            "p50": 2.1473,
+            "p95": 25.8433,
+            "p99": 25.8433
           },
-          "tokens_per_second": 529.889,
-          "model_size_mb": 11.252
+          "tokens_per_second": 181.4747,
+          "model_size_mb": 1.9689
         },
         {
           "backend": "mps",
@@ -87,17 +88,17 @@
           "sequence_length": 128,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 0.8024,
-            "p95": 0.8089,
-            "p99": 0.8089
+            "p50": 4.0935,
+            "p95": 4.2393,
+            "p99": 4.2393
           },
           "tpot_ms": {
-            "p50": 0.5261,
-            "p95": 3.4457,
-            "p99": 3.4457
+            "p50": 2.4575,
+            "p95": 16.0638,
+            "p99": 16.0638
           },
-          "tokens_per_second": 794.521,
-          "model_size_mb": 11.252
+          "tokens_per_second": 231.122,
+          "model_size_mb": 1.9689
         }
       ],
       "operator_breakdown": [
@@ -105,227 +106,368 @@
           "backend": "mps",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "qkv_projection",
-          "latency_ms": 0.7611,
-          "percent": 20.96
+          "op": "k_proj",
+          "latency_ms": 1.4489,
+          "percent": 16.78
         },
         {
           "backend": "mps",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "embed",
-          "latency_ms": 0.5994,
-          "percent": 16.51
+          "op": "q_proj",
+          "latency_ms": 1.2293,
+          "percent": 14.24
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "down_proj",
+          "latency_ms": 1.1415,
+          "percent": 13.22
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "input_layernorm",
+          "latency_ms": 0.9387,
+          "percent": 10.87
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.7422,
+          "percent": 8.6
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "o_proj",
+          "latency_ms": 0.7305,
+          "percent": 8.46
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "v_proj",
+          "latency_ms": 0.6486,
+          "percent": 7.51
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "gate_proj",
+          "latency_ms": 0.6306,
+          "percent": 7.31
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "up_proj",
+          "latency_ms": 0.4381,
+          "percent": 5.07
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "embed_tokens",
+          "latency_ms": 0.4053,
+          "percent": 4.69
         },
         {
           "backend": "mps",
           "batch_size": 1,
           "sequence_length": 64,
           "op": "lm_head",
-          "latency_ms": 0.597,
-          "percent": 16.44
+          "latency_ms": 0.2789,
+          "percent": 3.23
         },
         {
           "backend": "mps",
           "batch_size": 1,
-          "sequence_length": 64,
-          "op": "mlp",
-          "latency_ms": 0.5461,
-          "percent": 15.04
+          "sequence_length": 128,
+          "op": "o_proj",
+          "latency_ms": 0.892,
+          "percent": 13.27
         },
         {
           "backend": "mps",
           "batch_size": 1,
-          "sequence_length": 64,
-          "op": "rmsnorm",
-          "latency_ms": 0.3914,
-          "percent": 10.78
+          "sequence_length": 128,
+          "op": "q_proj",
+          "latency_ms": 0.8891,
+          "percent": 13.23
         },
         {
           "backend": "mps",
           "batch_size": 1,
-          "sequence_length": 64,
-          "op": "output_projection",
-          "latency_ms": 0.3721,
-          "percent": 10.25
+          "sequence_length": 128,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.8725,
+          "percent": 12.98
         },
         {
           "backend": "mps",
           "batch_size": 1,
-          "sequence_length": 64,
-          "op": "attention",
-          "latency_ms": 0.3641,
-          "percent": 10.03
+          "sequence_length": 128,
+          "op": "input_layernorm",
+          "latency_ms": 0.8465,
+          "percent": 12.59
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "up_proj",
+          "latency_ms": 0.6805,
+          "percent": 10.12
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "down_proj",
+          "latency_ms": 0.6757,
+          "percent": 10.05
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "k_proj",
+          "latency_ms": 0.4215,
+          "percent": 6.27
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "v_proj",
+          "latency_ms": 0.4192,
+          "percent": 6.24
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "embed_tokens",
+          "latency_ms": 0.4071,
+          "percent": 6.06
+        },
+        {
+          "backend": "mps",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "gate_proj",
+          "latency_ms": 0.3685,
+          "percent": 5.48
         },
         {
           "backend": "mps",
           "batch_size": 1,
           "sequence_length": 128,
           "op": "lm_head",
-          "latency_ms": 0.8937,
-          "percent": 33.76
-        },
-        {
-          "backend": "mps",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "mlp",
-          "latency_ms": 0.5887,
-          "percent": 22.24
-        },
-        {
-          "backend": "mps",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "output_projection",
-          "latency_ms": 0.3255,
-          "percent": 12.3
-        },
-        {
-          "backend": "mps",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "attention",
-          "latency_ms": 0.2591,
-          "percent": 9.79
-        },
-        {
-          "backend": "mps",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "qkv_projection",
-          "latency_ms": 0.2247,
-          "percent": 8.49
-        },
-        {
-          "backend": "mps",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "rmsnorm",
-          "latency_ms": 0.1892,
-          "percent": 7.15
-        },
-        {
-          "backend": "mps",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "embed",
-          "latency_ms": 0.1662,
-          "percent": 6.28
+          "latency_ms": 0.2489,
+          "percent": 3.7
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 64,
-          "op": "mlp",
+          "op": "up_proj",
+          "latency_ms": 1.304,
+          "percent": 15.99
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "q_proj",
+          "latency_ms": 0.9413,
+          "percent": 11.54
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "k_proj",
+          "latency_ms": 0.8646,
+          "percent": 10.6
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "input_layernorm",
           "latency_ms": 0.7513,
-          "percent": 22.96
+          "percent": 9.22
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.7275,
+          "percent": 8.92
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "v_proj",
+          "latency_ms": 0.7039,
+          "percent": 8.63
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "down_proj",
+          "latency_ms": 0.6791,
+          "percent": 8.33
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "o_proj",
+          "latency_ms": 0.6707,
+          "percent": 8.23
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "gate_proj",
+          "latency_ms": 0.6375,
+          "percent": 7.82
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 64,
           "op": "lm_head",
-          "latency_ms": 0.6967,
-          "percent": 21.29
+          "latency_ms": 0.5006,
+          "percent": 6.14
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 64,
-          "op": "attention",
-          "latency_ms": 0.4338,
-          "percent": 13.26
+          "op": "embed_tokens",
+          "latency_ms": 0.3729,
+          "percent": 4.57
         },
         {
           "backend": "mps",
           "batch_size": 2,
-          "sequence_length": 64,
-          "op": "qkv_projection",
-          "latency_ms": 0.3986,
-          "percent": 12.18
+          "sequence_length": 128,
+          "op": "input_layernorm",
+          "latency_ms": 0.5832,
+          "percent": 10.88
         },
         {
           "backend": "mps",
           "batch_size": 2,
-          "sequence_length": 64,
-          "op": "output_projection",
-          "latency_ms": 0.3657,
-          "percent": 11.18
+          "sequence_length": 128,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.5759,
+          "percent": 10.74
         },
         {
           "backend": "mps",
           "batch_size": 2,
-          "sequence_length": 64,
-          "op": "embed",
-          "latency_ms": 0.348,
-          "percent": 10.64
+          "sequence_length": 128,
+          "op": "q_proj",
+          "latency_ms": 0.56,
+          "percent": 10.44
         },
         {
           "backend": "mps",
           "batch_size": 2,
-          "sequence_length": 64,
-          "op": "rmsnorm",
-          "latency_ms": 0.2775,
-          "percent": 8.48
+          "sequence_length": 128,
+          "op": "v_proj",
+          "latency_ms": 0.5425,
+          "percent": 10.12
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "k_proj",
+          "latency_ms": 0.5286,
+          "percent": 9.86
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "up_proj",
+          "latency_ms": 0.5058,
+          "percent": 9.44
+        },
+        {
+          "backend": "mps",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "gate_proj",
+          "latency_ms": 0.4894,
+          "percent": 9.13
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 128,
           "op": "lm_head",
-          "latency_ms": 0.7207,
-          "percent": 33.18
+          "latency_ms": 0.4825,
+          "percent": 9.0
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 128,
-          "op": "mlp",
-          "latency_ms": 0.2837,
-          "percent": 13.06
+          "op": "down_proj",
+          "latency_ms": 0.4476,
+          "percent": 8.35
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 128,
-          "op": "attention",
-          "latency_ms": 0.266,
-          "percent": 12.24
+          "op": "o_proj",
+          "latency_ms": 0.3749,
+          "percent": 6.99
         },
         {
           "backend": "mps",
           "batch_size": 2,
           "sequence_length": 128,
-          "op": "qkv_projection",
-          "latency_ms": 0.2345,
-          "percent": 10.79
-        },
-        {
-          "backend": "mps",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "output_projection",
-          "latency_ms": 0.2329,
-          "percent": 10.72
-        },
-        {
-          "backend": "mps",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "rmsnorm",
-          "latency_ms": 0.2312,
-          "percent": 10.64
-        },
-        {
-          "backend": "mps",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "embed",
-          "latency_ms": 0.2034,
-          "percent": 9.36
+          "op": "embed_tokens",
+          "latency_ms": 0.2708,
+          "percent": 5.05
         }
-      ]
+      ],
+      "model_summary": {
+        "model_class": "LlamaForCausalLM",
+        "architecture": [
+          "LlamaForCausalLM"
+        ],
+        "hidden_size": 16,
+        "num_hidden_layers": 2,
+        "num_attention_heads": 4,
+        "num_key_value_heads": 4,
+        "vocab_size": 32000,
+        "parameter_count": 1032272,
+        "model_size_mb": 1.9689
+      }
     },
     {
       "backend": "cpu",
@@ -337,17 +479,17 @@
           "sequence_length": 64,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 0.4697,
-            "p95": 0.4793,
-            "p99": 0.4793
+            "p50": 1.9972,
+            "p95": 2.5934,
+            "p99": 2.5934
           },
           "tpot_ms": {
-            "p50": 0.1328,
-            "p95": 0.154,
-            "p99": 0.154
+            "p50": 0.7085,
+            "p95": 0.7777,
+            "p99": 0.7777
           },
-          "tokens_per_second": 7363.655,
-          "model_size_mb": 11.252
+          "tokens_per_second": 1418.849,
+          "model_size_mb": 3.9378
         },
         {
           "backend": "cpu",
@@ -355,17 +497,17 @@
           "sequence_length": 128,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 0.7976,
-            "p95": 0.8352,
-            "p99": 0.8352
+            "p50": 2.3936,
+            "p95": 3.1776,
+            "p99": 3.1776
           },
           "tpot_ms": {
-            "p50": 0.1596,
-            "p95": 0.1691,
-            "p99": 0.1691
+            "p50": 0.4605,
+            "p95": 0.5527,
+            "p99": 0.5527
           },
-          "tokens_per_second": 6275.3268,
-          "model_size_mb": 11.252
+          "tokens_per_second": 2101.6687,
+          "model_size_mb": 3.9378
         },
         {
           "backend": "cpu",
@@ -373,17 +515,17 @@
           "sequence_length": 64,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 0.7659,
-            "p95": 0.7764,
-            "p99": 0.7764
+            "p50": 1.4822,
+            "p95": 1.6839,
+            "p99": 1.6839
           },
           "tpot_ms": {
-            "p50": 0.309,
-            "p95": 0.3274,
-            "p99": 0.3274
+            "p50": 0.3821,
+            "p95": 0.4365,
+            "p99": 0.4365
           },
-          "tokens_per_second": 3231.4498,
-          "model_size_mb": 11.252
+          "tokens_per_second": 2559.1811,
+          "model_size_mb": 3.9378
         },
         {
           "backend": "cpu",
@@ -391,17 +533,17 @@
           "sequence_length": 128,
           "decode_steps": 4,
           "ttft_ms": {
-            "p50": 1.4033,
-            "p95": 1.504,
-            "p99": 1.504
+            "p50": 2.9876,
+            "p95": 3.8536,
+            "p99": 3.8536
           },
           "tpot_ms": {
-            "p50": 0.3463,
-            "p95": 0.5462,
-            "p99": 0.5462
+            "p50": 0.3391,
+            "p95": 0.3484,
+            "p99": 0.3484
           },
-          "tokens_per_second": 2713.8193,
-          "model_size_mb": 11.252
+          "tokens_per_second": 2962.7808,
+          "model_size_mb": 3.9378
         }
       ],
       "operator_breakdown": [
@@ -409,230 +551,381 @@
           "backend": "cpu",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "mlp",
-          "latency_ms": 0.1509,
-          "percent": 35.52
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 64,
           "op": "lm_head",
-          "latency_ms": 0.1477,
-          "percent": 34.79
+          "latency_ms": 0.4372,
+          "percent": 64.83
         },
         {
           "backend": "cpu",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "attention",
-          "latency_ms": 0.0603,
-          "percent": 14.2
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.0525,
+          "percent": 7.78
         },
         {
           "backend": "cpu",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "qkv_projection",
-          "latency_ms": 0.0306,
-          "percent": 7.21
+          "op": "input_layernorm",
+          "latency_ms": 0.0448,
+          "percent": 6.65
         },
         {
           "backend": "cpu",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "output_projection",
-          "latency_ms": 0.0162,
-          "percent": 3.82
+          "op": "o_proj",
+          "latency_ms": 0.0214,
+          "percent": 3.18
         },
         {
           "backend": "cpu",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "rmsnorm",
-          "latency_ms": 0.0134,
-          "percent": 3.15
+          "op": "down_proj",
+          "latency_ms": 0.0185,
+          "percent": 2.75
         },
         {
           "backend": "cpu",
           "batch_size": 1,
           "sequence_length": 64,
-          "op": "embed",
-          "latency_ms": 0.0056,
-          "percent": 1.31
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "lm_head",
-          "latency_ms": 0.2388,
-          "percent": 35.51
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "mlp",
-          "latency_ms": 0.2127,
-          "percent": 31.63
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "attention",
-          "latency_ms": 0.1089,
-          "percent": 16.19
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "qkv_projection",
-          "latency_ms": 0.0513,
-          "percent": 7.63
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "rmsnorm",
-          "latency_ms": 0.0332,
-          "percent": 4.94
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "output_projection",
-          "latency_ms": 0.0222,
-          "percent": 3.3
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 1,
-          "sequence_length": 128,
-          "op": "embed",
-          "latency_ms": 0.0054,
-          "percent": 0.8
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "lm_head",
-          "latency_ms": 0.2556,
-          "percent": 35.07
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "mlp",
-          "latency_ms": 0.2302,
-          "percent": 31.58
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "attention",
-          "latency_ms": 0.1251,
-          "percent": 17.16
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "qkv_projection",
-          "latency_ms": 0.054,
-          "percent": 7.4
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "rmsnorm",
-          "latency_ms": 0.0342,
-          "percent": 4.69
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "output_projection",
-          "latency_ms": 0.0245,
-          "percent": 3.36
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 64,
-          "op": "embed",
-          "latency_ms": 0.0053,
-          "percent": 0.73
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "lm_head",
-          "latency_ms": 0.456,
-          "percent": 36.31
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "mlp",
-          "latency_ms": 0.3277,
-          "percent": 26.1
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "attention",
-          "latency_ms": 0.2479,
-          "percent": 19.74
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "qkv_projection",
-          "latency_ms": 0.0948,
-          "percent": 7.55
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "rmsnorm",
-          "latency_ms": 0.0704,
-          "percent": 5.6
-        },
-        {
-          "backend": "cpu",
-          "batch_size": 2,
-          "sequence_length": 128,
-          "op": "output_projection",
-          "latency_ms": 0.0344,
+          "op": "q_proj",
+          "latency_ms": 0.0185,
           "percent": 2.74
         },
         {
           "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "gate_proj",
+          "latency_ms": 0.018,
+          "percent": 2.66
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "up_proj",
+          "latency_ms": 0.0175,
+          "percent": 2.59
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "k_proj",
+          "latency_ms": 0.0166,
+          "percent": 2.46
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "embed_tokens",
+          "latency_ms": 0.015,
+          "percent": 2.22
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 64,
+          "op": "v_proj",
+          "latency_ms": 0.0144,
+          "percent": 2.14
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "lm_head",
+          "latency_ms": 0.6428,
+          "percent": 78.48
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.0369,
+          "percent": 4.51
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "input_layernorm",
+          "latency_ms": 0.0329,
+          "percent": 4.02
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "k_proj",
+          "latency_ms": 0.0226,
+          "percent": 2.76
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "down_proj",
+          "latency_ms": 0.0132,
+          "percent": 1.61
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "o_proj",
+          "latency_ms": 0.0128,
+          "percent": 1.57
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "up_proj",
+          "latency_ms": 0.0128,
+          "percent": 1.56
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "q_proj",
+          "latency_ms": 0.0123,
+          "percent": 1.51
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "gate_proj",
+          "latency_ms": 0.0123,
+          "percent": 1.5
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "embed_tokens",
+          "latency_ms": 0.0105,
+          "percent": 1.28
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 1,
+          "sequence_length": 128,
+          "op": "v_proj",
+          "latency_ms": 0.01,
+          "percent": 1.22
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "lm_head",
+          "latency_ms": 0.5234,
+          "percent": 77.01
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.0348,
+          "percent": 5.13
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "input_layernorm",
+          "latency_ms": 0.0316,
+          "percent": 4.65
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "o_proj",
+          "latency_ms": 0.0128,
+          "percent": 1.89
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "up_proj",
+          "latency_ms": 0.0117,
+          "percent": 1.73
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "q_proj",
+          "latency_ms": 0.0117,
+          "percent": 1.72
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "gate_proj",
+          "latency_ms": 0.0114,
+          "percent": 1.67
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "down_proj",
+          "latency_ms": 0.0113,
+          "percent": 1.66
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "k_proj",
+          "latency_ms": 0.0109,
+          "percent": 1.6
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "v_proj",
+          "latency_ms": 0.0103,
+          "percent": 1.52
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 64,
+          "op": "embed_tokens",
+          "latency_ms": 0.0097,
+          "percent": 1.42
+        },
+        {
+          "backend": "cpu",
           "batch_size": 2,
           "sequence_length": 128,
-          "op": "embed",
-          "latency_ms": 0.0245,
-          "percent": 1.95
+          "op": "lm_head",
+          "latency_ms": 0.967,
+          "percent": 87.48
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "post_attention_layernorm",
+          "latency_ms": 0.0309,
+          "percent": 2.8
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "input_layernorm",
+          "latency_ms": 0.0258,
+          "percent": 2.33
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "o_proj",
+          "latency_ms": 0.0123,
+          "percent": 1.11
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "down_proj",
+          "latency_ms": 0.0123,
+          "percent": 1.11
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "up_proj",
+          "latency_ms": 0.0108,
+          "percent": 0.98
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "gate_proj",
+          "latency_ms": 0.0104,
+          "percent": 0.94
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "q_proj",
+          "latency_ms": 0.0098,
+          "percent": 0.89
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "k_proj",
+          "latency_ms": 0.0094,
+          "percent": 0.85
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "embed_tokens",
+          "latency_ms": 0.0085,
+          "percent": 0.77
+        },
+        {
+          "backend": "cpu",
+          "batch_size": 2,
+          "sequence_length": 128,
+          "op": "v_proj",
+          "latency_ms": 0.0083,
+          "percent": 0.75
         }
-      ]
+      ],
+      "model_summary": {
+        "model_class": "LlamaForCausalLM",
+        "architecture": [
+          "LlamaForCausalLM"
+        ],
+        "hidden_size": 16,
+        "num_hidden_layers": 2,
+        "num_attention_heads": 4,
+        "num_key_value_heads": 4,
+        "vocab_size": 32000,
+        "parameter_count": 1032272,
+        "model_size_mb": 3.9378
+      }
     }
   ],
   "unavailable_backends": [
     "cuda"
-  ]
+  ],
+  "hf_config": {
+    "model_type": "llama",
+    "architectures": [
+      "LlamaForCausalLM"
+    ],
+    "hidden_size": 16,
+    "num_hidden_layers": 2,
+    "num_attention_heads": 4,
+    "num_key_value_heads": 4
+  }
 }

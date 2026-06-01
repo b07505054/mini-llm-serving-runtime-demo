@@ -493,7 +493,9 @@
       );
       document.getElementById("real-profile-metrics").innerHTML = [
         metric("Source", realProfile.profile_source || "n/a", "blue"),
+        metric("Mode", realProfile.profile_mode || "n/a"),
         metric("Model", realProfile.model || "n/a"),
+        metric("Architecture", ((realProfile.hf_config && realProfile.hf_config.architectures) || []).join(", ") || "n/a"),
         metric("Backends", (realProfile.available_devices || []).join(", ") || "n/a"),
         metric("Unavailable", (realProfile.unavailable_backends || []).join(", ") || "none", (realProfile.unavailable_backends || []).length ? "warn" : "pass"),
         metric("Torch", realProfile.torch_version || "n/a"),
