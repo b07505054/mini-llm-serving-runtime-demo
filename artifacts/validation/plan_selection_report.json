@@ -1,0 +1,34 @@
+{
+  "artifact_type": "plan_selection_report",
+  "job_id": "llm-runtime-demo-001",
+  "selected_plan_id": "plan_metal",
+  "selection_reason": "lowest p95 latency while staying within memory budget",
+  "memory_budget_mb": 8192,
+  "plans": [
+    {
+      "plan_id": "plan_metal",
+      "backend": "Metal",
+      "latency_ms": 1.95,
+      "p95_latency_ms": 2.21,
+      "peak_memory_mb": 986.75,
+      "throughput_tokens_per_s": 512.8
+    },
+    {
+      "plan_id": "plan_cpu",
+      "backend": "CPU",
+      "latency_ms": 5.1,
+      "p95_latency_ms": 5.8,
+      "peak_memory_mb": 826.75,
+      "throughput_tokens_per_s": 196.1
+    },
+    {
+      "plan_id": "plan_hybrid",
+      "backend": "Hybrid",
+      "latency_ms": 2.7,
+      "p95_latency_ms": 3.05,
+      "peak_memory_mb": 890.75,
+      "throughput_tokens_per_s": 370.4
+    }
+  ],
+  "regression_detected": false
+}

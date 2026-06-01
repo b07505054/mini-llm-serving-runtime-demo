@@ -1,0 +1,51 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "artifact_provenance",
+  "compiler": {
+    "name": "ml-graph-compiler-runtime",
+    "version": "0.4.0",
+    "git_commit": "821d5312"
+  },
+  "pass_pipeline": [
+    "canonicalize",
+    "matmul_bias_relu_fusion",
+    "hir_lowering",
+    "backend_placement",
+    "memory_planning"
+  ],
+  "created_at_utc": "2026-05-31T23:35:03.066291+00:00",
+  "outputs": [
+    {
+      "path": "llm_graph_ir.json",
+      "sha256": "1f0745c21944eec5e917ad35b95301afd46c545e9af725e64b2523f7ee0ff80a"
+    },
+    {
+      "path": "serving_execution_plan.json",
+      "sha256": "faf65dad6f913bb2c3d48e82767543eb9fbe71e031ae1cbb7541a6433073a652"
+    },
+    {
+      "path": "kv_cache_plan.json",
+      "sha256": "686b8f2e13bc8a79616ec45c18ea5e55b352cee67def3a750a7a0a99d2dc6397"
+    },
+    {
+      "path": "memory_plan.json",
+      "sha256": "ca63ce59205d0f13d81227fb2e63595f3be5100106f9f810161d660775abb336"
+    },
+    {
+      "path": "scheduling_plan.json",
+      "sha256": "be282d5896d47d6929604185f3dc80b778a17fa0cd001128a8e34f57f6e916d1"
+    },
+    {
+      "path": "candidate_execution_plans.json",
+      "sha256": "30316ef41468efea69eca9e3c97e7578349a31e4f7d43557fc4db26281577cad"
+    },
+    {
+      "path": "memory_timeline.json",
+      "sha256": "99a146ff671d170c4ff97ffb8a9362b34a0093d7a4cde2ca3c2f611aa751cf5a"
+    },
+    {
+      "path": "validation_manifest.json",
+      "sha256": "a80464311056c6ee56745790ff546982a7921ad52acb357e9b040d39e4022cc5"
+    }
+  ]
+}

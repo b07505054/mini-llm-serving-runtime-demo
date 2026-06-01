@@ -93,7 +93,7 @@
     .purple { color: var(--purple); }
     .flow {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: repeat(9, minmax(100px, 1fr));
       gap: 8px;
     }
     .flow button {
@@ -185,6 +185,9 @@
           <button class="stage-button" data-stage="annotated">Annotated MLIR</button>
           <button class="stage-button" data-stage="lowered">Lowered HIR JSON</button>
           <button class="stage-button" data-stage="runtime">Runtime Plan</button>
+          <button class="stage-button" data-stage="provenance">Provenance</button>
+          <button class="stage-button" data-stage="plans">Plan Compare</button>
+          <button class="stage-button" data-stage="memory">Memory Timeline</button>
           <button class="stage-button" data-stage="validation">Validation</button>
         </div>
       </div>
@@ -210,6 +213,28 @@
         <div id="lowering-metrics"></div>
       </div>
 
+      <div class="panel span-4">
+        <h2>Artifact Provenance</h2>
+        <div id="provenance-metrics"></div>
+      </div>
+
+      <div class="panel span-8">
+        <h2>Plan Comparison</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>Backend</th>
+              <th>Est Latency</th>
+              <th>Measured P95</th>
+              <th>Memory</th>
+              <th>Throughput</th>
+            </tr>
+          </thead>
+          <tbody id="plan-comparison"></tbody>
+        </table>
+      </div>
+
       <div class="panel span-12">
         <h2>Baseline vs Compiler-Lowered Runtime</h2>
         <div class="compare">
@@ -227,6 +252,23 @@
           </div>
         </div>
         <div class="small" id="comparison-note" style="margin-top:10px"></div>
+      </div>
+
+      <div class="panel span-12">
+        <h2>Memory Timeline</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Event</th>
+              <th>Buffer</th>
+              <th>Size</th>
+              <th>Lifetime</th>
+              <th>Reuse</th>
+            </tr>
+          </thead>
+          <tbody id="memory-timeline"></tbody>
+        </table>
       </div>
 
       <div class="panel span-6">
@@ -307,6 +349,9 @@
       annotated: "Annotated MLIR",
       lowered: "Lowered HIR JSON",
       runtime: "Runtime Plan",
+      provenance: "Artifact Provenance",
+      plans: "Plan Comparison",
+      memory: "Memory Timeline",
       validation: "Validation"
     };
 
@@ -330,6 +375,11 @@
       const optimized = comparison.optimized || {};
       const improvement = comparison.improvement || {};
       const val = data.validation.llm_validation_report || {};
+      const provenance = data.compiler.artifact_provenance || {};
+      const candidatePlans = data.compiler.candidate_execution_plans || {};
+      const planBenchmarks = data.runtime_artifacts.plan_benchmark_results || {};
+      const memoryTimeline = data.compiler.memory_timeline || {};
+      const memoryValidation = data.validation.memory_validation_report || {};
       renderStage(data);
 
       document.getElementById("workload-metrics").innerHTML = [
@@ -358,6 +408,43 @@
         metric("Launch overhead", fmt(cr.estimated_launch_overhead_us, " us")),
       ].join("");
 
+      const compiler = provenance.compiler || {};
+      document.getElementById("provenance-metrics").innerHTML = [
+        metric("Compiler", compiler.name || "n/a", "blue"),
+        metric("Version", compiler.version || "n/a"),
+        metric("Commit", compiler.git_commit || "n/a"),
+        metric("Pipeline steps", fmt((provenance.pass_pipeline || []).length)),
+        metric("Artifacts hashed", fmt((provenance.outputs || []).length)),
+      ].join("");
+
+      const measuredByPlan = {};
+      (planBenchmarks.results || []).forEach(row => { measuredByPlan[row.plan_id] = row; });
+      document.getElementById("plan-comparison").innerHTML = (candidatePlans.plans || []).map(plan => {
+        const measured = measuredByPlan[plan.plan_id] || {};
+        const selected = plan.plan_id === candidatePlans.selected_plan_id || plan.plan_id === planBenchmarks.selected_plan_id;
+        return `
+          <tr>
+            <td><code class="${selected ? "pass" : ""}">${plan.plan_id}</code></td>
+            <td>${plan.backend}</td>
+            <td>${fmt(plan.estimated_latency_ms, " ms")}</td>
+            <td>${fmt(measured.p95_latency_ms, " ms")}</td>
+            <td>${fmt(measured.peak_memory_mb || plan.estimated_memory_mb, " MB")}</td>
+            <td>${fmt(measured.throughput_tokens_per_s || plan.estimated_throughput_tokens_per_s, " tok/s")}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("memory-timeline").innerHTML = (memoryTimeline.events || []).map(event => `
+        <tr>
+          <td>${event.step}</td>
+          <td class="${event.event === "reuse" ? "pass" : ""}">${event.event}</td>
+          <td><code>${event.buffer}</code></td>
+          <td>${event.size_mb === undefined ? "-" : `${event.size_mb} MB`}</td>
+          <td>${event.lifetime ? event.lifetime.join(" → ") : "-"}</td>
+          <td>${event.reused_as ? `<code>${event.reused_as}</code>` : "-"}</td>
+        </tr>
+      `).join("");
+
       document.getElementById("baseline-metrics").innerHTML = [
         metric("TTFT P95", fmt(baseline.ttft_p95_ms, " ms")),
         metric("TPOT", fmt(baseline.tpot_ms, " ms/token")),
@@ -375,6 +462,7 @@
         metric("KV memory saved", fmt(improvement.kv_memory_saved_mb, " MB"), improvement.kv_memory_saved_mb > 0 ? "pass" : ""),
         metric("Correctness", val.correctness_passed ? "passed" : "n/a", val.correctness_passed ? "pass" : ""),
         metric("Max logit diff", fmt(val.max_logit_diff)),
+        metric("Memory validation", memoryValidation.passed ? "passed" : "n/a", memoryValidation.passed ? "pass" : ""),
       ].join("");
       document.getElementById("comparison-note").textContent = improvement.assumption || "";
 
@@ -425,6 +513,9 @@
         annotated: "The annotated MLIR is the pass output. The important part is the fusion metadata attached before runtime lowering.",
         lowered: `The bridge converts annotated MLIR into runtime-facing HIR. The lowered op is ${cr.lowered_op_type || "hir.fused_matmul_bias_relu"}.`,
         runtime: `The runtime consumes the execution plan and dispatches ${cr.runtime_action || "dispatch_fused_kernel"} on ${cr.backend || "Metal"}.`,
+        provenance: "Provenance records the compiler version, git commit, pass pipeline, and hashes for emitted artifacts.",
+        plans: "Candidate plans compare Metal, CPU, and Hybrid execution choices using compiler estimates and runtime benchmark artifacts.",
+        memory: "The memory timeline exposes allocation, reuse, and free events so peak memory and buffer reuse are auditable.",
         validation: "Validation artifacts check SLO/correctness and provide the report that makes the optimization claim auditable."
       };
       const stageArtifact = {
@@ -439,9 +530,21 @@
         annotated: data.compiler.mlir_fused_graph || "No annotated MLIR snapshot found.",
         lowered: JSON.stringify(data.compiler.mlir_lowered_graph, null, 2),
         runtime: JSON.stringify(data.compiler.mlir_execution_plan, null, 2),
+        provenance: JSON.stringify(data.compiler.artifact_provenance, null, 2),
+        plans: JSON.stringify({
+          candidate_execution_plans: data.compiler.candidate_execution_plans,
+          plan_benchmark_results: data.runtime_artifacts.plan_benchmark_results,
+          plan_selection_report: data.validation.plan_selection_report
+        }, null, 2),
+        memory: JSON.stringify({
+          memory_timeline: data.compiler.memory_timeline,
+          memory_validation_report: data.validation.memory_validation_report
+        }, null, 2),
         validation: JSON.stringify({
           llm_validation_report: data.validation.llm_validation_report,
-          slo_report: data.validation.slo_report
+          slo_report: data.validation.slo_report,
+          plan_selection_report: data.validation.plan_selection_report,
+          memory_validation_report: data.validation.memory_validation_report
         }, null, 2)
       };
       document.getElementById("stage-title").textContent = stageLabel[selectedStage];

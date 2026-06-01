@@ -50,18 +50,24 @@ class MiniServingRuntime:
             "mlir_fused_graph": load_text(COMPILER_ARTIFACTS / "mlir_fused_graph.mlir"),
             "mlir_lowered_graph": load_json(COMPILER_ARTIFACTS / "mlir_lowered_graph.json", {}),
             "mlir_execution_plan": load_json(COMPILER_ARTIFACTS / "mlir_execution_plan.json", {}),
+            "artifact_provenance": load_json(COMPILER_ARTIFACTS / "artifact_provenance.json", {}),
+            "candidate_execution_plans": load_json(COMPILER_ARTIFACTS / "candidate_execution_plans.json", {}),
+            "memory_timeline": load_json(COMPILER_ARTIFACTS / "memory_timeline.json", {}),
         }
         self.runtime_artifacts = {
             "runtime_profile": load_json(RUNTIME_ARTIFACTS / "runtime_profile.json", {}),
             "prefill_decode": load_json(RUNTIME_ARTIFACTS / "prefill_decode_benchmark.json", {}),
             "scheduler_trace": load_json(RUNTIME_ARTIFACTS / "scheduler_trace.json", {}),
             "kv_cache_trace": load_json(RUNTIME_ARTIFACTS / "kv_cache_trace.json", {}),
+            "plan_benchmark_results": load_json(RUNTIME_ARTIFACTS / "plan_benchmark_results.json", {}),
         }
         self.validation = {
             "llm_validation_report": load_json(VALIDATION_ARTIFACTS / "llm_validation_report.json", {}),
             "slo_report": load_json(VALIDATION_ARTIFACTS / "slo_report.json", {}),
             "kv_cache_analysis": load_json(VALIDATION_ARTIFACTS / "kv_cache_analysis.json", {}),
             "request_timeline": load_json(VALIDATION_ARTIFACTS / "request_timeline.json", {}),
+            "plan_selection_report": load_json(VALIDATION_ARTIFACTS / "plan_selection_report.json", {}),
+            "memory_validation_report": load_json(VALIDATION_ARTIFACTS / "memory_validation_report.json", {}),
         }
         self.reset()
 

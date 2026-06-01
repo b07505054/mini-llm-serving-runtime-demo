@@ -1,0 +1,12 @@
+{
+  "artifact_type": "memory_validation_report",
+  "job_id": "llm-runtime-demo-001",
+  "passed": true,
+  "peak_memory_mb": 673,
+  "memory_budget_mb": 8192,
+  "budget_utilization": 0.0822,
+  "reuse_events": 1,
+  "allocations": 4,
+  "frees": 3,
+  "issues": []
+}

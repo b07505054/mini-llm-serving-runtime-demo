@@ -1,0 +1,35 @@
+{
+  "artifact_type": "plan_benchmark_results",
+  "source": "deterministic_runtime_artifact_generator",
+  "results": [
+    {
+      "plan_id": "plan_metal",
+      "backend": "Metal",
+      "source": "simulated_runtime_measurement",
+      "measured_latency_ms": 1.95,
+      "p95_latency_ms": 2.21,
+      "peak_memory_mb": 986.75,
+      "throughput_tokens_per_s": 512.8
+    },
+    {
+      "plan_id": "plan_cpu",
+      "backend": "CPU",
+      "source": "simulated_runtime_measurement",
+      "measured_latency_ms": 5.1,
+      "p95_latency_ms": 5.8,
+      "peak_memory_mb": 826.75,
+      "throughput_tokens_per_s": 196.1
+    },
+    {
+      "plan_id": "plan_hybrid",
+      "backend": "Hybrid",
+      "source": "simulated_runtime_measurement",
+      "measured_latency_ms": 2.7,
+      "p95_latency_ms": 3.05,
+      "peak_memory_mb": 890.75,
+      "throughput_tokens_per_s": 370.4
+    }
+  ],
+  "selected_plan_id": "plan_metal",
+  "selection_reason": "lowest measured p95 latency under memory budget"
+}

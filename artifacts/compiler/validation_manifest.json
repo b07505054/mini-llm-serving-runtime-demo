@@ -8,6 +8,9 @@
     "kv_cache_plan.json",
     "memory_plan.json",
     "scheduling_plan.json",
+    "artifact_provenance.json",
+    "candidate_execution_plans.json",
+    "memory_timeline.json",
     "validation_manifest.json"
   ],
   "checks": [
@@ -16,7 +19,10 @@
     "kv_cache_capacity_valid",
     "kv_cache_block_size_positive",
     "memory_budget_not_exceeded",
-    "scheduling_queues_present"
+    "scheduling_queues_present",
+    "artifact_provenance_present",
+    "candidate_plans_present",
+    "memory_timeline_present"
   ],
   "demo_contract": {
     "apple_demo_entry_artifacts": [
@@ -25,6 +31,9 @@
       "kv_cache_plan.json",
       "memory_plan.json",
       "scheduling_plan.json",
+      "artifact_provenance.json",
+      "candidate_execution_plans.json",
+      "memory_timeline.json",
       "validation_manifest.json"
     ],
     "primary_dashboard_views": [

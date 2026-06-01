@@ -1,0 +1,122 @@
+{
+  "artifact_type": "llm_artifact_validation_report",
+  "artifacts": "artifacts/apple_demo",
+  "summary": {
+    "passed": 18,
+    "failed": 0,
+    "total": 18,
+    "status": "passed"
+  },
+  "checks": [
+    {
+      "name": "llm_graph_ir.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/llm_graph_ir.json"
+    },
+    {
+      "name": "serving_execution_plan.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/serving_execution_plan.json"
+    },
+    {
+      "name": "kv_cache_plan.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/kv_cache_plan.json"
+    },
+    {
+      "name": "memory_plan.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/memory_plan.json"
+    },
+    {
+      "name": "scheduling_plan.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/scheduling_plan.json"
+    },
+    {
+      "name": "validation_manifest.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/validation_manifest.json"
+    },
+    {
+      "name": "graph_ir_type_valid",
+      "passed": true,
+      "detail": "llm_graph_ir"
+    },
+    {
+      "name": "execution_plan_type_valid",
+      "passed": true,
+      "detail": "serving_execution_plan"
+    },
+    {
+      "name": "prefill_decode_phase_present",
+      "passed": true,
+      "detail": [
+        "prefill",
+        "decode"
+      ]
+    },
+    {
+      "name": "kv_cache_block_size_positive",
+      "passed": true,
+      "detail": 16
+    },
+    {
+      "name": "kv_cache_num_blocks_positive",
+      "passed": true,
+      "detail": 1024
+    },
+    {
+      "name": "kv_cache_capacity_consistent",
+      "passed": true,
+      "detail": {
+        "total_token_capacity": 16384,
+        "expected": 16384
+      }
+    },
+    {
+      "name": "kv_cache_allocation_block_based",
+      "passed": true,
+      "detail": "block_based"
+    },
+    {
+      "name": "prefill_memory_positive",
+      "passed": true,
+      "detail": 210
+    },
+    {
+      "name": "decode_memory_positive",
+      "passed": true,
+      "detail": 673
+    },
+    {
+      "name": "memory_budget_not_exceeded",
+      "passed": true,
+      "detail": {
+        "peak_decode_memory_mb": 673,
+        "memory_budget_mb": 8192,
+        "fits_memory_budget": true
+      }
+    },
+    {
+      "name": "scheduling_queues_present",
+      "passed": true,
+      "detail": [
+        "prefill_queue",
+        "decode_queue"
+      ]
+    },
+    {
+      "name": "manifest_expected_outputs_complete",
+      "passed": true,
+      "detail": [
+        "llm_graph_ir.json",
+        "serving_execution_plan.json",
+        "kv_cache_plan.json",
+        "memory_plan.json",
+        "scheduling_plan.json",
+        "validation_manifest.json"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "candidate_execution_plans",
+  "model": "tiny-gpt",
+  "selection_objective": "minimize_latency_under_memory_budget",
+  "plans": [
+    {
+      "plan_id": "plan_metal",
+      "backend": "Metal",
+      "runtime_action": "dispatch_fused_kernel",
+      "estimated_latency_ms": 1.8,
+      "estimated_memory_mb": 673,
+      "estimated_throughput_tokens_per_s": 555.6,
+      "notes": "Fused op placed on Metal for lowest estimated latency."
+    },
+    {
+      "plan_id": "plan_cpu",
+      "backend": "CPU",
+      "runtime_action": "dispatch_unfused_ops",
+      "estimated_latency_ms": 4.7,
+      "estimated_memory_mb": 224,
+      "estimated_throughput_tokens_per_s": 212.8,
+      "notes": "CPU fallback plan with lower memory pressure and higher latency."
+    },
+    {
+      "plan_id": "plan_hybrid",
+      "backend": "Hybrid",
+      "runtime_action": "dispatch_metal_compute_cpu_kv_bookkeeping",
+      "estimated_latency_ms": 2.4,
+      "estimated_memory_mb": 577,
+      "estimated_throughput_tokens_per_s": 416.7,
+      "notes": "Hybrid plan keeps fused compute on accelerator and bookkeeping on CPU."
+    }
+  ],
+  "selected_plan_id": "plan_metal",
+  "selection_reason": "lowest estimated latency while fitting memory budget"
+}

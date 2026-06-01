@@ -87,6 +87,9 @@ curl -X POST http://127.0.0.1:8765/reset
 - MLIR compiler pipeline: source MLIR, fusion pass, annotated MLIR, lowered HIR, runtime plan
 - Fusion details: fusion candidate, fusion group, lowered op type, backend, runtime action
 - Runtime lowering: `hir.fused_matmul_bias_relu` dispatched to the configured backend
+- Artifact provenance: compiler version, git commit, pass pipeline, artifact hashes
+- Plan comparison: Metal, CPU, and Hybrid candidate plans with estimated and measured metrics
+- Memory timeline: allocation, reuse, and free events with validation status
 - Baseline vs compiler-lowered runtime comparison: TTFT, TPOT, E2E, KV memory
 - Runtime events: `mlir_pattern_matched`, `lowered_to_hir`, prefill/decode events, completion
 - Validation status: correctness pass/fail, SLO status, max logit diff
@@ -120,6 +123,22 @@ linalg.matmul + bias add + ReLU
 
 The LLM-shaped workload is used to exercise this compiler/runtime path. It is
 not presented as a full LLM serving framework.
+
+## Production-Oriented Artifacts
+
+This snapshot also includes three production-style artifact groups:
+
+- `artifact_provenance.json`: compiler version, git commit, pass pipeline, and
+  SHA-256 hashes for emitted compiler artifacts
+- `candidate_execution_plans.json` and `plan_benchmark_results.json`: candidate
+  Metal, CPU, and Hybrid plans with compiler estimates and runtime benchmark
+  results
+- `memory_timeline.json` and `memory_validation_report.json`: allocation,
+  reuse, free events, peak memory, budget utilization, and validation status
+
+These artifacts make the demo auditable: the dashboard can show which compiler
+produced the plan, which backend plan was selected, and how memory was allocated
+and reused over the workload.
 
 ## Baseline Comparison
 

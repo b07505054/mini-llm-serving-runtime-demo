@@ -1,0 +1,75 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "memory_timeline",
+  "model": "tiny-gpt",
+  "peak_memory_mb": 673,
+  "reuse_enabled": true,
+  "events": [
+    {
+      "step": 0,
+      "event": "allocate",
+      "buffer": "prefill_hidden_states",
+      "size_mb": 114,
+      "lifetime": [
+        0,
+        3
+      ]
+    },
+    {
+      "step": 1,
+      "event": "allocate",
+      "buffer": "fusion_workspace",
+      "size_mb": 96,
+      "lifetime": [
+        1,
+        2
+      ]
+    },
+    {
+      "step": 2,
+      "event": "reuse",
+      "buffer": "fusion_workspace",
+      "reused_as": "mlp_workspace",
+      "size_mb": 96,
+      "lifetime": [
+        2,
+        4
+      ]
+    },
+    {
+      "step": 3,
+      "event": "allocate",
+      "buffer": "kv_cache_blocks",
+      "size_mb": 576,
+      "lifetime": [
+        3,
+        7
+      ]
+    },
+    {
+      "step": 4,
+      "event": "allocate",
+      "buffer": "decode_step_activation",
+      "size_mb": 1,
+      "lifetime": [
+        4,
+        5
+      ]
+    },
+    {
+      "step": 5,
+      "event": "free",
+      "buffer": "decode_step_activation"
+    },
+    {
+      "step": 6,
+      "event": "free",
+      "buffer": "mlp_workspace"
+    },
+    {
+      "step": 7,
+      "event": "free",
+      "buffer": "kv_cache_blocks"
+    }
+  ]
+}

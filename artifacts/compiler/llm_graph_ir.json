@@ -10,9 +10,8 @@
   "operators": [
     "rmsnorm",
     "qkv_projection",
-    "mlp",
     "attention",
-    "kv_cache_read"
+    "mlp"
   ],
   "request_workload": {
     "batch_size": 8,
