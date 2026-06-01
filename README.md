@@ -172,6 +172,22 @@ artifacts/runtime/
 artifacts/validation/
 ```
 
+Current source artifact locations:
+
+```text
+/Users/allen/Desktop/project/ml-graph-compiler-runtime/integration_bundle/apple_demo_artifacts
+/Users/allen/Desktop/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts
+/Users/allen/Desktop/project/inference-validation-platform/integration_artifacts
+```
+
+Example refresh:
+
+```bash
+cp /Users/allen/Desktop/project/ml-graph-compiler-runtime/integration_bundle/apple_demo_artifacts/* artifacts/compiler/
+cp /Users/allen/Desktop/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts/* artifacts/runtime/
+cp /Users/allen/Desktop/project/inference-validation-platform/integration_artifacts/* artifacts/validation/
+```
+
 For local testing against live artifact directories, set environment variables:
 
 ```bash
@@ -188,3 +204,19 @@ runtime demo. The compiler emits MLIR and runtime-facing HIR artifacts. The
 runtime consumes the lowered plan and produces timing/profile artifacts. The
 validation platform turns runtime results into correctness and SLO reports. The
 demo shell ties them together as an optimization workbench.
+
+## What Is Real Versus Simulated
+
+- Real: committed MLIR/HIR/compiler artifacts from `ml-graph-compiler-runtime`
+- Real: committed runtime and profiling artifacts from
+  `heterogeneous-inference-runtime`
+- Real: HuggingFace `LlamaForCausalLM` execution on available PyTorch backends
+  in `real_llama_profile.json`
+- Real: validation artifact snapshots from `Inference-Validation-Platform`
+- Simulated: the interactive `/generate` endpoint uses deterministic timing
+  formulas so the dashboard remains portable without requiring a GPU or model
+  download at demo time
+
+This split is intentional: the dashboard is a presentation layer over committed
+compiler/runtime/validation evidence, while the live controls make that evidence
+easy to inspect during an interview.
