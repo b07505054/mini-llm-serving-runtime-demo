@@ -144,6 +144,9 @@ class MiniServingRuntime:
             "mlir_fused_graph": load_text(COMPILER_ARTIFACTS / "mlir_fused_graph.mlir"),
             "mlir_lowered_graph": load_json(COMPILER_ARTIFACTS / "mlir_lowered_graph.json", {}),
             "mlir_execution_plan": load_json(COMPILER_ARTIFACTS / "mlir_execution_plan.json", {}),
+            "rmsnorm_fused_graph": load_text(COMPILER_ARTIFACTS / "rmsnorm_fused_graph.mlir"),
+            "rmsnorm_lowered_graph": load_json(COMPILER_ARTIFACTS / "rmsnorm_lowered_graph.json", {}),
+            "rmsnorm_execution_plan": load_json(COMPILER_ARTIFACTS / "rmsnorm_execution_plan.json", {}),
             "artifact_provenance": load_json(COMPILER_ARTIFACTS / "artifact_provenance.json", {}),
             "candidate_execution_plans": load_json(COMPILER_ARTIFACTS / "candidate_execution_plans.json", {}),
             "memory_timeline": load_json(COMPILER_ARTIFACTS / "memory_timeline.json", {}),
@@ -155,6 +158,7 @@ class MiniServingRuntime:
             "kv_cache_trace": load_json(RUNTIME_ARTIFACTS / "kv_cache_trace.json", {}),
             "plan_benchmark_results": load_json(RUNTIME_ARTIFACTS / "plan_benchmark_results.json", {}),
             "real_llama_profile": load_json(RUNTIME_ARTIFACTS / "real_llama_profile.json", {}),
+            "rmsnorm_benchmark": load_json(RUNTIME_ARTIFACTS / "rmsnorm_benchmark.json", {}),
         }
         self.validation = {
             "llm_validation_report": load_json(VALIDATION_ARTIFACTS / "llm_validation_report.json", {}),
@@ -562,6 +566,34 @@ class MiniServingRuntime:
             ),
         }
 
+    def rmsnorm_kernel_selection_summary(self):
+        plan = self.compiler.get("rmsnorm_execution_plan", {})
+        benchmark = self.runtime_artifacts.get("rmsnorm_benchmark", {})
+        steps = plan.get("steps", [])
+        first_step = steps[0] if steps else {}
+        selection = first_step.get("kernel_selection", {})
+        evidence = selection.get("evidence") or {}
+        representative_shape = evidence.get("representative_shape", {})
+        return {
+            "fusion_candidate": first_step.get("fusion_candidate", "rmsnorm"),
+            "lowered_op_type": first_step.get("lowered_op_type", "hir.fused_rmsnorm"),
+            "selected_kernel": selection.get("selected_kernel", first_step.get("runtime_kernel")),
+            "selected_backend": selection.get("selected_backend", first_step.get("backend")),
+            "candidate_kernel": selection.get("candidate_kernel"),
+            "fallback_kernel": selection.get("fallback_kernel"),
+            "selection_reason": selection.get("selection_reason"),
+            "profile_status": benchmark.get("profile_status", selection.get("profile_status")),
+            "profile_source": benchmark.get("source", selection.get("profile_source")),
+            "device": benchmark.get("device"),
+            "custom_latency_ms": evidence.get("custom_latency_ms"),
+            "fallback_latency_ms": evidence.get("fallback_latency_ms"),
+            "speedup": evidence.get("speedup"),
+            "correct": evidence.get("correct"),
+            "selection_ready": evidence.get("selection_ready"),
+            "representative_shape": representative_shape,
+            "sweep_count": len(benchmark.get("sweep", [])),
+        }
+
     def snapshot(self):
         return {
             "compiler": self.compiler,
@@ -570,6 +602,7 @@ class MiniServingRuntime:
             "live": {
                 "metrics": self.metrics(),
                 "compiler_runtime": self.compiler_runtime_summary(),
+                "rmsnorm_kernel_selection": self.rmsnorm_kernel_selection_summary(),
                 "requests": self.requests[-20:],
                 "events": self.events[-80:],
                 "prefix_cache": [

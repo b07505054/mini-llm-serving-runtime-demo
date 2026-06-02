@@ -1,0 +1,71 @@
+{
+  "format": "hir.lowered_graph.v1",
+  "source": "/Users/allen/Documents/Codex/project/ml-graph-compiler-runtime/trace/mlir_fused_graph.mlir",
+  "kernel_profile": {
+    "status": "loaded",
+    "source": "/Users/allen/Documents/Codex/project/ml-graph-compiler-runtime/trace/matmul_bias_relu_kernel_profile.json,/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json"
+  },
+  "num_ops": 1,
+  "ops": [
+    {
+      "id": 0,
+      "name": "fused_rmsnorm_0",
+      "source_result": "%0",
+      "op_type": "FusedRMSNorm",
+      "lowered_op_type": "hir.fused_rmsnorm",
+      "runtime_op_type": "FusedRMSNorm",
+      "runtime_kernel": "fused_rmsnorm_cuda",
+      "runtime_kernel_backend": "CUDA",
+      "backend": "CUDA",
+      "fusion_candidate": "rmsnorm",
+      "fusion_group": "rmsnorm_0",
+      "inputs": [
+        "hidden_states",
+        "weight"
+      ],
+      "outputs": [
+        "%0"
+      ],
+      "cost_model": {
+        "tokens": 16,
+        "hidden": 768,
+        "dtype": "f16",
+        "estimated_flops": 49152,
+        "estimated_bytes_read": 49152,
+        "estimated_bytes_written": 24576,
+        "arithmetic_intensity_flops_per_byte": 0.6666666666666666
+      },
+      "kernel_selection": {
+        "selected_kernel": "fused_rmsnorm_cuda",
+        "selected_backend": "CUDA",
+        "candidate_kernel": "fused_rmsnorm_cuda",
+        "candidate_backend": "CUDA",
+        "fallback_kernel": "torch_rmsnorm",
+        "fallback_backend": "PyTorch",
+        "profile_status": "loaded",
+        "profile_source": "/Users/allen/Documents/Codex/project/ml-graph-compiler-runtime/trace/matmul_bias_relu_kernel_profile.json,/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+        "selection_reason": "runtime benchmark selected custom kernel",
+        "evidence": {
+          "fusion_candidate": "rmsnorm",
+          "custom_kernel": "fused_rmsnorm_cuda",
+          "fallback_kernel": "torch_rmsnorm",
+          "custom_latency_ms": 0.02975,
+          "fallback_latency_ms": 0.086751,
+          "speedup": 2.916,
+          "correct": true,
+          "selection_ready": true,
+          "representative_shape": {
+            "tokens": 16,
+            "hidden": 4096,
+            "dtype": "float32"
+          }
+        }
+      },
+      "notes": [
+        "Detected from MLIR llm.rmsnorm annotated by RMSNormKernelSelectionPass",
+        "Lowered to HIR fused RMSNorm candidate",
+        "Runtime benchmark evidence selects custom CUDA or PyTorch fallback"
+      ]
+    }
+  ]
+}

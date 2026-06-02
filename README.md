@@ -88,6 +88,9 @@ curl -X POST http://127.0.0.1:8765/reset
 - MLIR compiler pipeline: source MLIR, fusion pass, annotated MLIR, lowered HIR, runtime plan
 - Fusion details: fusion candidate, fusion group, lowered op type, backend, runtime action
 - Runtime lowering: `hir.fused_matmul_bias_relu` dispatched to the configured backend
+- Runtime-aware kernel selection: `hir.fused_rmsnorm` selects
+  `fused_rmsnorm_cuda` over `torch_rmsnorm` only when runtime benchmark evidence
+  proves the custom CUDA kernel is faster and correct
 - Artifact provenance: compiler version, git commit, pass pipeline, artifact hashes
 - Plan comparison: Metal, CPU, and Hybrid candidate plans with estimated and measured metrics
 - KV runtime policy: prefix-cache hit rate, reused/evicted KV blocks, admission rejects,
@@ -112,6 +115,10 @@ The committed artifacts currently demonstrate:
 - MLIR-to-HIR lowering into `hir.fused_matmul_bias_relu`
 - Backend placement for the lowered op, currently targeting `Metal`
 - Runtime execution-plan generation with `dispatch_fused_kernel`
+- Runtime-aware RMSNorm kernel selection:
+  `llm.rmsnorm -> hir.fused_rmsnorm -> fused_rmsnorm_cuda`
+  using measured PyTorch-vs-custom-CUDA benchmark evidence from
+  `heterogeneous-inference-runtime`
 - Lightweight cost metadata: estimated FLOPs, memory traffic, arithmetic intensity,
   and launch overhead
 - TinyGPT-style planning artifacts: prefill/decode phase split, KV-cache block
@@ -133,6 +140,19 @@ linalg.matmul + bias add + ReLU
   -> runtime execution plan
   -> backend dispatch contract
 ```
+
+The RMSNorm path demonstrates the runtime-aware compiler loop:
+
+```text
+llm.rmsnorm
+  -> hir.fused_rmsnorm
+  -> PyTorch RMSNorm vs custom CUDA RMSNorm benchmark
+  -> compiler selects fused_rmsnorm_cuda
+```
+
+The committed benchmark snapshot on an NVIDIA GTX 1650 Max-Q records
+`fused_rmsnorm_cuda` at `0.02975 ms` versus `torch_rmsnorm` at `0.086751 ms`
+for the representative shape, with correctness passing and a `2.916x` speedup.
 
 The LLM-shaped workload is used to exercise this compiler/runtime path. It is
 not presented as a full LLM serving framework.

@@ -1,0 +1,297 @@
+{
+  "artifact_type": "runtime_kernel_profile",
+  "source": "scripts/benchmark_rmsnorm_cuda.py",
+  "profile_status": "measured",
+  "device": "NVIDIA GeForce GTX 1650 with Max-Q Design",
+  "kernel_benchmarks": [
+    {
+      "fusion_candidate": "rmsnorm",
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.02975,
+      "fallback_latency_ms": 0.086751,
+      "speedup": 2.916,
+      "correct": true,
+      "selection_ready": true,
+      "representative_shape": {
+        "tokens": 16,
+        "hidden": 4096,
+        "dtype": "float32"
+      }
+    }
+  ],
+  "sweep": [
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 1,
+        "hidden": 768,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.033729,
+      "fallback_latency_ms": 0.098004,
+      "custom_p95_ms": 0.035968,
+      "fallback_p95_ms": 0.110816,
+      "speedup": 2.9056,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 1,
+        "hidden": 1024,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.032869,
+      "fallback_latency_ms": 0.091844,
+      "custom_p95_ms": 0.034848,
+      "fallback_p95_ms": 0.101216,
+      "speedup": 2.7942,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 1,
+        "hidden": 2048,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.031165,
+      "fallback_latency_ms": 0.089302,
+      "custom_p95_ms": 0.036064,
+      "fallback_p95_ms": 0.10016,
+      "speedup": 2.8655,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 1,
+        "hidden": 4096,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.030843,
+      "fallback_latency_ms": 0.086994,
+      "custom_p95_ms": 0.037312,
+      "fallback_p95_ms": 0.096256,
+      "speedup": 2.8206,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 16,
+        "hidden": 768,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.031967,
+      "fallback_latency_ms": 0.084374,
+      "custom_p95_ms": 0.036192,
+      "fallback_p95_ms": 0.088704,
+      "speedup": 2.6394,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 16,
+        "hidden": 1024,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.031466,
+      "fallback_latency_ms": 0.084626,
+      "custom_p95_ms": 0.037408,
+      "fallback_p95_ms": 0.08896,
+      "speedup": 2.6894,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 16,
+        "hidden": 2048,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.029685,
+      "fallback_latency_ms": 0.085199,
+      "custom_p95_ms": 0.03072,
+      "fallback_p95_ms": 0.091392,
+      "speedup": 2.8701,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 16,
+        "hidden": 4096,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.02975,
+      "fallback_latency_ms": 0.086751,
+      "custom_p95_ms": 0.03072,
+      "fallback_p95_ms": 0.094464,
+      "speedup": 2.916,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 128,
+        "hidden": 768,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.02967,
+      "fallback_latency_ms": 0.085456,
+      "custom_p95_ms": 0.031104,
+      "fallback_p95_ms": 0.093056,
+      "speedup": 2.8802,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 128,
+        "hidden": 1024,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.03435,
+      "fallback_latency_ms": 0.098915,
+      "custom_p95_ms": 0.036864,
+      "fallback_p95_ms": 0.114688,
+      "speedup": 2.8796,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 128,
+        "hidden": 2048,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.045403,
+      "fallback_latency_ms": 0.112256,
+      "custom_p95_ms": 0.049376,
+      "fallback_p95_ms": 0.121824,
+      "speedup": 2.4724,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 128,
+        "hidden": 4096,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.084616,
+      "fallback_latency_ms": 0.183348,
+      "custom_p95_ms": 0.08816,
+      "fallback_p95_ms": 0.186592,
+      "speedup": 2.1668,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 512,
+        "hidden": 768,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.064237,
+      "fallback_latency_ms": 0.143818,
+      "custom_p95_ms": 0.067072,
+      "fallback_p95_ms": 0.14992,
+      "speedup": 2.2388,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 512,
+        "hidden": 1024,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.076558,
+      "fallback_latency_ms": 0.183844,
+      "custom_p95_ms": 0.080608,
+      "fallback_p95_ms": 0.190464,
+      "speedup": 2.4014,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 512,
+        "hidden": 2048,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.117191,
+      "fallback_latency_ms": 0.334124,
+      "custom_p95_ms": 0.121344,
+      "fallback_p95_ms": 0.344192,
+      "speedup": 2.8511,
+      "correct": true,
+      "selection_ready": true
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape": {
+        "tokens": 512,
+        "hidden": 4096,
+        "dtype": "float32"
+      },
+      "custom_kernel": "fused_rmsnorm_cuda",
+      "fallback_kernel": "torch_rmsnorm",
+      "custom_latency_ms": 0.280284,
+      "fallback_latency_ms": 0.638128,
+      "custom_p95_ms": 0.283424,
+      "fallback_p95_ms": 0.646432,
+      "speedup": 2.2767,
+      "correct": true,
+      "selection_ready": true
+    }
+  ]
+}

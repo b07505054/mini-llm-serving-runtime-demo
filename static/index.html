@@ -214,6 +214,11 @@
       </div>
 
       <div class="panel span-4">
+        <h2>Runtime-Aware Kernel Selection</h2>
+        <div id="kernel-selection-metrics"></div>
+      </div>
+
+      <div class="panel span-4">
         <h2>Artifact Provenance</h2>
         <div id="provenance-metrics"></div>
       </div>
@@ -415,6 +420,7 @@
     function render(data) {
       const m = data.live.metrics;
       const cr = data.live.compiler_runtime || m.compiler_runtime || {};
+      const rms = data.live.rmsnorm_kernel_selection || {};
       const comparison = m.comparison || {};
       const baseline = comparison.baseline || {};
       const optimized = comparison.optimized || {};
@@ -452,6 +458,20 @@
         metric("FLOPs", fmt(cr.estimated_flops)),
         metric("Arithmetic intensity", fmt(cr.arithmetic_intensity)),
         metric("Launch overhead", fmt(cr.estimated_launch_overhead_us, " us")),
+      ].join("");
+
+      const rmsShape = rms.representative_shape || {};
+      document.getElementById("kernel-selection-metrics").innerHTML = [
+        metric("Fusion candidate", rms.fusion_candidate || "rmsnorm", "purple"),
+        metric("Lowered op", rms.lowered_op_type || "hir.fused_rmsnorm"),
+        metric("Selected kernel", rms.selected_kernel || "n/a", rms.selected_kernel === "fused_rmsnorm_cuda" ? "pass" : "warn"),
+        metric("Fallback", rms.fallback_kernel || "torch_rmsnorm"),
+        metric("Custom CUDA", fmt(rms.custom_latency_ms, " ms"), rms.selection_ready ? "pass" : ""),
+        metric("PyTorch baseline", fmt(rms.fallback_latency_ms, " ms")),
+        metric("Speedup", fmt(rms.speedup, "x"), rms.speedup > 1 ? "pass" : ""),
+        metric("Correct", rms.correct ? "true" : "false", rms.correct ? "pass" : "fail"),
+        metric("Shape", rmsShape.tokens ? `${rmsShape.tokens} x ${rmsShape.hidden}` : "n/a"),
+        metric("Profile", rms.device || rms.profile_status || "n/a", rms.selection_ready ? "blue" : ""),
       ].join("");
 
       const compiler = provenance.compiler || {};
@@ -601,6 +621,7 @@
         live_prefix_cache: data.live.prefix_cache,
         runtime_profile: data.runtime_artifacts.runtime_profile,
         prefill_decode_benchmark: data.runtime_artifacts.prefill_decode,
+        rmsnorm_benchmark: data.runtime_artifacts.rmsnorm_benchmark,
         real_llama_profile: data.runtime_artifacts.real_llama_profile,
       }, null, 2);
       document.getElementById("validation-json").textContent = JSON.stringify({
@@ -635,6 +656,7 @@
         lowered: JSON.stringify(data.compiler.mlir_lowered_graph, null, 2),
         runtime: JSON.stringify({
           execution_plan: data.compiler.mlir_execution_plan,
+          rmsnorm_execution_plan: data.compiler.rmsnorm_execution_plan,
           kv_cache_plan: data.compiler.kv_cache_plan,
           live_prefix_cache: data.live.prefix_cache
         }, null, 2),
