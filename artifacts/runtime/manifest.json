@@ -13,6 +13,7 @@
     "plan_benchmark_results.json",
     "scheduler_decision_report.json",
     "serving_framework_report.json",
+    "cold_start_report.json",
     "real_llama_profile.json"
   ]
 }

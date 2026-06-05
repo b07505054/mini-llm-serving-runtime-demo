@@ -499,5 +499,25 @@
       "p95_latency_ms_delta": -5869.755
     },
     "selection_reason": "cost-aware policy improved tokens/sec while staying within KV memory capacity"
+  },
+  "cold_start_validation_report": {
+    "artifact_type": "cold_start_validation_report",
+    "source": "heterogeneous-inference-runtime/cold_start_report.json",
+    "passed": true,
+    "available_artifacts": [
+      "onnx_fp32",
+      "tensorrt_fp16_engine",
+      "tensorrt_int8_engine",
+      "executorch_xnnpack_pte"
+    ],
+    "missing_sections": [],
+    "cold_ttft_ms": 98.316,
+    "warm_ttft_ms": 38.316,
+    "first_request_penalty_ms": 60.0,
+    "steady_state_tpot_p95_ms": 3.244,
+    "steady_state_throughput_tokens_per_s": 1236.142,
+    "tensorrt_available": false,
+    "tensorrt_reason": "TensorRT import failed: No module named 'tensorrt'",
+    "recommendation_count": 4
   }
 }

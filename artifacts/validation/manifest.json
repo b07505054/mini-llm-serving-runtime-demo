@@ -4,6 +4,7 @@
   "output_dir": "/Users/allen/Documents/Codex/project/inference-validation-platform/reports/runtime_artifact_validation",
   "files": [
     "backend_validation_report.json",
+    "cold_start_validation_report.json",
     "kv_cache_analysis.json",
     "llm_validation_report.json",
     "request_timeline.json",

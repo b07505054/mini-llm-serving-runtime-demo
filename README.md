@@ -102,6 +102,8 @@ curl -X POST http://127.0.0.1:8765/reset
 - Serving-framework comparison artifacts for vLLM/SGLang-style scheduling,
   Triton Server-style dynamic batching/backend routing, and TensorRT-style
   engine/profile dispatch
+- Cold-start artifacts showing model load, backend initialization, TensorRT
+  engine deserialize/context creation, first-token warmup, and steady-state metrics
 - Runtime events: `mlir_pattern_matched`, `lowered_to_hir`, prefill/decode events, completion
 - KV policy events: `prefix_cache_hit`, `prefix_cache_miss`, `kv_blocks_evicted`,
   `admission_rejected`, and `prefix_cache_inserted`

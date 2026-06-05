@@ -1,0 +1,118 @@
+{
+  "artifact_type": "cold_start_report",
+  "source": "scripts/generate_llm_runtime_artifacts.py",
+  "positioning": "Serving initialization report separating model artifact load, backend initialization, TensorRT engine deserialize/context creation, first-token warmup, and steady-state serving metrics.",
+  "artifact_load": {
+    "onnx_fp32": {
+      "path": "models/mobilenet_v2_fp32.onnx",
+      "available": true,
+      "artifact_bytes": 279771,
+      "artifact_mb": 0.2668,
+      "cold_load_ms": 0.3686,
+      "warm_load_avg_ms": 0.019,
+      "warm_load_p95_ms": 0.0294,
+      "runs": 5
+    },
+    "tensorrt_fp16_engine": {
+      "path": "models/mobilenet_v2_fp16.engine",
+      "available": true,
+      "artifact_bytes": 10799732,
+      "artifact_mb": 10.2994,
+      "cold_load_ms": 1.8091,
+      "warm_load_avg_ms": 0.6499,
+      "warm_load_p95_ms": 0.8701,
+      "runs": 5
+    },
+    "tensorrt_int8_engine": {
+      "path": "models/mobilenet_v2_int8.engine",
+      "available": true,
+      "artifact_bytes": 6805924,
+      "artifact_mb": 6.4906,
+      "cold_load_ms": 1.3522,
+      "warm_load_avg_ms": 0.2684,
+      "warm_load_p95_ms": 0.3507,
+      "runs": 5
+    },
+    "executorch_xnnpack_pte": {
+      "path": "models/mobilenet_v2_xnnpack.pte",
+      "available": true,
+      "artifact_bytes": 13950240,
+      "artifact_mb": 13.304,
+      "cold_load_ms": 2.378,
+      "warm_load_avg_ms": 0.7679,
+      "warm_load_p95_ms": 1.0689,
+      "runs": 5
+    }
+  },
+  "backend_initialization": {
+    "pytorch_eager_init_ms": 18.0,
+    "cuda_context_or_backend_init_ms": 42.0,
+    "tensorrt_runtime_create_ms": null,
+    "tensorrt_engine_deserialize_ms": null,
+    "tensorrt_context_create_ms": null,
+    "tensorrt_available": false,
+    "tensorrt_reason": "TensorRT import failed: No module named 'tensorrt'"
+  },
+  "tensorrt_deserialize": {
+    "available": false,
+    "engine_path": "models/mobilenet_v2_fp16.engine",
+    "reason": "TensorRT import failed: No module named 'tensorrt'"
+  },
+  "first_token_warmup": {
+    "cold_ttft_ms": 98.316,
+    "warm_ttft_ms": 38.316,
+    "warmup_runs": 3,
+    "first_request_penalty_ms": 60.0
+  },
+  "steady_state": {
+    "ttft_ms": 38.316,
+    "tpot_p95_ms": 3.244,
+    "e2e_p95_ms": 1716.077,
+    "throughput_tokens_per_s": 1236.142,
+    "selected_framework_style": "vllm_sglang_style"
+  },
+  "initialization_reduction_plan": [
+    {
+      "technique": "preload_model_artifacts",
+      "targets": [
+        "PyTorch",
+        "ExecuTorch",
+        "ONNX Runtime"
+      ],
+      "expected_effect": "reduce filesystem/model load component of first request latency"
+    },
+    {
+      "technique": "pre_deserialize_tensorrt_engine",
+      "targets": [
+        "TensorRT"
+      ],
+      "expected_effect": "move engine deserialize and execution context creation out of request path"
+    },
+    {
+      "technique": "warmup_prefill_decode_path",
+      "targets": [
+        "vLLM",
+        "SGLang",
+        "Triton Server",
+        "TensorRT"
+      ],
+      "expected_effect": "reduce TTFT by paying kernel/runtime setup before serving traffic"
+    },
+    {
+      "technique": "reuse_backend_instances",
+      "targets": [
+        "Triton Server",
+        "TensorRT"
+      ],
+      "expected_effect": "avoid repeated backend init and shape-profile setup across requests"
+    }
+  ],
+  "validation_metrics": [
+    "model_load_ms",
+    "backend_init_ms",
+    "engine_deserialize_ms",
+    "first_request_ttft_ms",
+    "warm_ttft_ms",
+    "steady_state_tpot_ms"
+  ]
+}
