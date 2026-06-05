@@ -1,0 +1,143 @@
+{
+  "artifact_type": "serving_framework_report",
+  "source": "deployment.llm_runtime_decision",
+  "positioning": "Portfolio-sized serving framework comparison inspired by vLLM, SGLang, Triton Server, and TensorRT. It does not vendor those frameworks; it maps their core runtime decisions onto the local scheduler, KV-cache planner, backend dispatch, and serving metrics.",
+  "framework_targets": [
+    "vLLM continuous batching and paged KV-cache pressure",
+    "SGLang request/decode scheduling and prefix/KV reuse hooks",
+    "Triton Server dynamic batching and backend instance routing",
+    "TensorRT engine/optimization-profile backend candidate selection"
+  ],
+  "metrics": {
+    "ttft_ms": 38.316,
+    "tpot_p95_ms": 3.244,
+    "e2e_p95_ms": 1716.077,
+    "throughput_tokens_per_s": 1236.142,
+    "peak_kv_cache_mb": 868.75,
+    "peak_memory_mb": 1636.75,
+    "oom_events": 0
+  },
+  "comparisons": [
+    {
+      "framework_style": "baseline_fcfs",
+      "policy": "fcfs_fixed_batch",
+      "scheduler_policy": "single_request_fcfs",
+      "batching": "static_batch_1",
+      "kv_cache_policy": "capacity_only",
+      "backend_routing": "fixed_pytorch_or_default_backend",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "ttft_p95_ms": 175.864,
+      "tpot_p95_ms": 2.899,
+      "e2e_p95_ms": 7585.832,
+      "throughput_tokens_per_s": 298.047,
+      "avg_decode_batch_size": 1.0,
+      "decode_batch_efficiency": 0.125,
+      "peak_kv_cache_mb": 225.0,
+      "pressure_limited_candidates": 0,
+      "serving_metrics": [
+        "TTFT",
+        "TPOT",
+        "latency_p95",
+        "tokens_per_second",
+        "queue_wait",
+        "kv_cache_pressure"
+      ]
+    },
+    {
+      "framework_style": "vllm_sglang_style",
+      "policy": "cost_aware_memory_pressure",
+      "scheduler_policy": "continuous_batching_prefill_decode_split",
+      "batching": "memory_pressure_aware_adaptive_decode_batch",
+      "kv_cache_policy": "paged_kv_cache_pressure_tracking",
+      "backend_routing": "profile_guided_backend_dispatch",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "ttft_p95_ms": 154.956,
+      "tpot_p95_ms": 3.244,
+      "e2e_p95_ms": 1716.077,
+      "throughput_tokens_per_s": 1236.142,
+      "avg_decode_batch_size": 6.4,
+      "decode_batch_efficiency": 0.8,
+      "peak_kv_cache_mb": 868.75,
+      "pressure_limited_candidates": 20,
+      "serving_metrics": [
+        "TTFT",
+        "TPOT",
+        "latency_p95",
+        "tokens_per_second",
+        "queue_wait",
+        "kv_cache_pressure"
+      ]
+    },
+    {
+      "framework_style": "triton_server_style",
+      "policy": "cost_aware_memory_pressure",
+      "scheduler_policy": "dynamic_batching_backend_instance_routing",
+      "batching": "dynamic_batching_projection_from_runtime_trace",
+      "kv_cache_policy": "model_instance_memory_budget",
+      "backend_routing": "backend_instance_metadata_and_profile_selection",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "ttft_p95_ms": 154.956,
+      "tpot_p95_ms": 3.244,
+      "e2e_p95_ms": 1716.077,
+      "throughput_tokens_per_s": 1236.142,
+      "avg_decode_batch_size": 6.4,
+      "decode_batch_efficiency": 0.8,
+      "peak_kv_cache_mb": 868.75,
+      "pressure_limited_candidates": 20,
+      "serving_metrics": [
+        "TTFT",
+        "TPOT",
+        "latency_p95",
+        "tokens_per_second",
+        "queue_wait",
+        "kv_cache_pressure"
+      ]
+    },
+    {
+      "framework_style": "tensorrt_style",
+      "policy": "cost_aware_memory_pressure",
+      "scheduler_policy": "execution_context_shape_profile",
+      "batching": "optimization_profile_batch_shape_selection",
+      "kv_cache_policy": "engine_workspace_plus_kv_cache_budget",
+      "backend_routing": "tensorrt_engine_candidate_when_available",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "ttft_p95_ms": 154.956,
+      "tpot_p95_ms": 3.244,
+      "e2e_p95_ms": 1716.077,
+      "throughput_tokens_per_s": 1236.142,
+      "avg_decode_batch_size": 6.4,
+      "decode_batch_efficiency": 0.8,
+      "peak_kv_cache_mb": 868.75,
+      "pressure_limited_candidates": 20,
+      "serving_metrics": [
+        "TTFT",
+        "TPOT",
+        "latency_p95",
+        "tokens_per_second",
+        "queue_wait",
+        "kv_cache_pressure"
+      ]
+    }
+  ],
+  "selected_framework_style": "vllm_sglang_style",
+  "selection_reason": "cost-aware policy improved tokens/sec while staying within KV memory capacity",
+  "improvement": {
+    "tokens_per_second_delta": 938.095,
+    "decode_batch_efficiency_delta": 0.675,
+    "p95_latency_ms_delta": -5869.755
+  },
+  "optional_integrations": {
+    "vllm": "design target only; no dependency required for CI",
+    "sglang": "design target only; request trace maps to decode scheduling hooks",
+    "triton_server": "backend-routing abstraction mirrors dynamic batching decisions",
+    "tensorrt": "real TensorRT benchmark artifacts are consumed when available"
+  }
+}

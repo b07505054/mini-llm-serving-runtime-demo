@@ -1,7 +1,12 @@
 {
-  "peak_blocks_used": 812,
-  "block_utilization": 0.79,
-  "fragmentation_ratio": 0.08,
-  "evictions": 0,
-  "failed_allocations": 0
+  "source": "heterogeneous-inference-runtime/kv_cache_trace.json",
+  "total_blocks": 512,
+  "peak_blocks_used": 278,
+  "block_utilization": 0.543,
+  "fragmentation_ratio": 0.05,
+  "peak_kv_cache_mb": 868.75,
+  "avg_blocks_per_request": 25.5625,
+  "max_blocks_per_request": 72,
+  "failed_allocations": 0,
+  "evictions": 0
 }

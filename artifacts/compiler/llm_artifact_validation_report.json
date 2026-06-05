@@ -2,9 +2,9 @@
   "artifact_type": "llm_artifact_validation_report",
   "artifacts": "artifacts/apple_demo",
   "summary": {
-    "passed": 18,
+    "passed": 26,
     "failed": 0,
-    "total": 18,
+    "total": 26,
     "status": "passed"
   },
   "checks": [
@@ -32,6 +32,26 @@
       "name": "scheduling_plan.json_exists",
       "passed": true,
       "detail": "artifacts/apple_demo/scheduling_plan.json"
+    },
+    {
+      "name": "artifact_provenance.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/artifact_provenance.json"
+    },
+    {
+      "name": "candidate_execution_plans.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/candidate_execution_plans.json"
+    },
+    {
+      "name": "serving_framework_contract.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/serving_framework_contract.json"
+    },
+    {
+      "name": "memory_timeline.json_exists",
+      "passed": true,
+      "detail": "artifacts/apple_demo/memory_timeline.json"
     },
     {
       "name": "validation_manifest.json_exists",
@@ -107,6 +127,43 @@
       ]
     },
     {
+      "name": "artifact_provenance_present",
+      "passed": true,
+      "detail": {
+        "artifact_type": "artifact_provenance",
+        "output_count": 9
+      }
+    },
+    {
+      "name": "candidate_plans_present",
+      "passed": true,
+      "detail": {
+        "artifact_type": "candidate_execution_plans",
+        "plan_count": 3
+      }
+    },
+    {
+      "name": "serving_framework_contract_present",
+      "passed": true,
+      "detail": {
+        "artifact_type": "serving_framework_contract",
+        "framework_targets": [
+          "sglang",
+          "tensorrt",
+          "triton_server",
+          "vllm"
+        ]
+      }
+    },
+    {
+      "name": "memory_timeline_present",
+      "passed": true,
+      "detail": {
+        "artifact_type": "memory_timeline",
+        "event_count": 8
+      }
+    },
+    {
       "name": "manifest_expected_outputs_complete",
       "passed": true,
       "detail": [
@@ -115,6 +172,10 @@
         "kv_cache_plan.json",
         "memory_plan.json",
         "scheduling_plan.json",
+        "artifact_provenance.json",
+        "candidate_execution_plans.json",
+        "serving_framework_contract.json",
+        "memory_timeline.json",
         "validation_manifest.json"
       ]
     }

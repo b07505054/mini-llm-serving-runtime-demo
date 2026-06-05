@@ -1,0 +1,18 @@
+{
+  "artifact_set": "runtime_artifact_validation",
+  "source_runtime_artifacts": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts",
+  "output_dir": "/Users/allen/Documents/Codex/project/inference-validation-platform/reports/runtime_artifact_validation",
+  "files": [
+    "backend_validation_report.json",
+    "kv_cache_analysis.json",
+    "llm_validation_report.json",
+    "request_timeline.json",
+    "runtime_decision_validation_report.json",
+    "runtime_profile_imported.json",
+    "runtime_validation_report.json",
+    "runtime_validation_report.md",
+    "scheduler_analysis.json",
+    "serving_framework_validation_report.json",
+    "slo_report.json"
+  ]
+}

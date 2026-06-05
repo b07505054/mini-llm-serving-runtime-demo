@@ -4,7 +4,7 @@
   "compiler": {
     "name": "ml-graph-compiler-runtime",
     "version": "0.4.0",
-    "git_commit": "24e8972f"
+    "git_commit": "914cb04d"
   },
   "pass_pipeline": [
     "canonicalize",
@@ -13,7 +13,7 @@
     "backend_placement",
     "memory_planning"
   ],
-  "created_at_utc": "2026-06-01T19:13:47.655460+00:00",
+  "created_at_utc": "2026-06-05T16:01:25.491901+00:00",
   "outputs": [
     {
       "path": "llm_graph_ir.json",
@@ -21,7 +21,7 @@
     },
     {
       "path": "serving_execution_plan.json",
-      "sha256": "b3bd0e8a00f50aa7dba7e31145f81b84876ce6f893c38f7008c0e9913db1aa3c"
+      "sha256": "7d1749ccf927454846e0ce61dae2f85ccebe70dd3835c96e0101ce15b4e92086"
     },
     {
       "path": "kv_cache_plan.json",
@@ -40,12 +40,16 @@
       "sha256": "30316ef41468efea69eca9e3c97e7578349a31e4f7d43557fc4db26281577cad"
     },
     {
+      "path": "serving_framework_contract.json",
+      "sha256": "a0ccda1b563b5d5fb07aec49709a43cddc5d90aa83b9170d980ce94ca4338f3c"
+    },
+    {
       "path": "memory_timeline.json",
       "sha256": "99a146ff671d170c4ff97ffb8a9362b34a0093d7a4cde2ca3c2f611aa751cf5a"
     },
     {
       "path": "validation_manifest.json",
-      "sha256": "3fe426c5abba6925113fa5e04888a02a0ce8aacbac7d347c0095f05cc644bd36"
+      "sha256": "4e6bceaf5f4155d8345fc0a1fdfc66a88d144437f012cf60ddb62d9b966dd087"
     }
   ]
 }

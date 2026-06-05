@@ -1,0 +1,36 @@
+{
+  "artifact_type": "serving_framework_validation_report",
+  "source": "heterogeneous-inference-runtime/serving_framework_report.json",
+  "passed": true,
+  "selected_framework_style": "vllm_sglang_style",
+  "framework_targets": [
+    "vLLM continuous batching and paged KV-cache pressure",
+    "SGLang request/decode scheduling and prefix/KV reuse hooks",
+    "Triton Server dynamic batching and backend instance routing",
+    "TensorRT engine/optimization-profile backend candidate selection"
+  ],
+  "comparison_count": 4,
+  "available_framework_styles": [
+    "baseline_fcfs",
+    "tensorrt_style",
+    "triton_server_style",
+    "vllm_sglang_style"
+  ],
+  "missing_framework_styles": [],
+  "missing_metrics": [],
+  "metrics": {
+    "ttft_ms": 38.316,
+    "tpot_p95_ms": 3.244,
+    "e2e_p95_ms": 1716.077,
+    "throughput_tokens_per_s": 1236.142,
+    "peak_kv_cache_mb": 868.75,
+    "peak_memory_mb": 1636.75,
+    "oom_events": 0
+  },
+  "improvement": {
+    "tokens_per_second_delta": 938.095,
+    "decode_batch_efficiency_delta": 0.675,
+    "p95_latency_ms_delta": -5869.755
+  },
+  "selection_reason": "cost-aware policy improved tokens/sec while staying within KV memory capacity"
+}

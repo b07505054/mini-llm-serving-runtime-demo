@@ -1,9 +1,18 @@
 {
-  "job_id": "llm-runtime-demo-001",
+  "job_id": "runtime-artifact-validation-001",
+  "source_runtime": "heterogeneous-inference-runtime",
+  "model": "tiny-gpt",
   "passed": true,
-  "latency_budget_ms": 20.0,
-  "p95_decode_latency_ms": 15.9,
   "correctness_passed": true,
-  "max_logit_diff": 0.0008,
-  "peak_memory_mb": 1240.0
+  "decode_latency_budget_ms": 20.0,
+  "e2e_latency_budget_ms": 1800.0,
+  "prefill_latency_ms": 38.316,
+  "avg_decode_latency_ms": 2.519,
+  "p95_decode_latency_ms": 3.244,
+  "p99_decode_latency_ms": 3.384,
+  "p95_latency_ms": 1716.077,
+  "p99_latency_ms": 1727.51,
+  "tokens_per_second": 1236.142,
+  "peak_memory_mb": 1636.75,
+  "oom_events": 0
 }

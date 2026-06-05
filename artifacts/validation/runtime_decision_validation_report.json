@@ -1,0 +1,53 @@
+{
+  "artifact_type": "runtime_decision_validation_report",
+  "source": "heterogeneous-inference-runtime/scheduler_decision_report.json",
+  "selected_policy": "cost_aware_memory_pressure",
+  "passed": true,
+  "baseline_policy": {
+    "policy": "fcfs_fixed_batch",
+    "completed_requests": 32,
+    "rejected_requests": 0,
+    "delayed_requests": 0,
+    "p95_latency_ms": 7585.832,
+    "tokens_per_second": 298.047,
+    "peak_kv_cache_mb": 225.0,
+    "avg_decode_batch_size": 1.0,
+    "decode_batch_efficiency": 0.125,
+    "pressure_level_counts": {
+      "low": 32
+    },
+    "batch_cap_reductions": 0,
+    "pressure_limited_candidates": 0,
+    "finish_time_ms": 8052.433
+  },
+  "optimized_policy": {
+    "policy": "cost_aware_memory_pressure",
+    "completed_requests": 32,
+    "rejected_requests": 0,
+    "delayed_requests": 0,
+    "p95_latency_ms": 1716.077,
+    "tokens_per_second": 1236.142,
+    "peak_kv_cache_mb": 868.75,
+    "avg_decode_batch_size": 6.4,
+    "decode_batch_efficiency": 0.8,
+    "pressure_level_counts": {
+      "low": 5
+    },
+    "batch_cap_reductions": 0,
+    "pressure_limited_candidates": 20,
+    "finish_time_ms": 1941.525
+  },
+  "improvement": {
+    "tokens_per_second_delta": 938.095,
+    "decode_batch_efficiency_delta": 0.675,
+    "p95_latency_ms_delta": -5869.755
+  },
+  "checks": {
+    "selected_optimized": true,
+    "throughput_improved": true,
+    "latency_not_regressed": true,
+    "batching_improved": true,
+    "pressure_policy_exercised": true
+  },
+  "regression_detected": false
+}

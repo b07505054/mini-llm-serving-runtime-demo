@@ -1,1430 +1,150 @@
 {
-  "policy": "prefill-first-with-batched-decode",
+  "policy": "cost_aware_memory_pressure",
   "max_decode_batch_size": 8,
+  "avg_decode_batch_size": 6.4,
+  "decode_batch_efficiency": 0.8,
   "steps": [
     {
-      "time_ms": 1.231,
+      "time_ms": 10.231,
       "event": "prefill_start",
       "request_id": "req-001",
       "batch_size": 1
     },
     {
-      "time_ms": 67.935,
+      "time_ms": 39.028,
       "event": "prefill_end",
       "request_id": "req-001",
       "batch_size": 1
     },
     {
-      "time_ms": 67.935,
+      "time_ms": 76.523,
       "event": "decode_batch",
       "active_requests": [
-        "req-001"
+        "req-001",
+        "req-002",
+        "req-004",
+        "req-005",
+        "req-008",
+        "req-009",
+        "req-010",
+        "req-011"
       ],
-      "batch_size": 1
+      "batch_size": 8,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 259.774,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-001"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 450.088,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-001"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 639.575,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-001"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 852.814,
-      "event": "prefill_start",
-      "request_id": "req-002",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 890.145,
-      "event": "prefill_end",
-      "request_id": "req-002",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 890.145,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-002"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 1092.032,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-002"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 1289.865,
+      "time_ms": 317.285,
       "event": "prefill_start",
       "request_id": "req-003",
       "batch_size": 1
     },
     {
-      "time_ms": 1336.827,
+      "time_ms": 487.266,
       "event": "prefill_end",
       "request_id": "req-003",
       "batch_size": 1
     },
     {
-      "time_ms": 1336.827,
+      "time_ms": 487.266,
       "event": "decode_batch",
       "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 1529.323,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 1742.453,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 1928.438,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 2122.824,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 2324.215,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 2543.964,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 2739.653,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 2944.098,
-      "event": "prefill_start",
-      "request_id": "req-004",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3128.488,
-      "event": "prefill_end",
-      "request_id": "req-004",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3128.488,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3323.859,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3516.862,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3706.528,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3895.379,
-      "event": "prefill_start",
-      "request_id": "req-005",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3937.213,
-      "event": "prefill_end",
-      "request_id": "req-005",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 3937.213,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 4163.212,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 4347.291,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 4545.067,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 4732.366,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 4913.037,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 5104.866,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 5303.406,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 5511.141,
-      "event": "prefill_start",
-      "request_id": "req-006",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 5613.399,
-      "event": "prefill_end",
-      "request_id": "req-006",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 5613.399,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-006"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 5816.43,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-006"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6018.906,
-      "event": "prefill_start",
-      "request_id": "req-007",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6064.811,
-      "event": "prefill_end",
-      "request_id": "req-007",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6064.811,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6260.766,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6438.907,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6629.001,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 6824.272,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7020.059,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7224.75,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7421.298,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7637.96,
-      "event": "prefill_start",
-      "request_id": "req-008",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7701.127,
-      "event": "prefill_end",
-      "request_id": "req-008",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7701.127,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 7884.137,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8076.307,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8268.379,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8472.756,
-      "event": "prefill_start",
-      "request_id": "req-009",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8509.376,
-      "event": "prefill_end",
-      "request_id": "req-009",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8509.376,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8718.113,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 8920.164,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9122.119,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9301.979,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9491.475,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9716.026,
-      "event": "prefill_start",
-      "request_id": "req-010",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9778.068,
-      "event": "prefill_end",
-      "request_id": "req-010",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9778.068,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 9984.823,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 10185.722,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 10401.157,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 10611.373,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 10807.219,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11000.721,
-      "event": "prefill_start",
-      "request_id": "req-011",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11046.046,
-      "event": "prefill_end",
-      "request_id": "req-011",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11046.046,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-011"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11238.116,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-011"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11415.001,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-011"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11602.296,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-011"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11795.953,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-011"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 11998.587,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-011"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 12198.56,
-      "event": "prefill_start",
-      "request_id": "req-012",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 12380.566,
-      "event": "prefill_end",
-      "request_id": "req-012",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 12380.566,
-      "event": "decode_batch",
-      "active_requests": [
+        "req-003",
+        "req-006",
+        "req-007",
         "req-012"
       ],
-      "batch_size": 1
+      "batch_size": 4,
+      "memory_pressure": 0.543,
+      "pressure_level": "low",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 12569.769,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 12768.454,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 12959.395,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 13140.821,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 13332.832,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 13535.36,
+      "time_ms": 825.69,
       "event": "prefill_start",
       "request_id": "req-013",
       "batch_size": 1
     },
     {
-      "time_ms": 13595.887,
+      "time_ms": 920.545,
       "event": "prefill_end",
       "request_id": "req-013",
       "batch_size": 1
     },
     {
-      "time_ms": 13595.887,
+      "time_ms": 920.545,
       "event": "decode_batch",
       "active_requests": [
-        "req-013"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 13790.564,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-013"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 13996.48,
-      "event": "prefill_start",
-      "request_id": "req-014",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 14059.911,
-      "event": "prefill_end",
-      "request_id": "req-014",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 14059.911,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 14254.434,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 14459.543,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 14661.01,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 14865.214,
-      "event": "prefill_start",
-      "request_id": "req-015",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15047.321,
-      "event": "prefill_end",
-      "request_id": "req-015",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15047.321,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-015"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15233.154,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-015"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15432.333,
-      "event": "prefill_start",
-      "request_id": "req-016",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15617.522,
-      "event": "prefill_end",
-      "request_id": "req-016",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15617.522,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 15828.35,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16017.673,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16218.689,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16412.658,
-      "event": "prefill_start",
-      "request_id": "req-017",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16595.978,
-      "event": "prefill_end",
-      "request_id": "req-017",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16595.978,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-017"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16786.907,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-017"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 16991.217,
-      "event": "prefill_start",
-      "request_id": "req-018",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 17091.082,
-      "event": "prefill_end",
-      "request_id": "req-018",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 17091.082,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 17287.036,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 17494.589,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 17693.345,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 17903.21,
-      "event": "prefill_start",
-      "request_id": "req-019",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18089.521,
-      "event": "prefill_end",
-      "request_id": "req-019",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18089.521,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18283.794,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18481.875,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18682.962,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18901.255,
-      "event": "prefill_start",
-      "request_id": "req-020",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18948.381,
-      "event": "prefill_end",
-      "request_id": "req-020",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 18948.381,
-      "event": "decode_batch",
-      "active_requests": [
+        "req-013",
+        "req-014",
+        "req-015",
+        "req-016",
+        "req-017",
+        "req-018",
+        "req-019",
         "req-020"
       ],
-      "batch_size": 1
+      "batch_size": 8,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 19135.499,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 19337.391,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 19529.689,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 19734.861,
+      "time_ms": 1241.064,
       "event": "prefill_start",
       "request_id": "req-021",
       "batch_size": 1
     },
     {
-      "time_ms": 19782.171,
+      "time_ms": 1271.539,
       "event": "prefill_end",
       "request_id": "req-021",
       "batch_size": 1
     },
     {
-      "time_ms": 19782.171,
+      "time_ms": 1271.539,
       "event": "decode_batch",
       "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 19973.45,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 20143.417,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 20333.582,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 20546.87,
-      "event": "prefill_start",
-      "request_id": "req-022",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 20611.22,
-      "event": "prefill_end",
-      "request_id": "req-022",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 20611.22,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-022"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 20820.21,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-022"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21017.832,
-      "event": "prefill_start",
-      "request_id": "req-023",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21080.022,
-      "event": "prefill_end",
-      "request_id": "req-023",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21080.022,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21276.046,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21479.649,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21675.899,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 21875.021,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22093.296,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22293.602,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22490.514,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22685.789,
-      "event": "prefill_start",
-      "request_id": "req-024",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22752.994,
-      "event": "prefill_end",
-      "request_id": "req-024",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22752.994,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-024"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 22971.659,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-024"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23185.803,
-      "event": "prefill_start",
-      "request_id": "req-025",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23289.269,
-      "event": "prefill_end",
-      "request_id": "req-025",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23289.269,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-025"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23488.914,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-025"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23706.011,
-      "event": "prefill_start",
-      "request_id": "req-026",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23769.989,
-      "event": "prefill_end",
-      "request_id": "req-026",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23769.989,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-026"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 23957.675,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-026"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 24154.708,
-      "event": "prefill_start",
-      "request_id": "req-027",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 24186.942,
-      "event": "prefill_end",
-      "request_id": "req-027",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 24186.942,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 24387.285,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 24595.573,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 24796.257,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 25012.254,
-      "event": "prefill_start",
-      "request_id": "req-028",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 25192.889,
-      "event": "prefill_end",
-      "request_id": "req-028",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 25192.889,
-      "event": "decode_batch",
-      "active_requests": [
+        "req-021",
+        "req-022",
+        "req-023",
+        "req-024",
+        "req-025",
+        "req-026",
+        "req-027",
         "req-028"
       ],
-      "batch_size": 1
+      "batch_size": 8,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 25386.932,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 25582.582,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 25781.16,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 25965.462,
+      "time_ms": 1609.152,
       "event": "prefill_start",
       "request_id": "req-029",
       "batch_size": 1
     },
     {
-      "time_ms": 26150.687,
+      "time_ms": 1647.468,
       "event": "prefill_end",
       "request_id": "req-029",
       "batch_size": 1
     },
     {
-      "time_ms": 26150.687,
+      "time_ms": 1647.468,
       "event": "decode_batch",
       "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 26342.439,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 26540.206,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 26734.979,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 26935.156,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27140.11,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27329.945,
-      "event": "prefill_start",
-      "request_id": "req-030",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27391.124,
-      "event": "prefill_end",
-      "request_id": "req-030",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27391.124,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-030"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27581.287,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-030"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27768.733,
-      "event": "prefill_start",
-      "request_id": "req-031",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27831.071,
-      "event": "prefill_end",
-      "request_id": "req-031",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 27831.071,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-031"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 28040.473,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-031"
-      ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 28255.534,
-      "event": "prefill_start",
-      "request_id": "req-032",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 28321.579,
-      "event": "prefill_end",
-      "request_id": "req-032",
-      "batch_size": 1
-    },
-    {
-      "time_ms": 28321.579,
-      "event": "decode_batch",
-      "active_requests": [
+        "req-029",
+        "req-030",
+        "req-031",
         "req-032"
       ],
-      "batch_size": 1
-    },
-    {
-      "time_ms": 28529.008,
-      "event": "decode_batch",
-      "active_requests": [
-        "req-032"
-      ],
-      "batch_size": 1
+      "batch_size": 4,
+      "memory_pressure": 0.1484,
+      "pressure_level": "low",
+      "effective_batch_cap": 8
     }
   ]
 }

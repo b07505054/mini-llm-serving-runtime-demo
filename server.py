@@ -149,6 +149,7 @@ class MiniServingRuntime:
             "rmsnorm_execution_plan": load_json(COMPILER_ARTIFACTS / "rmsnorm_execution_plan.json", {}),
             "artifact_provenance": load_json(COMPILER_ARTIFACTS / "artifact_provenance.json", {}),
             "candidate_execution_plans": load_json(COMPILER_ARTIFACTS / "candidate_execution_plans.json", {}),
+            "serving_framework_contract": load_json(COMPILER_ARTIFACTS / "serving_framework_contract.json", {}),
             "memory_timeline": load_json(COMPILER_ARTIFACTS / "memory_timeline.json", {}),
         }
         self.runtime_artifacts = {
@@ -159,6 +160,7 @@ class MiniServingRuntime:
             "plan_benchmark_results": load_json(RUNTIME_ARTIFACTS / "plan_benchmark_results.json", {}),
             "real_llama_profile": load_json(RUNTIME_ARTIFACTS / "real_llama_profile.json", {}),
             "rmsnorm_benchmark": load_json(RUNTIME_ARTIFACTS / "rmsnorm_benchmark.json", {}),
+            "serving_framework_report": load_json(RUNTIME_ARTIFACTS / "serving_framework_report.json", {}),
         }
         self.validation = {
             "llm_validation_report": load_json(VALIDATION_ARTIFACTS / "llm_validation_report.json", {}),
@@ -167,6 +169,7 @@ class MiniServingRuntime:
             "request_timeline": load_json(VALIDATION_ARTIFACTS / "request_timeline.json", {}),
             "plan_selection_report": load_json(VALIDATION_ARTIFACTS / "plan_selection_report.json", {}),
             "memory_validation_report": load_json(VALIDATION_ARTIFACTS / "memory_validation_report.json", {}),
+            "serving_framework_validation_report": load_json(VALIDATION_ARTIFACTS / "serving_framework_validation_report.json", {}),
         }
         self.reset()
 

@@ -1,0 +1,61 @@
+{
+  "artifact_type": "scheduler_decision_report",
+  "source": "deployment.llm_runtime_decision",
+  "workload": {
+    "model": "tiny-gpt",
+    "requests": 32,
+    "block_size_tokens": 16,
+    "total_kv_blocks": 512
+  },
+  "cost_model_calibration": {
+    "prefill_scale_before": 1.0,
+    "decode_scale_before": 1.0,
+    "prefill_scale_after": 0.8719,
+    "decode_scale_after": 0.8838,
+    "observed_prefill_samples": 8,
+    "observed_decode_samples": 64
+  },
+  "policies": [
+    {
+      "policy": "fcfs_fixed_batch",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "p95_latency_ms": 7585.832,
+      "tokens_per_second": 298.047,
+      "peak_kv_cache_mb": 225.0,
+      "avg_decode_batch_size": 1.0,
+      "decode_batch_efficiency": 0.125,
+      "pressure_level_counts": {
+        "low": 32
+      },
+      "batch_cap_reductions": 0,
+      "pressure_limited_candidates": 0,
+      "finish_time_ms": 8052.433
+    },
+    {
+      "policy": "cost_aware_memory_pressure",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "p95_latency_ms": 1716.077,
+      "tokens_per_second": 1236.142,
+      "peak_kv_cache_mb": 868.75,
+      "avg_decode_batch_size": 6.4,
+      "decode_batch_efficiency": 0.8,
+      "pressure_level_counts": {
+        "low": 5
+      },
+      "batch_cap_reductions": 0,
+      "pressure_limited_candidates": 20,
+      "finish_time_ms": 1941.525
+    }
+  ],
+  "selected_policy": "cost_aware_memory_pressure",
+  "selection_reason": "cost-aware policy improved tokens/sec while staying within KV memory capacity",
+  "improvement": {
+    "tokens_per_second_delta": 938.095,
+    "decode_batch_efficiency_delta": 0.675,
+    "p95_latency_ms_delta": -5869.755
+  }
+}

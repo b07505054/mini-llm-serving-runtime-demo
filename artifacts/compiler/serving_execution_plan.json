@@ -28,10 +28,26 @@
     "scheduler_plan": "scheduling_plan.json",
     "kv_cache_plan": "kv_cache_plan.json",
     "memory_plan": "memory_plan.json",
+    "serving_framework_contract": "serving_framework_contract.json",
     "kv_policy_contract": {
       "prefix_cache_enabled": true,
       "eviction_policy": "lru_finished_prefix",
       "admission_policy": "prefix_aware_capacity"
-    }
+    },
+    "serving_policy_targets": [
+      "vllm_style_continuous_batching",
+      "sglang_style_request_decode_scheduler",
+      "triton_server_style_dynamic_batching",
+      "tensorrt_style_engine_profile_dispatch"
+    ],
+    "metrics_targets": [
+      "TTFT",
+      "TPOT",
+      "latency_p95",
+      "throughput_tokens_per_s",
+      "queue_wait_p95",
+      "kv_cache_pressure",
+      "slo_violation_rate"
+    ]
   }
 }

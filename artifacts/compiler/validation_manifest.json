@@ -10,6 +10,7 @@
     "scheduling_plan.json",
     "artifact_provenance.json",
     "candidate_execution_plans.json",
+    "serving_framework_contract.json",
     "memory_timeline.json",
     "validation_manifest.json"
   ],
@@ -23,6 +24,7 @@
     "scheduling_queues_present",
     "artifact_provenance_present",
     "candidate_plans_present",
+    "serving_framework_contract_present",
     "memory_timeline_present"
   ],
   "demo_contract": {
@@ -34,6 +36,7 @@
       "scheduling_plan.json",
       "artifact_provenance.json",
       "candidate_execution_plans.json",
+      "serving_framework_contract.json",
       "memory_timeline.json",
       "validation_manifest.json"
     ],

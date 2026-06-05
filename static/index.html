@@ -621,12 +621,14 @@
         live_prefix_cache: data.live.prefix_cache,
         runtime_profile: data.runtime_artifacts.runtime_profile,
         prefill_decode_benchmark: data.runtime_artifacts.prefill_decode,
+        serving_framework_report: data.runtime_artifacts.serving_framework_report,
         rmsnorm_benchmark: data.runtime_artifacts.rmsnorm_benchmark,
         real_llama_profile: data.runtime_artifacts.real_llama_profile,
       }, null, 2);
       document.getElementById("validation-json").textContent = JSON.stringify({
         llm_validation_report: data.validation.llm_validation_report,
         slo_report: data.validation.slo_report,
+        serving_framework_validation_report: data.validation.serving_framework_validation_report,
       }, null, 2);
     }
 
@@ -657,6 +659,7 @@
         runtime: JSON.stringify({
           execution_plan: data.compiler.mlir_execution_plan,
           rmsnorm_execution_plan: data.compiler.rmsnorm_execution_plan,
+          serving_framework_contract: data.compiler.serving_framework_contract,
           kv_cache_plan: data.compiler.kv_cache_plan,
           live_prefix_cache: data.live.prefix_cache
         }, null, 2),

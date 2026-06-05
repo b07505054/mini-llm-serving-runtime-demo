@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1",
+  "artifact_type": "serving_framework_contract",
+  "model": "tiny-gpt",
+  "positioning": "Compiler-produced serving metadata for a runtime layer modeled after vLLM, SGLang, Triton Server, and TensorRT serving decisions.",
+  "framework_targets": {
+    "vllm": {
+      "enabled_decisions": [
+        "continuous_batching",
+        "prefill_decode_split",
+        "paged_kv_cache_pressure_tracking"
+      ],
+      "runtime_fields": [
+        "scheduler",
+        "decode_step_tokens",
+        "block_size_tokens",
+        "paged_attention_enabled",
+        "block_table_enabled"
+      ]
+    },
+    "sglang": {
+      "enabled_decisions": [
+        "request_queue_decode_scheduling",
+        "prefix_cache_reuse",
+        "structured_serving_trace"
+      ],
+      "runtime_fields": [
+        "queues",
+        "prefix_cache_enabled",
+        "prefix_cache_policy",
+        "eviction_policy"
+      ]
+    },
+    "triton_server": {
+      "enabled_decisions": [
+        "dynamic_batching_comparison",
+        "backend_instance_routing",
+        "per_backend_metrics"
+      ],
+      "runtime_fields": [
+        "max_batch_size",
+        "candidate_execution_plans",
+        "backend_placement",
+        "throughput_tokens_per_s"
+      ]
+    },
+    "tensorrt": {
+      "enabled_decisions": [
+        "engine_candidate_selection",
+        "optimization_profile_shape_metadata",
+        "execution_context_memory_budget"
+      ],
+      "runtime_fields": [
+        "preferred_backend",
+        "memory_budget_mb",
+        "batch_size",
+        "prefill_tokens_per_request",
+        "decode_tokens_per_request"
+      ]
+    }
+  },
+  "serving_policy": {
+    "scheduler": "continuous_batching",
+    "max_batch_size": 8,
+    "decode_step_tokens": 1,
+    "preemption_enabled": false,
+    "cache_policy": {
+      "kv_cache": "paged",
+      "prefix_cache_enabled": true,
+      "eviction_policy": "lru_finished_prefix",
+      "admission_policy": "prefix_aware_capacity"
+    }
+  },
+  "selection_contract": {
+    "selected_backend_values": [
+      "pytorch",
+      "tensorrt",
+      "cuda",
+      "triton",
+      "tvm",
+      "executorch",
+      "metal",
+      "cpu"
+    ],
+    "selection_reason_values": [
+      "profile_guided_backend_selection",
+      "lowest_p95_latency_under_memory_budget",
+      "memory_pressure_aware_admission",
+      "kernel_profile_fastest_for_shape_bucket"
+    ],
+    "required_metrics": [
+      "TTFT",
+      "TPOT",
+      "latency_p95",
+      "throughput_tokens_per_s",
+      "queue_wait_p95",
+      "kv_cache_pressure",
+      "slo_violation_rate"
+    ]
+  }
+}

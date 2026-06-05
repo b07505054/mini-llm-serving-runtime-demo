@@ -1,17 +1,24 @@
 {
   "model": "tiny-gpt",
-  "scheduler_policy": "prefill-first-with-batched-decode",
+  "scheduler_policy": "cost_aware_memory_pressure",
   "events": [
     {
-      "time_ms": 0.0,
+      "time_ms": 10.231,
       "event": "request_admitted",
       "request_id": "req-001",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 1.231
+      "prompt_tokens": 64,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 0.0,
+      "needed_blocks": 10,
+      "available_blocks": 512,
+      "memory_pressure": 0.0,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "fits_kv_budget",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 1.231,
+      "time_ms": 10.231,
       "event": "prefill_start",
       "request_id": "req-001",
       "backend": "gpu",
@@ -25,78 +32,212 @@
         6,
         7,
         8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19
+        9
       ]
     },
     {
-      "time_ms": 67.935,
+      "time_ms": 39.028,
       "event": "prefill_end",
       "request_id": "req-001",
-      "prefill_latency_ms": 66.704
+      "prefill_latency_ms": 28.797
     },
     {
-      "time_ms": 67.935,
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-002",
+      "prompt_tokens": 128,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 62.374,
+      "needed_blocks": 10,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-004",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 42.099,
+      "needed_blocks": 6,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-005",
+      "prompt_tokens": 128,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 40.6,
+      "needed_blocks": 10,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-008",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 64,
+      "queue_wait_ms": 15.142,
+      "needed_blocks": 8,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-009",
+      "prompt_tokens": 256,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 3.972,
+      "needed_blocks": 22,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-010",
+      "prompt_tokens": 256,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 1.484,
+      "needed_blocks": 18,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
+      "event": "request_admitted",
+      "request_id": "req-011",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 0.0,
+      "needed_blocks": 10,
+      "memory_pressure": 0.1836,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 76.523,
       "event": "decode_step",
       "request_id": "req-001",
       "step": 0,
       "active_requests": [
-        "req-001"
+        "req-001",
+        "req-002",
+        "req-004",
+        "req-005",
+        "req-008",
+        "req-009",
+        "req-010",
+        "req-011"
       ],
-      "batch_size": 1,
+      "batch_size": 8,
       "backend": "gpu"
     },
     {
-      "time_ms": 259.774,
+      "time_ms": 123.337,
       "event": "decode_step",
       "request_id": "req-001",
       "step": 16,
       "active_requests": [
-        "req-001"
+        "req-001",
+        "req-002",
+        "req-004",
+        "req-005",
+        "req-008",
+        "req-009",
+        "req-010",
+        "req-011"
       ],
-      "batch_size": 1,
+      "batch_size": 8,
       "backend": "gpu"
     },
     {
-      "time_ms": 450.088,
+      "time_ms": 169.565,
       "event": "decode_step",
       "request_id": "req-001",
       "step": 32,
       "active_requests": [
-        "req-001"
+        "req-001",
+        "req-008",
+        "req-009",
+        "req-011"
       ],
-      "batch_size": 1,
+      "batch_size": 4,
       "backend": "gpu"
     },
     {
-      "time_ms": 639.575,
+      "time_ms": 206.635,
       "event": "decode_step",
       "request_id": "req-001",
       "step": 48,
       "active_requests": [
-        "req-001"
+        "req-001",
+        "req-008",
+        "req-009",
+        "req-011"
       ],
-      "batch_size": 1,
+      "batch_size": 4,
       "backend": "gpu"
     },
     {
-      "time_ms": 835.366,
-      "event": "tokens_generated",
+      "time_ms": 245.784,
+      "event": "decode_step",
       "request_id": "req-001",
-      "tokens_generated": 64,
-      "decode_latency_ms": 767.431
+      "step": 64,
+      "active_requests": [
+        "req-001",
+        "req-009",
+        "req-011"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
     },
     {
-      "time_ms": 835.366,
+      "time_ms": 282.179,
+      "event": "decode_step",
+      "request_id": "req-001",
+      "step": 80,
+      "active_requests": [
+        "req-001",
+        "req-009",
+        "req-011"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 317.285,
+      "event": "tokens_generated",
+      "request_id": "req-001",
+      "tokens_generated": 96,
+      "decode_latency_ms": 240.762
+    },
+    {
+      "time_ms": 317.285,
       "event": "kv_blocks_freed",
       "request_id": "req-001",
       "freed_blocks": [
@@ -109,269 +250,21 @@
         6,
         7,
         8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19
+        9
       ]
     },
     {
-      "time_ms": 835.366,
-      "event": "request_admitted",
-      "request_id": "req-002",
-      "prompt_tokens": 64,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 17.448
-    },
-    {
-      "time_ms": 852.814,
-      "event": "prefill_start",
-      "request_id": "req-002",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5
-      ]
-    },
-    {
-      "time_ms": 890.145,
-      "event": "prefill_end",
-      "request_id": "req-002",
-      "prefill_latency_ms": 37.331
-    },
-    {
-      "time_ms": 890.145,
-      "event": "decode_step",
-      "request_id": "req-002",
-      "step": 0,
-      "active_requests": [
-        "req-002"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 1092.032,
-      "event": "decode_step",
-      "request_id": "req-002",
-      "step": 16,
-      "active_requests": [
-        "req-002"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 1287.531,
+      "time_ms": 317.285,
       "event": "tokens_generated",
       "request_id": "req-002",
       "tokens_generated": 32,
-      "decode_latency_ms": 397.386
+      "decode_latency_ms": 240.762
     },
     {
-      "time_ms": 1287.531,
+      "time_ms": 317.285,
       "event": "kv_blocks_freed",
       "request_id": "req-002",
       "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5
-      ]
-    },
-    {
-      "time_ms": 1287.531,
-      "event": "request_admitted",
-      "request_id": "req-003",
-      "prompt_tokens": 128,
-      "generated_tokens_target": 128,
-      "queue_wait_ms": 2.334
-    },
-    {
-      "time_ms": 1289.865,
-      "event": "prefill_start",
-      "request_id": "req-003",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ]
-    },
-    {
-      "time_ms": 1336.827,
-      "event": "prefill_end",
-      "request_id": "req-003",
-      "prefill_latency_ms": 46.962
-    },
-    {
-      "time_ms": 1336.827,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 0,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 1529.323,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 16,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 1742.453,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 32,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 1928.438,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 48,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 2122.824,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 64,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 2324.215,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 80,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 2543.964,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 96,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 2739.653,
-      "event": "decode_step",
-      "request_id": "req-003",
-      "step": 112,
-      "active_requests": [
-        "req-003"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 2939.364,
-      "event": "tokens_generated",
-      "request_id": "req-003",
-      "tokens_generated": 128,
-      "decode_latency_ms": 1602.537
-    },
-    {
-      "time_ms": 2939.364,
-      "event": "kv_blocks_freed",
-      "request_id": "req-003",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ]
-    },
-    {
-      "time_ms": 2939.364,
-      "event": "request_admitted",
-      "request_id": "req-004",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 4.734
-    },
-    {
-      "time_ms": 2944.098,
-      "event": "prefill_start",
-      "request_id": "req-004",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
         10,
         11,
         12,
@@ -381,13 +274,41 @@
         16,
         17,
         18,
-        19,
+        19
+      ]
+    },
+    {
+      "time_ms": 317.285,
+      "event": "tokens_generated",
+      "request_id": "req-004",
+      "tokens_generated": 32,
+      "decode_latency_ms": 240.762
+    },
+    {
+      "time_ms": 317.285,
+      "event": "kv_blocks_freed",
+      "request_id": "req-004",
+      "freed_blocks": [
         20,
         21,
         22,
         23,
         24,
-        25,
+        25
+      ]
+    },
+    {
+      "time_ms": 317.285,
+      "event": "tokens_generated",
+      "request_id": "req-005",
+      "tokens_generated": 32,
+      "decode_latency_ms": 240.762
+    },
+    {
+      "time_ms": 317.285,
+      "event": "kv_blocks_freed",
+      "request_id": "req-005",
+      "freed_blocks": [
         26,
         27,
         28,
@@ -397,103 +318,144 @@
         32,
         33,
         34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
+        35
       ]
     },
     {
-      "time_ms": 3128.488,
-      "event": "prefill_end",
-      "request_id": "req-004",
-      "prefill_latency_ms": 184.39
-    },
-    {
-      "time_ms": 3128.488,
-      "event": "decode_step",
-      "request_id": "req-004",
-      "step": 0,
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 3323.859,
-      "event": "decode_step",
-      "request_id": "req-004",
-      "step": 16,
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 3516.862,
-      "event": "decode_step",
-      "request_id": "req-004",
-      "step": 32,
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 3706.528,
-      "event": "decode_step",
-      "request_id": "req-004",
-      "step": 48,
-      "active_requests": [
-        "req-004"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 3894.285,
+      "time_ms": 317.285,
       "event": "tokens_generated",
-      "request_id": "req-004",
+      "request_id": "req-008",
       "tokens_generated": 64,
-      "decode_latency_ms": 765.797
+      "decode_latency_ms": 240.762
     },
     {
-      "time_ms": 3894.285,
+      "time_ms": 317.285,
       "event": "kv_blocks_freed",
-      "request_id": "req-004",
+      "request_id": "req-008",
       "freed_blocks": [
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43
+      ]
+    },
+    {
+      "time_ms": 317.285,
+      "event": "tokens_generated",
+      "request_id": "req-009",
+      "tokens_generated": 96,
+      "decode_latency_ms": 240.762
+    },
+    {
+      "time_ms": 317.285,
+      "event": "kv_blocks_freed",
+      "request_id": "req-009",
+      "freed_blocks": [
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ]
+    },
+    {
+      "time_ms": 317.285,
+      "event": "tokens_generated",
+      "request_id": "req-010",
+      "tokens_generated": 32,
+      "decode_latency_ms": 240.762
+    },
+    {
+      "time_ms": 317.285,
+      "event": "kv_blocks_freed",
+      "request_id": "req-010",
+      "freed_blocks": [
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83
+      ]
+    },
+    {
+      "time_ms": 317.285,
+      "event": "tokens_generated",
+      "request_id": "req-011",
+      "tokens_generated": 96,
+      "decode_latency_ms": 240.762
+    },
+    {
+      "time_ms": 317.285,
+      "event": "kv_blocks_freed",
+      "request_id": "req-011",
+      "freed_blocks": [
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93
+      ]
+    },
+    {
+      "time_ms": 317.285,
+      "event": "request_admitted",
+      "request_id": "req-003",
+      "prompt_tokens": 1024,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 292.309,
+      "needed_blocks": 66,
+      "available_blocks": 512,
+      "memory_pressure": 0.0,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "fits_kv_budget",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 317.285,
+      "event": "prefill_start",
+      "request_id": "req-003",
+      "backend": "gpu",
+      "allocated_blocks": [
         0,
         1,
         2,
@@ -559,179 +521,512 @@
         62,
         63,
         64,
-        65,
-        66,
-        67
+        65
       ]
     },
     {
-      "time_ms": 3894.285,
-      "event": "request_admitted",
-      "request_id": "req-005",
-      "prompt_tokens": 128,
-      "generated_tokens_target": 128,
-      "queue_wait_ms": 1.094
-    },
-    {
-      "time_ms": 3895.379,
-      "event": "prefill_start",
-      "request_id": "req-005",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ]
-    },
-    {
-      "time_ms": 3937.213,
+      "time_ms": 487.266,
       "event": "prefill_end",
-      "request_id": "req-005",
-      "prefill_latency_ms": 41.834
+      "request_id": "req-003",
+      "prefill_latency_ms": 169.981
     },
     {
-      "time_ms": 3937.213,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 0,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 4163.212,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 16,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 4347.291,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 32,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 4545.067,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 48,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 4732.366,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 64,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 4913.037,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 80,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 5104.866,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 96,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 5303.406,
-      "event": "decode_step",
-      "request_id": "req-005",
-      "step": 112,
-      "active_requests": [
-        "req-005"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 5503.224,
-      "event": "tokens_generated",
-      "request_id": "req-005",
-      "tokens_generated": 128,
-      "decode_latency_ms": 1566.011
-    },
-    {
-      "time_ms": 5503.224,
-      "event": "kv_blocks_freed",
-      "request_id": "req-005",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ]
-    },
-    {
-      "time_ms": 5503.224,
+      "time_ms": 487.266,
       "event": "request_admitted",
       "request_id": "req-006",
+      "prompt_tokens": 1024,
+      "generated_tokens_target": 128,
+      "queue_wait_ms": 442.363,
+      "needed_blocks": 72,
+      "memory_pressure": 0.543,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 487.266,
+      "event": "request_admitted",
+      "request_id": "req-007",
+      "prompt_tokens": 1024,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 438.836,
+      "needed_blocks": 70,
+      "memory_pressure": 0.543,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 487.266,
+      "event": "request_admitted",
+      "request_id": "req-012",
+      "prompt_tokens": 1024,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 397.183,
+      "needed_blocks": 70,
+      "memory_pressure": 0.543,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 487.266,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 0,
+      "active_requests": [
+        "req-003",
+        "req-006",
+        "req-007",
+        "req-012"
+      ],
+      "batch_size": 4,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 531.148,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 16,
+      "active_requests": [
+        "req-003",
+        "req-006",
+        "req-007",
+        "req-012"
+      ],
+      "batch_size": 4,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 578.11,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 32,
+      "active_requests": [
+        "req-006",
+        "req-007",
+        "req-012"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 620.32,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 48,
+      "active_requests": [
+        "req-006",
+        "req-007",
+        "req-012"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 662.59,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 64,
+      "active_requests": [
+        "req-006",
+        "req-007",
+        "req-012"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 706.421,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 80,
+      "active_requests": [
+        "req-006",
+        "req-007",
+        "req-012"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 748.825,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 96,
+      "active_requests": [
+        "req-006"
+      ],
+      "batch_size": 1,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 786.606,
+      "event": "decode_step",
+      "request_id": "req-003",
+      "step": 112,
+      "active_requests": [
+        "req-006"
+      ],
+      "batch_size": 1,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 825.69,
+      "event": "tokens_generated",
+      "request_id": "req-003",
+      "tokens_generated": 32,
+      "decode_latency_ms": 338.424
+    },
+    {
+      "time_ms": 825.69,
+      "event": "kv_blocks_freed",
+      "request_id": "req-003",
+      "freed_blocks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ]
+    },
+    {
+      "time_ms": 825.69,
+      "event": "tokens_generated",
+      "request_id": "req-006",
+      "tokens_generated": 128,
+      "decode_latency_ms": 338.424
+    },
+    {
+      "time_ms": 825.69,
+      "event": "kv_blocks_freed",
+      "request_id": "req-006",
+      "freed_blocks": [
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137
+      ]
+    },
+    {
+      "time_ms": 825.69,
+      "event": "tokens_generated",
+      "request_id": "req-007",
+      "tokens_generated": 96,
+      "decode_latency_ms": 338.424
+    },
+    {
+      "time_ms": 825.69,
+      "event": "kv_blocks_freed",
+      "request_id": "req-007",
+      "freed_blocks": [
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207
+      ]
+    },
+    {
+      "time_ms": 825.69,
+      "event": "tokens_generated",
+      "request_id": "req-012",
+      "tokens_generated": 96,
+      "decode_latency_ms": 338.424
+    },
+    {
+      "time_ms": 825.69,
+      "event": "kv_blocks_freed",
+      "request_id": "req-012",
+      "freed_blocks": [
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277
+      ]
+    },
+    {
+      "time_ms": 825.69,
+      "event": "request_admitted",
+      "request_id": "req-013",
       "prompt_tokens": 512,
       "generated_tokens_target": 32,
-      "queue_wait_ms": 7.917
+      "queue_wait_ms": 722.693,
+      "needed_blocks": 34,
+      "available_blocks": 512,
+      "memory_pressure": 0.0,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "fits_kv_budget",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 5511.141,
+      "time_ms": 825.69,
       "event": "prefill_start",
-      "request_id": "req-006",
+      "request_id": "req-013",
       "backend": "gpu",
       "allocated_blocks": [
         0,
@@ -771,637 +1066,1091 @@
       ]
     },
     {
-      "time_ms": 5613.399,
+      "time_ms": 920.545,
       "event": "prefill_end",
-      "request_id": "req-006",
-      "prefill_latency_ms": 102.258
+      "request_id": "req-013",
+      "prefill_latency_ms": 94.855
     },
     {
-      "time_ms": 5613.399,
-      "event": "decode_step",
-      "request_id": "req-006",
-      "step": 0,
-      "active_requests": [
-        "req-006"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 5816.43,
-      "event": "decode_step",
-      "request_id": "req-006",
-      "step": 16,
-      "active_requests": [
-        "req-006"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 6010.009,
-      "event": "tokens_generated",
-      "request_id": "req-006",
-      "tokens_generated": 32,
-      "decode_latency_ms": 396.61
-    },
-    {
-      "time_ms": 6010.009,
-      "event": "kv_blocks_freed",
-      "request_id": "req-006",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33
-      ]
-    },
-    {
-      "time_ms": 6010.009,
+      "time_ms": 920.545,
       "event": "request_admitted",
-      "request_id": "req-007",
-      "prompt_tokens": 128,
+      "request_id": "req-014",
+      "prompt_tokens": 512,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 801.978,
+      "needed_blocks": 34,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 920.545,
+      "event": "request_admitted",
+      "request_id": "req-015",
+      "prompt_tokens": 1024,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 793.146,
+      "needed_blocks": 70,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 920.545,
+      "event": "request_admitted",
+      "request_id": "req-016",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 783.908,
+      "needed_blocks": 6,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 920.545,
+      "event": "request_admitted",
+      "request_id": "req-017",
+      "prompt_tokens": 256,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 773.328,
+      "needed_blocks": 18,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 920.545,
+      "event": "request_admitted",
+      "request_id": "req-018",
+      "prompt_tokens": 64,
       "generated_tokens_target": 128,
-      "queue_wait_ms": 8.897
+      "queue_wait_ms": 759.643,
+      "needed_blocks": 12,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 6018.906,
-      "event": "prefill_start",
-      "request_id": "req-007",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ]
-    },
-    {
-      "time_ms": 6064.811,
-      "event": "prefill_end",
-      "request_id": "req-007",
-      "prefill_latency_ms": 45.905
-    },
-    {
-      "time_ms": 6064.811,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 0,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 6260.766,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 16,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 6438.907,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 32,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 6629.001,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 48,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 6824.272,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 64,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 7020.059,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 80,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 7224.75,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 96,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 7421.298,
-      "event": "decode_step",
-      "request_id": "req-007",
-      "step": 112,
-      "active_requests": [
-        "req-007"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 7620.014,
-      "event": "tokens_generated",
-      "request_id": "req-007",
-      "tokens_generated": 128,
-      "decode_latency_ms": 1555.203
-    },
-    {
-      "time_ms": 7620.014,
-      "event": "kv_blocks_freed",
-      "request_id": "req-007",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15
-      ]
-    },
-    {
-      "time_ms": 7620.014,
+      "time_ms": 920.545,
       "event": "request_admitted",
-      "request_id": "req-008",
+      "request_id": "req-019",
       "prompt_tokens": 256,
       "generated_tokens_target": 64,
-      "queue_wait_ms": 17.946
+      "queue_wait_ms": 755.195,
+      "needed_blocks": 20,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 7637.96,
-      "event": "prefill_start",
-      "request_id": "req-008",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19
-      ]
-    },
-    {
-      "time_ms": 7701.127,
-      "event": "prefill_end",
-      "request_id": "req-008",
-      "prefill_latency_ms": 63.167
-    },
-    {
-      "time_ms": 7701.127,
-      "event": "decode_step",
-      "request_id": "req-008",
-      "step": 0,
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 7884.137,
-      "event": "decode_step",
-      "request_id": "req-008",
-      "step": 16,
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 8076.307,
-      "event": "decode_step",
-      "request_id": "req-008",
-      "step": 32,
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 8268.379,
-      "event": "decode_step",
-      "request_id": "req-008",
-      "step": 48,
-      "active_requests": [
-        "req-008"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 8459.632,
-      "event": "tokens_generated",
-      "request_id": "req-008",
-      "tokens_generated": 64,
-      "decode_latency_ms": 758.505
-    },
-    {
-      "time_ms": 8459.632,
-      "event": "kv_blocks_freed",
-      "request_id": "req-008",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19
-      ]
-    },
-    {
-      "time_ms": 8459.632,
+      "time_ms": 920.545,
       "event": "request_admitted",
-      "request_id": "req-009",
-      "prompt_tokens": 64,
-      "generated_tokens_target": 96,
-      "queue_wait_ms": 13.124
-    },
-    {
-      "time_ms": 8472.756,
-      "event": "prefill_start",
-      "request_id": "req-009",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ]
-    },
-    {
-      "time_ms": 8509.376,
-      "event": "prefill_end",
-      "request_id": "req-009",
-      "prefill_latency_ms": 36.62
-    },
-    {
-      "time_ms": 8509.376,
-      "event": "decode_step",
-      "request_id": "req-009",
-      "step": 0,
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 8718.113,
-      "event": "decode_step",
-      "request_id": "req-009",
-      "step": 16,
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 8920.164,
-      "event": "decode_step",
-      "request_id": "req-009",
-      "step": 32,
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 9122.119,
-      "event": "decode_step",
-      "request_id": "req-009",
-      "step": 48,
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 9301.979,
-      "event": "decode_step",
-      "request_id": "req-009",
-      "step": 64,
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 9491.475,
-      "event": "decode_step",
-      "request_id": "req-009",
-      "step": 80,
-      "active_requests": [
-        "req-009"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 9698.156,
-      "event": "tokens_generated",
-      "request_id": "req-009",
-      "tokens_generated": 96,
-      "decode_latency_ms": 1188.78
-    },
-    {
-      "time_ms": 9698.156,
-      "event": "kv_blocks_freed",
-      "request_id": "req-009",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ]
-    },
-    {
-      "time_ms": 9698.156,
-      "event": "request_admitted",
-      "request_id": "req-010",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 96,
-      "queue_wait_ms": 17.87
-    },
-    {
-      "time_ms": 9716.026,
-      "event": "prefill_start",
-      "request_id": "req-010",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21
-      ]
-    },
-    {
-      "time_ms": 9778.068,
-      "event": "prefill_end",
-      "request_id": "req-010",
-      "prefill_latency_ms": 62.042
-    },
-    {
-      "time_ms": 9778.068,
-      "event": "decode_step",
-      "request_id": "req-010",
-      "step": 0,
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 9984.823,
-      "event": "decode_step",
-      "request_id": "req-010",
-      "step": 16,
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 10185.722,
-      "event": "decode_step",
-      "request_id": "req-010",
-      "step": 32,
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 10401.157,
-      "event": "decode_step",
-      "request_id": "req-010",
-      "step": 48,
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 10611.373,
-      "event": "decode_step",
-      "request_id": "req-010",
-      "step": 64,
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 10807.219,
-      "event": "decode_step",
-      "request_id": "req-010",
-      "step": 80,
-      "active_requests": [
-        "req-010"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 10998.752,
-      "event": "tokens_generated",
-      "request_id": "req-010",
-      "tokens_generated": 96,
-      "decode_latency_ms": 1220.684
-    },
-    {
-      "time_ms": 10998.752,
-      "event": "kv_blocks_freed",
-      "request_id": "req-010",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21
-      ]
-    },
-    {
-      "time_ms": 10998.752,
-      "event": "request_admitted",
-      "request_id": "req-011",
+      "request_id": "req-020",
       "prompt_tokens": 128,
       "generated_tokens_target": 96,
-      "queue_wait_ms": 1.969
+      "queue_wait_ms": 749.272,
+      "needed_blocks": 14,
+      "memory_pressure": 0.4062,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
     },
     {
-      "time_ms": 11000.721,
+      "time_ms": 920.545,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 0,
+      "active_requests": [
+        "req-013",
+        "req-014",
+        "req-015",
+        "req-016",
+        "req-017",
+        "req-018",
+        "req-019",
+        "req-020"
+      ],
+      "batch_size": 8,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 971.118,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 16,
+      "active_requests": [
+        "req-013",
+        "req-014",
+        "req-015",
+        "req-016",
+        "req-017",
+        "req-018",
+        "req-019",
+        "req-020"
+      ],
+      "batch_size": 8,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1019.362,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 32,
+      "active_requests": [
+        "req-015",
+        "req-018",
+        "req-019",
+        "req-020"
+      ],
+      "batch_size": 4,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1060.221,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 48,
+      "active_requests": [
+        "req-015",
+        "req-018",
+        "req-019",
+        "req-020"
+      ],
+      "batch_size": 4,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1101.322,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 64,
+      "active_requests": [
+        "req-015",
+        "req-018",
+        "req-020"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1137.766,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 80,
+      "active_requests": [
+        "req-015",
+        "req-018",
+        "req-020"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1175.447,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 96,
+      "active_requests": [
+        "req-018"
+      ],
+      "batch_size": 1,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1208.504,
+      "event": "decode_step",
+      "request_id": "req-013",
+      "step": 112,
+      "active_requests": [
+        "req-018"
+      ],
+      "batch_size": 1,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-013",
+      "tokens_generated": 32,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-013",
+      "freed_blocks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-014",
+      "tokens_generated": 32,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-014",
+      "freed_blocks": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-015",
+      "tokens_generated": 96,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-015",
+      "freed_blocks": [
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-016",
+      "tokens_generated": 32,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-016",
+      "freed_blocks": [
+        138,
+        139,
+        140,
+        141,
+        142,
+        143
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-017",
+      "tokens_generated": 32,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-017",
+      "freed_blocks": [
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-018",
+      "tokens_generated": 128,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-018",
+      "freed_blocks": [
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-019",
+      "tokens_generated": 64,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-019",
+      "freed_blocks": [
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "tokens_generated",
+      "request_id": "req-020",
+      "tokens_generated": 96,
+      "decode_latency_ms": 320.519
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "kv_blocks_freed",
+      "request_id": "req-020",
+      "freed_blocks": [
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207
+      ]
+    },
+    {
+      "time_ms": 1241.064,
+      "event": "request_admitted",
+      "request_id": "req-021",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 64,
+      "queue_wait_ms": 1058.562,
+      "needed_blocks": 8,
+      "available_blocks": 512,
+      "memory_pressure": 0.0,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "fits_kv_budget",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1241.064,
       "event": "prefill_start",
-      "request_id": "req-011",
+      "request_id": "req-021",
+      "backend": "gpu",
+      "allocated_blocks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "prefill_end",
+      "request_id": "req-021",
+      "prefill_latency_ms": 30.475
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-022",
+      "prompt_tokens": 128,
+      "generated_tokens_target": 64,
+      "queue_wait_ms": 1080.491,
+      "needed_blocks": 12,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-023",
+      "prompt_tokens": 256,
+      "generated_tokens_target": 64,
+      "queue_wait_ms": 1073.095,
+      "needed_blocks": 20,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-024",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 64,
+      "queue_wait_ms": 1062.141,
+      "needed_blocks": 8,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-025",
+      "prompt_tokens": 256,
+      "generated_tokens_target": 128,
+      "queue_wait_ms": 1048.992,
+      "needed_blocks": 24,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-026",
+      "prompt_tokens": 128,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 1044.708,
+      "needed_blocks": 14,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-027",
+      "prompt_tokens": 512,
+      "generated_tokens_target": 128,
+      "queue_wait_ms": 1041.306,
+      "needed_blocks": 40,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "request_admitted",
+      "request_id": "req-028",
+      "prompt_tokens": 512,
+      "generated_tokens_target": 64,
+      "queue_wait_ms": 1027.151,
+      "needed_blocks": 36,
+      "memory_pressure": 0.3164,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1271.539,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 0,
+      "active_requests": [
+        "req-021",
+        "req-022",
+        "req-023",
+        "req-024",
+        "req-025",
+        "req-026",
+        "req-027",
+        "req-028"
+      ],
+      "batch_size": 8,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1319.132,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 16,
+      "active_requests": [
+        "req-021",
+        "req-022",
+        "req-023",
+        "req-024",
+        "req-025",
+        "req-026",
+        "req-027",
+        "req-028"
+      ],
+      "batch_size": 8,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1367.936,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 32,
+      "active_requests": [
+        "req-021",
+        "req-022",
+        "req-023",
+        "req-024",
+        "req-025",
+        "req-026",
+        "req-027",
+        "req-028"
+      ],
+      "batch_size": 8,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1415.16,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 48,
+      "active_requests": [
+        "req-021",
+        "req-022",
+        "req-023",
+        "req-024",
+        "req-025",
+        "req-026",
+        "req-027",
+        "req-028"
+      ],
+      "batch_size": 8,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1464.696,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 64,
+      "active_requests": [
+        "req-025",
+        "req-026",
+        "req-027"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1502.246,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 80,
+      "active_requests": [
+        "req-025",
+        "req-026",
+        "req-027"
+      ],
+      "batch_size": 3,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1539.756,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 96,
+      "active_requests": [
+        "req-025",
+        "req-027"
+      ],
+      "batch_size": 2,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1574.31,
+      "event": "decode_step",
+      "request_id": "req-021",
+      "step": 112,
+      "active_requests": [
+        "req-025",
+        "req-027"
+      ],
+      "batch_size": 2,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-021",
+      "tokens_generated": 64,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-021",
+      "freed_blocks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-022",
+      "tokens_generated": 64,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-022",
+      "freed_blocks": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-023",
+      "tokens_generated": 64,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-023",
+      "freed_blocks": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-024",
+      "tokens_generated": 64,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-024",
+      "freed_blocks": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-025",
+      "tokens_generated": 128,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-025",
+      "freed_blocks": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-026",
+      "tokens_generated": 96,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-026",
+      "freed_blocks": [
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-027",
+      "tokens_generated": 128,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-027",
+      "freed_blocks": [
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "tokens_generated",
+      "request_id": "req-028",
+      "tokens_generated": 64,
+      "decode_latency_ms": 337.613
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "kv_blocks_freed",
+      "request_id": "req-028",
+      "freed_blocks": [
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161
+      ]
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "request_admitted",
+      "request_id": "req-029",
+      "prompt_tokens": 128,
+      "generated_tokens_target": 96,
+      "queue_wait_ms": 1360.526,
+      "needed_blocks": 14,
+      "available_blocks": 512,
+      "memory_pressure": 0.0,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "fits_kv_budget",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1609.152,
+      "event": "prefill_start",
+      "request_id": "req-029",
       "backend": "gpu",
       "allocated_blocks": [
         0,
@@ -1421,88 +2170,168 @@
       ]
     },
     {
-      "time_ms": 11046.046,
+      "time_ms": 1647.468,
       "event": "prefill_end",
-      "request_id": "req-011",
-      "prefill_latency_ms": 45.325
+      "request_id": "req-029",
+      "prefill_latency_ms": 38.316
     },
     {
-      "time_ms": 11046.046,
+      "time_ms": 1647.468,
+      "event": "request_admitted",
+      "request_id": "req-030",
+      "prompt_tokens": 512,
+      "generated_tokens_target": 128,
+      "queue_wait_ms": 1386.89,
+      "needed_blocks": 40,
+      "memory_pressure": 0.1484,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1647.468,
+      "event": "request_admitted",
+      "request_id": "req-031",
+      "prompt_tokens": 128,
+      "generated_tokens_target": 128,
+      "queue_wait_ms": 1381.098,
+      "needed_blocks": 16,
+      "memory_pressure": 0.1484,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1647.468,
+      "event": "request_admitted",
+      "request_id": "req-032",
+      "prompt_tokens": 64,
+      "generated_tokens_target": 32,
+      "queue_wait_ms": 1379.643,
+      "needed_blocks": 6,
+      "memory_pressure": 0.1484,
+      "pressure_level": "low",
+      "admission_action": "admit",
+      "admission_reason": "batched_with_decode_peer",
+      "effective_batch_cap": 8
+    },
+    {
+      "time_ms": 1647.468,
       "event": "decode_step",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "step": 0,
       "active_requests": [
-        "req-011"
+        "req-029",
+        "req-030",
+        "req-031",
+        "req-032"
       ],
-      "batch_size": 1,
+      "batch_size": 4,
       "backend": "gpu"
     },
     {
-      "time_ms": 11238.116,
+      "time_ms": 1687.387,
       "event": "decode_step",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "step": 16,
       "active_requests": [
-        "req-011"
+        "req-029",
+        "req-030",
+        "req-031",
+        "req-032"
       ],
-      "batch_size": 1,
+      "batch_size": 4,
       "backend": "gpu"
     },
     {
-      "time_ms": 11415.001,
+      "time_ms": 1725.221,
       "event": "decode_step",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "step": 32,
       "active_requests": [
-        "req-011"
+        "req-029",
+        "req-030",
+        "req-031"
       ],
-      "batch_size": 1,
+      "batch_size": 3,
       "backend": "gpu"
     },
     {
-      "time_ms": 11602.296,
+      "time_ms": 1762.938,
       "event": "decode_step",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "step": 48,
       "active_requests": [
-        "req-011"
+        "req-029",
+        "req-030",
+        "req-031"
       ],
-      "batch_size": 1,
+      "batch_size": 3,
       "backend": "gpu"
     },
     {
-      "time_ms": 11795.953,
+      "time_ms": 1798.538,
       "event": "decode_step",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "step": 64,
       "active_requests": [
-        "req-011"
+        "req-029",
+        "req-030",
+        "req-031"
       ],
-      "batch_size": 1,
+      "batch_size": 3,
       "backend": "gpu"
     },
     {
-      "time_ms": 11998.587,
+      "time_ms": 1835.535,
       "event": "decode_step",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "step": 80,
       "active_requests": [
-        "req-011"
+        "req-029",
+        "req-030",
+        "req-031"
       ],
-      "batch_size": 1,
+      "batch_size": 3,
       "backend": "gpu"
     },
     {
-      "time_ms": 12186.434,
-      "event": "tokens_generated",
-      "request_id": "req-011",
-      "tokens_generated": 96,
-      "decode_latency_ms": 1140.388
+      "time_ms": 1871.923,
+      "event": "decode_step",
+      "request_id": "req-029",
+      "step": 96,
+      "active_requests": [
+        "req-030",
+        "req-031"
+      ],
+      "batch_size": 2,
+      "backend": "gpu"
     },
     {
-      "time_ms": 12186.434,
+      "time_ms": 1906.307,
+      "event": "decode_step",
+      "request_id": "req-029",
+      "step": 112,
+      "active_requests": [
+        "req-030",
+        "req-031"
+      ],
+      "batch_size": 2,
+      "backend": "gpu"
+    },
+    {
+      "time_ms": 1941.525,
+      "event": "tokens_generated",
+      "request_id": "req-029",
+      "tokens_generated": 96,
+      "decode_latency_ms": 294.057
+    },
+    {
+      "time_ms": 1941.525,
       "event": "kv_blocks_freed",
-      "request_id": "req-011",
+      "request_id": "req-029",
       "freed_blocks": [
         0,
         1,
@@ -1521,2337 +2350,17 @@
       ]
     },
     {
-      "time_ms": 12186.434,
-      "event": "request_admitted",
-      "request_id": "req-012",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 96,
-      "queue_wait_ms": 12.126
-    },
-    {
-      "time_ms": 12198.56,
-      "event": "prefill_start",
-      "request_id": "req-012",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67,
-        68,
-        69
-      ]
-    },
-    {
-      "time_ms": 12380.566,
-      "event": "prefill_end",
-      "request_id": "req-012",
-      "prefill_latency_ms": 182.006
-    },
-    {
-      "time_ms": 12380.566,
-      "event": "decode_step",
-      "request_id": "req-012",
-      "step": 0,
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 12569.769,
-      "event": "decode_step",
-      "request_id": "req-012",
-      "step": 16,
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 12768.454,
-      "event": "decode_step",
-      "request_id": "req-012",
-      "step": 32,
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 12959.395,
-      "event": "decode_step",
-      "request_id": "req-012",
-      "step": 48,
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 13140.821,
-      "event": "decode_step",
-      "request_id": "req-012",
-      "step": 64,
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 13332.832,
-      "event": "decode_step",
-      "request_id": "req-012",
-      "step": 80,
-      "active_requests": [
-        "req-012"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 13527.387,
+      "time_ms": 1941.525,
       "event": "tokens_generated",
-      "request_id": "req-012",
-      "tokens_generated": 96,
-      "decode_latency_ms": 1146.821
-    },
-    {
-      "time_ms": 13527.387,
-      "event": "kv_blocks_freed",
-      "request_id": "req-012",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67,
-        68,
-        69
-      ]
-    },
-    {
-      "time_ms": 13527.387,
-      "event": "request_admitted",
-      "request_id": "req-013",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 7.973
-    },
-    {
-      "time_ms": 13535.36,
-      "event": "prefill_start",
-      "request_id": "req-013",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 13595.887,
-      "event": "prefill_end",
-      "request_id": "req-013",
-      "prefill_latency_ms": 60.527
-    },
-    {
-      "time_ms": 13595.887,
-      "event": "decode_step",
-      "request_id": "req-013",
-      "step": 0,
-      "active_requests": [
-        "req-013"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 13790.564,
-      "event": "decode_step",
-      "request_id": "req-013",
-      "step": 16,
-      "active_requests": [
-        "req-013"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 13988.452,
-      "event": "tokens_generated",
-      "request_id": "req-013",
-      "tokens_generated": 32,
-      "decode_latency_ms": 392.565
-    },
-    {
-      "time_ms": 13988.452,
-      "event": "kv_blocks_freed",
-      "request_id": "req-013",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 13988.452,
-      "event": "request_admitted",
-      "request_id": "req-014",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 8.028
-    },
-    {
-      "time_ms": 13996.48,
-      "event": "prefill_start",
-      "request_id": "req-014",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19
-      ]
-    },
-    {
-      "time_ms": 14059.911,
-      "event": "prefill_end",
-      "request_id": "req-014",
-      "prefill_latency_ms": 63.431
-    },
-    {
-      "time_ms": 14059.911,
-      "event": "decode_step",
-      "request_id": "req-014",
-      "step": 0,
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 14254.434,
-      "event": "decode_step",
-      "request_id": "req-014",
-      "step": 16,
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 14459.543,
-      "event": "decode_step",
-      "request_id": "req-014",
-      "step": 32,
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 14661.01,
-      "event": "decode_step",
-      "request_id": "req-014",
-      "step": 48,
-      "active_requests": [
-        "req-014"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 14853.515,
-      "event": "tokens_generated",
-      "request_id": "req-014",
-      "tokens_generated": 64,
-      "decode_latency_ms": 793.604
-    },
-    {
-      "time_ms": 14853.515,
-      "event": "kv_blocks_freed",
-      "request_id": "req-014",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19
-      ]
-    },
-    {
-      "time_ms": 14853.515,
-      "event": "request_admitted",
-      "request_id": "req-015",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 11.699
-    },
-    {
-      "time_ms": 14865.214,
-      "event": "prefill_start",
-      "request_id": "req-015",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65
-      ]
-    },
-    {
-      "time_ms": 15047.321,
-      "event": "prefill_end",
-      "request_id": "req-015",
-      "prefill_latency_ms": 182.107
-    },
-    {
-      "time_ms": 15047.321,
-      "event": "decode_step",
-      "request_id": "req-015",
-      "step": 0,
-      "active_requests": [
-        "req-015"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 15233.154,
-      "event": "decode_step",
-      "request_id": "req-015",
-      "step": 16,
-      "active_requests": [
-        "req-015"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 15426.624,
-      "event": "tokens_generated",
-      "request_id": "req-015",
-      "tokens_generated": 32,
-      "decode_latency_ms": 379.303
-    },
-    {
-      "time_ms": 15426.624,
-      "event": "kv_blocks_freed",
-      "request_id": "req-015",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65
-      ]
-    },
-    {
-      "time_ms": 15426.624,
-      "event": "request_admitted",
-      "request_id": "req-016",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 5.709
-    },
-    {
-      "time_ms": 15432.333,
-      "event": "prefill_start",
-      "request_id": "req-016",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
-      ]
-    },
-    {
-      "time_ms": 15617.522,
-      "event": "prefill_end",
-      "request_id": "req-016",
-      "prefill_latency_ms": 185.189
-    },
-    {
-      "time_ms": 15617.522,
-      "event": "decode_step",
-      "request_id": "req-016",
-      "step": 0,
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 15828.35,
-      "event": "decode_step",
-      "request_id": "req-016",
-      "step": 16,
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 16017.673,
-      "event": "decode_step",
-      "request_id": "req-016",
-      "step": 32,
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 16218.689,
-      "event": "decode_step",
-      "request_id": "req-016",
-      "step": 48,
-      "active_requests": [
-        "req-016"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 16401.209,
-      "event": "tokens_generated",
-      "request_id": "req-016",
-      "tokens_generated": 64,
-      "decode_latency_ms": 783.687
-    },
-    {
-      "time_ms": 16401.209,
-      "event": "kv_blocks_freed",
-      "request_id": "req-016",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
-      ]
-    },
-    {
-      "time_ms": 16401.209,
-      "event": "request_admitted",
-      "request_id": "req-017",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 11.449
-    },
-    {
-      "time_ms": 16412.658,
-      "event": "prefill_start",
-      "request_id": "req-017",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65
-      ]
-    },
-    {
-      "time_ms": 16595.978,
-      "event": "prefill_end",
-      "request_id": "req-017",
-      "prefill_latency_ms": 183.32
-    },
-    {
-      "time_ms": 16595.978,
-      "event": "decode_step",
-      "request_id": "req-017",
-      "step": 0,
-      "active_requests": [
-        "req-017"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 16786.907,
-      "event": "decode_step",
-      "request_id": "req-017",
-      "step": 16,
-      "active_requests": [
-        "req-017"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 16976.572,
-      "event": "tokens_generated",
-      "request_id": "req-017",
-      "tokens_generated": 32,
-      "decode_latency_ms": 380.594
-    },
-    {
-      "time_ms": 16976.572,
-      "event": "kv_blocks_freed",
-      "request_id": "req-017",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65
-      ]
-    },
-    {
-      "time_ms": 16976.572,
-      "event": "request_admitted",
-      "request_id": "req-018",
-      "prompt_tokens": 512,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 14.645
-    },
-    {
-      "time_ms": 16991.217,
-      "event": "prefill_start",
-      "request_id": "req-018",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35
-      ]
-    },
-    {
-      "time_ms": 17091.082,
-      "event": "prefill_end",
-      "request_id": "req-018",
-      "prefill_latency_ms": 99.865
-    },
-    {
-      "time_ms": 17091.082,
-      "event": "decode_step",
-      "request_id": "req-018",
-      "step": 0,
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 17287.036,
-      "event": "decode_step",
-      "request_id": "req-018",
-      "step": 16,
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 17494.589,
-      "event": "decode_step",
-      "request_id": "req-018",
-      "step": 32,
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 17693.345,
-      "event": "decode_step",
-      "request_id": "req-018",
-      "step": 48,
-      "active_requests": [
-        "req-018"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 17890.923,
-      "event": "tokens_generated",
-      "request_id": "req-018",
-      "tokens_generated": 64,
-      "decode_latency_ms": 799.841
-    },
-    {
-      "time_ms": 17890.923,
-      "event": "kv_blocks_freed",
-      "request_id": "req-018",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35
-      ]
-    },
-    {
-      "time_ms": 17890.923,
-      "event": "request_admitted",
-      "request_id": "req-019",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 12.287
-    },
-    {
-      "time_ms": 17903.21,
-      "event": "prefill_start",
-      "request_id": "req-019",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
-      ]
-    },
-    {
-      "time_ms": 18089.521,
-      "event": "prefill_end",
-      "request_id": "req-019",
-      "prefill_latency_ms": 186.311
-    },
-    {
-      "time_ms": 18089.521,
-      "event": "decode_step",
-      "request_id": "req-019",
-      "step": 0,
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 18283.794,
-      "event": "decode_step",
-      "request_id": "req-019",
-      "step": 16,
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 18481.875,
-      "event": "decode_step",
-      "request_id": "req-019",
-      "step": 32,
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 18682.962,
-      "event": "decode_step",
-      "request_id": "req-019",
-      "step": 48,
-      "active_requests": [
-        "req-019"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 18893.354,
-      "event": "tokens_generated",
-      "request_id": "req-019",
-      "tokens_generated": 64,
-      "decode_latency_ms": 803.833
-    },
-    {
-      "time_ms": 18893.354,
-      "event": "kv_blocks_freed",
-      "request_id": "req-019",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
-      ]
-    },
-    {
-      "time_ms": 18893.354,
-      "event": "request_admitted",
-      "request_id": "req-020",
-      "prompt_tokens": 128,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 7.901
-    },
-    {
-      "time_ms": 18901.255,
-      "event": "prefill_start",
-      "request_id": "req-020",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ]
-    },
-    {
-      "time_ms": 18948.381,
-      "event": "prefill_end",
-      "request_id": "req-020",
-      "prefill_latency_ms": 47.126
-    },
-    {
-      "time_ms": 18948.381,
-      "event": "decode_step",
-      "request_id": "req-020",
-      "step": 0,
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 19135.499,
-      "event": "decode_step",
-      "request_id": "req-020",
-      "step": 16,
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 19337.391,
-      "event": "decode_step",
-      "request_id": "req-020",
-      "step": 32,
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 19529.689,
-      "event": "decode_step",
-      "request_id": "req-020",
-      "step": 48,
-      "active_requests": [
-        "req-020"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 19720.181,
-      "event": "tokens_generated",
-      "request_id": "req-020",
-      "tokens_generated": 64,
-      "decode_latency_ms": 771.8
-    },
-    {
-      "time_ms": 19720.181,
-      "event": "kv_blocks_freed",
-      "request_id": "req-020",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ]
-    },
-    {
-      "time_ms": 19720.181,
-      "event": "request_admitted",
-      "request_id": "req-021",
-      "prompt_tokens": 128,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 14.68
-    },
-    {
-      "time_ms": 19734.861,
-      "event": "prefill_start",
-      "request_id": "req-021",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ]
-    },
-    {
-      "time_ms": 19782.171,
-      "event": "prefill_end",
-      "request_id": "req-021",
-      "prefill_latency_ms": 47.31
-    },
-    {
-      "time_ms": 19782.171,
-      "event": "decode_step",
-      "request_id": "req-021",
-      "step": 0,
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 19973.45,
-      "event": "decode_step",
-      "request_id": "req-021",
-      "step": 16,
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 20143.417,
-      "event": "decode_step",
-      "request_id": "req-021",
-      "step": 32,
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 20333.582,
-      "event": "decode_step",
-      "request_id": "req-021",
-      "step": 48,
-      "active_requests": [
-        "req-021"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 20529.228,
-      "event": "tokens_generated",
-      "request_id": "req-021",
-      "tokens_generated": 64,
-      "decode_latency_ms": 747.057
-    },
-    {
-      "time_ms": 20529.228,
-      "event": "kv_blocks_freed",
-      "request_id": "req-021",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11
-      ]
-    },
-    {
-      "time_ms": 20529.228,
-      "event": "request_admitted",
-      "request_id": "req-022",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 17.642
-    },
-    {
-      "time_ms": 20546.87,
-      "event": "prefill_start",
-      "request_id": "req-022",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 20611.22,
-      "event": "prefill_end",
-      "request_id": "req-022",
-      "prefill_latency_ms": 64.35
-    },
-    {
-      "time_ms": 20611.22,
-      "event": "decode_step",
-      "request_id": "req-022",
-      "step": 0,
-      "active_requests": [
-        "req-022"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 20820.21,
-      "event": "decode_step",
-      "request_id": "req-022",
-      "step": 16,
-      "active_requests": [
-        "req-022"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 21008.279,
-      "event": "tokens_generated",
-      "request_id": "req-022",
-      "tokens_generated": 32,
-      "decode_latency_ms": 397.059
-    },
-    {
-      "time_ms": 21008.279,
-      "event": "kv_blocks_freed",
-      "request_id": "req-022",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 21008.279,
-      "event": "request_admitted",
-      "request_id": "req-023",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 128,
-      "queue_wait_ms": 9.553
-    },
-    {
-      "time_ms": 21017.832,
-      "event": "prefill_start",
-      "request_id": "req-023",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23
-      ]
-    },
-    {
-      "time_ms": 21080.022,
-      "event": "prefill_end",
-      "request_id": "req-023",
-      "prefill_latency_ms": 62.19
-    },
-    {
-      "time_ms": 21080.022,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 0,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 21276.046,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 16,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 21479.649,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 32,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 21675.899,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 48,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 21875.021,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 64,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 22093.296,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 80,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 22293.602,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 96,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 22490.514,
-      "event": "decode_step",
-      "request_id": "req-023",
-      "step": 112,
-      "active_requests": [
-        "req-023"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 22674.22,
-      "event": "tokens_generated",
-      "request_id": "req-023",
+      "request_id": "req-030",
       "tokens_generated": 128,
-      "decode_latency_ms": 1594.198
+      "decode_latency_ms": 294.057
     },
     {
-      "time_ms": 22674.22,
+      "time_ms": 1941.525,
       "event": "kv_blocks_freed",
-      "request_id": "req-023",
+      "request_id": "req-030",
       "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23
-      ]
-    },
-    {
-      "time_ms": 22674.22,
-      "event": "request_admitted",
-      "request_id": "req-024",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 11.569
-    },
-    {
-      "time_ms": 22685.789,
-      "event": "prefill_start",
-      "request_id": "req-024",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 22752.994,
-      "event": "prefill_end",
-      "request_id": "req-024",
-      "prefill_latency_ms": 67.205
-    },
-    {
-      "time_ms": 22752.994,
-      "event": "decode_step",
-      "request_id": "req-024",
-      "step": 0,
-      "active_requests": [
-        "req-024"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 22971.659,
-      "event": "decode_step",
-      "request_id": "req-024",
-      "step": 16,
-      "active_requests": [
-        "req-024"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 23177.532,
-      "event": "tokens_generated",
-      "request_id": "req-024",
-      "tokens_generated": 32,
-      "decode_latency_ms": 424.538
-    },
-    {
-      "time_ms": 23177.532,
-      "event": "kv_blocks_freed",
-      "request_id": "req-024",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 23177.532,
-      "event": "request_admitted",
-      "request_id": "req-025",
-      "prompt_tokens": 512,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 8.271
-    },
-    {
-      "time_ms": 23185.803,
-      "event": "prefill_start",
-      "request_id": "req-025",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33
-      ]
-    },
-    {
-      "time_ms": 23289.269,
-      "event": "prefill_end",
-      "request_id": "req-025",
-      "prefill_latency_ms": 103.466
-    },
-    {
-      "time_ms": 23289.269,
-      "event": "decode_step",
-      "request_id": "req-025",
-      "step": 0,
-      "active_requests": [
-        "req-025"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 23488.914,
-      "event": "decode_step",
-      "request_id": "req-025",
-      "step": 16,
-      "active_requests": [
-        "req-025"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 23702.634,
-      "event": "tokens_generated",
-      "request_id": "req-025",
-      "tokens_generated": 32,
-      "decode_latency_ms": 413.365
-    },
-    {
-      "time_ms": 23702.634,
-      "event": "kv_blocks_freed",
-      "request_id": "req-025",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33
-      ]
-    },
-    {
-      "time_ms": 23702.634,
-      "event": "request_admitted",
-      "request_id": "req-026",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 3.377
-    },
-    {
-      "time_ms": 23706.011,
-      "event": "prefill_start",
-      "request_id": "req-026",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 23769.989,
-      "event": "prefill_end",
-      "request_id": "req-026",
-      "prefill_latency_ms": 63.978
-    },
-    {
-      "time_ms": 23769.989,
-      "event": "decode_step",
-      "request_id": "req-026",
-      "step": 0,
-      "active_requests": [
-        "req-026"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 23957.675,
-      "event": "decode_step",
-      "request_id": "req-026",
-      "step": 16,
-      "active_requests": [
-        "req-026"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 24145.539,
-      "event": "tokens_generated",
-      "request_id": "req-026",
-      "tokens_generated": 32,
-      "decode_latency_ms": 375.55
-    },
-    {
-      "time_ms": 24145.539,
-      "event": "kv_blocks_freed",
-      "request_id": "req-026",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 24145.539,
-      "event": "request_admitted",
-      "request_id": "req-027",
-      "prompt_tokens": 64,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 9.169
-    },
-    {
-      "time_ms": 24154.708,
-      "event": "prefill_start",
-      "request_id": "req-027",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ]
-    },
-    {
-      "time_ms": 24186.942,
-      "event": "prefill_end",
-      "request_id": "req-027",
-      "prefill_latency_ms": 32.234
-    },
-    {
-      "time_ms": 24186.942,
-      "event": "decode_step",
-      "request_id": "req-027",
-      "step": 0,
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 24387.285,
-      "event": "decode_step",
-      "request_id": "req-027",
-      "step": 16,
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 24595.573,
-      "event": "decode_step",
-      "request_id": "req-027",
-      "step": 32,
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 24796.257,
-      "event": "decode_step",
-      "request_id": "req-027",
-      "step": 48,
-      "active_requests": [
-        "req-027"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 25004.994,
-      "event": "tokens_generated",
-      "request_id": "req-027",
-      "tokens_generated": 64,
-      "decode_latency_ms": 818.052
-    },
-    {
-      "time_ms": 25004.994,
-      "event": "kv_blocks_freed",
-      "request_id": "req-027",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7
-      ]
-    },
-    {
-      "time_ms": 25004.994,
-      "event": "request_admitted",
-      "request_id": "req-028",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 64,
-      "queue_wait_ms": 7.26
-    },
-    {
-      "time_ms": 25012.254,
-      "event": "prefill_start",
-      "request_id": "req-028",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
         14,
         15,
         16,
@@ -3891,223 +2400,21 @@
         50,
         51,
         52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
+        53
       ]
     },
     {
-      "time_ms": 25192.889,
-      "event": "prefill_end",
-      "request_id": "req-028",
-      "prefill_latency_ms": 180.635
-    },
-    {
-      "time_ms": 25192.889,
-      "event": "decode_step",
-      "request_id": "req-028",
-      "step": 0,
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 25386.932,
-      "event": "decode_step",
-      "request_id": "req-028",
-      "step": 16,
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 25582.582,
-      "event": "decode_step",
-      "request_id": "req-028",
-      "step": 32,
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 25781.16,
-      "event": "decode_step",
-      "request_id": "req-028",
-      "step": 48,
-      "active_requests": [
-        "req-028"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 25964.957,
+      "time_ms": 1941.525,
       "event": "tokens_generated",
-      "request_id": "req-028",
-      "tokens_generated": 64,
-      "decode_latency_ms": 772.068
+      "request_id": "req-031",
+      "tokens_generated": 128,
+      "decode_latency_ms": 294.057
     },
     {
-      "time_ms": 25964.957,
+      "time_ms": 1941.525,
       "event": "kv_blocks_freed",
-      "request_id": "req-028",
+      "request_id": "req-031",
       "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67
-      ]
-    },
-    {
-      "time_ms": 25964.957,
-      "event": "request_admitted",
-      "request_id": "req-029",
-      "prompt_tokens": 1024,
-      "generated_tokens_target": 96,
-      "queue_wait_ms": 0.505
-    },
-    {
-      "time_ms": 25965.462,
-      "event": "prefill_start",
-      "request_id": "req-029",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
         54,
         55,
         56,
@@ -4127,441 +2434,23 @@
       ]
     },
     {
-      "time_ms": 26150.687,
-      "event": "prefill_end",
-      "request_id": "req-029",
-      "prefill_latency_ms": 185.225
-    },
-    {
-      "time_ms": 26150.687,
-      "event": "decode_step",
-      "request_id": "req-029",
-      "step": 0,
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 26342.439,
-      "event": "decode_step",
-      "request_id": "req-029",
-      "step": 16,
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 26540.206,
-      "event": "decode_step",
-      "request_id": "req-029",
-      "step": 32,
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 26734.979,
-      "event": "decode_step",
-      "request_id": "req-029",
-      "step": 48,
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 26935.156,
-      "event": "decode_step",
-      "request_id": "req-029",
-      "step": 64,
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 27140.11,
-      "event": "decode_step",
-      "request_id": "req-029",
-      "step": 80,
-      "active_requests": [
-        "req-029"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 27327.386,
-      "event": "tokens_generated",
-      "request_id": "req-029",
-      "tokens_generated": 96,
-      "decode_latency_ms": 1176.699
-    },
-    {
-      "time_ms": 27327.386,
-      "event": "kv_blocks_freed",
-      "request_id": "req-029",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        62,
-        63,
-        64,
-        65,
-        66,
-        67,
-        68,
-        69
-      ]
-    },
-    {
-      "time_ms": 27327.386,
-      "event": "request_admitted",
-      "request_id": "req-030",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 2.559
-    },
-    {
-      "time_ms": 27329.945,
-      "event": "prefill_start",
-      "request_id": "req-030",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 27391.124,
-      "event": "prefill_end",
-      "request_id": "req-030",
-      "prefill_latency_ms": 61.179
-    },
-    {
-      "time_ms": 27391.124,
-      "event": "decode_step",
-      "request_id": "req-030",
-      "step": 0,
-      "active_requests": [
-        "req-030"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 27581.287,
-      "event": "decode_step",
-      "request_id": "req-030",
-      "step": 16,
-      "active_requests": [
-        "req-030"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 27751.644,
-      "event": "tokens_generated",
-      "request_id": "req-030",
-      "tokens_generated": 32,
-      "decode_latency_ms": 360.52
-    },
-    {
-      "time_ms": 27751.644,
-      "event": "kv_blocks_freed",
-      "request_id": "req-030",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 27751.644,
-      "event": "request_admitted",
-      "request_id": "req-031",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 17.089
-    },
-    {
-      "time_ms": 27768.733,
-      "event": "prefill_start",
-      "request_id": "req-031",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 27831.071,
-      "event": "prefill_end",
-      "request_id": "req-031",
-      "prefill_latency_ms": 62.338
-    },
-    {
-      "time_ms": 27831.071,
-      "event": "decode_step",
-      "request_id": "req-031",
-      "step": 0,
-      "active_requests": [
-        "req-031"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 28040.473,
-      "event": "decode_step",
-      "request_id": "req-031",
-      "step": 16,
-      "active_requests": [
-        "req-031"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 28240.756,
-      "event": "tokens_generated",
-      "request_id": "req-031",
-      "tokens_generated": 32,
-      "decode_latency_ms": 409.685
-    },
-    {
-      "time_ms": 28240.756,
-      "event": "kv_blocks_freed",
-      "request_id": "req-031",
-      "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 28240.756,
-      "event": "request_admitted",
-      "request_id": "req-032",
-      "prompt_tokens": 256,
-      "generated_tokens_target": 32,
-      "queue_wait_ms": 14.778
-    },
-    {
-      "time_ms": 28255.534,
-      "event": "prefill_start",
-      "request_id": "req-032",
-      "backend": "gpu",
-      "allocated_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
-      ]
-    },
-    {
-      "time_ms": 28321.579,
-      "event": "prefill_end",
-      "request_id": "req-032",
-      "prefill_latency_ms": 66.045
-    },
-    {
-      "time_ms": 28321.579,
-      "event": "decode_step",
-      "request_id": "req-032",
-      "step": 0,
-      "active_requests": [
-        "req-032"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 28529.008,
-      "event": "decode_step",
-      "request_id": "req-032",
-      "step": 16,
-      "active_requests": [
-        "req-032"
-      ],
-      "batch_size": 1,
-      "backend": "gpu"
-    },
-    {
-      "time_ms": 28735.19,
+      "time_ms": 1941.525,
       "event": "tokens_generated",
       "request_id": "req-032",
       "tokens_generated": 32,
-      "decode_latency_ms": 413.611
+      "decode_latency_ms": 294.057
     },
     {
-      "time_ms": 28735.19,
+      "time_ms": 1941.525,
       "event": "kv_blocks_freed",
       "request_id": "req-032",
       "freed_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17
+        70,
+        71,
+        72,
+        73,
+        74,
+        75
       ]
     }
   ],
@@ -4570,12 +2459,12 @@
     "total_requests": 32,
     "completed_requests": 32,
     "rejected_requests": 0,
-    "p50_latency_ms": 849.537,
-    "p95_latency_ms": 1628.828,
-    "p99_latency_ms": 1661.568,
-    "peak_memory_mb": 986.75,
-    "peak_kv_cache_mb": 218.75,
+    "p50_latency_ms": 1193.992,
+    "p95_latency_ms": 1716.077,
+    "p99_latency_ms": 1727.51,
+    "peak_memory_mb": 1636.75,
+    "peak_kv_cache_mb": 868.75,
     "oom_events": 0,
-    "tokens_per_second": 76.254
+    "tokens_per_second": 1236.142
   }
 }

@@ -3,416 +3,65 @@
     "name": "prefill",
     "cat": "llm_runtime",
     "ph": "X",
-    "ts": 1231.0,
-    "dur": 66704.0,
+    "ts": 10231.0,
+    "dur": 28797.0,
     "pid": 1,
     "tid": 1,
     "args": {
       "request_id": "req-001",
-      "tokens": 256
+      "tokens": null
     }
   },
   {
     "name": "prefill",
     "cat": "llm_runtime",
     "ph": "X",
-    "ts": 852814.0,
-    "dur": 37331.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-002",
-      "tokens": 64
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 1289865.0,
-    "dur": 46962.0,
+    "ts": 317285.0,
+    "dur": 169981.0,
     "pid": 1,
     "tid": 1,
     "args": {
       "request_id": "req-003",
-      "tokens": 128
+      "tokens": null
     }
   },
   {
     "name": "prefill",
     "cat": "llm_runtime",
     "ph": "X",
-    "ts": 2944098.0,
-    "dur": 184390.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-004",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 3895379.0,
-    "dur": 41834.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-005",
-      "tokens": 128
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 5511141.0,
-    "dur": 102258.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-006",
-      "tokens": 512
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 6018906.0,
-    "dur": 45905.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-007",
-      "tokens": 128
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 7637960.0,
-    "dur": 63167.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-008",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 8472756.0,
-    "dur": 36620.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-009",
-      "tokens": 64
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 9716026.0,
-    "dur": 62042.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-010",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 11000721.0,
-    "dur": 45325.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-011",
-      "tokens": 128
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 12198560.0,
-    "dur": 182006.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-012",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 13535360.0,
-    "dur": 60527.0,
+    "ts": 825690.0,
+    "dur": 94855.0,
     "pid": 1,
     "tid": 1,
     "args": {
       "request_id": "req-013",
-      "tokens": 256
+      "tokens": null
     }
   },
   {
     "name": "prefill",
     "cat": "llm_runtime",
     "ph": "X",
-    "ts": 13996480.0,
-    "dur": 63431.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-014",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 14865214.0,
-    "dur": 182107.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-015",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 15432333.0,
-    "dur": 185189.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-016",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 16412658.0,
-    "dur": 183320.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-017",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 16991217.0,
-    "dur": 99865.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-018",
-      "tokens": 512
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 17903210.0,
-    "dur": 186311.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-019",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 18901255.0,
-    "dur": 47126.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-020",
-      "tokens": 128
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 19734861.0,
-    "dur": 47310.0,
+    "ts": 1241064.0,
+    "dur": 30475.0,
     "pid": 1,
     "tid": 1,
     "args": {
       "request_id": "req-021",
-      "tokens": 128
+      "tokens": null
     }
   },
   {
     "name": "prefill",
     "cat": "llm_runtime",
     "ph": "X",
-    "ts": 20546870.0,
-    "dur": 64350.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-022",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 21017832.0,
-    "dur": 62190.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-023",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 22685789.0,
-    "dur": 67205.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-024",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 23185803.0,
-    "dur": 103466.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-025",
-      "tokens": 512
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 23706011.0,
-    "dur": 63978.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-026",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 24154708.0,
-    "dur": 32234.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-027",
-      "tokens": 64
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 25012254.0,
-    "dur": 180635.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-028",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 25965462.0,
-    "dur": 185225.0,
+    "ts": 1609152.0,
+    "dur": 38316.0,
     "pid": 1,
     "tid": 1,
     "args": {
       "request_id": "req-029",
-      "tokens": 1024
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 27329945.0,
-    "dur": 61179.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-030",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 27768733.0,
-    "dur": 62338.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-031",
-      "tokens": 256
-    }
-  },
-  {
-    "name": "prefill",
-    "cat": "llm_runtime",
-    "ph": "X",
-    "ts": 28255534.0,
-    "dur": 66045.0,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "request_id": "req-032",
-      "tokens": 256
+      "tokens": null
     }
   }
 ]
