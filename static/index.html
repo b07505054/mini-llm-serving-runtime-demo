@@ -627,6 +627,7 @@
         cold_start_report: data.runtime_artifacts.cold_start_report,
         technology_gate_audit: data.runtime_artifacts.technology_gate_audit,
         rmsnorm_benchmark: data.runtime_artifacts.rmsnorm_benchmark,
+        gpu_pgo_like_rmsnorm_report: data.runtime_artifacts.gpu_pgo_like_rmsnorm_report,
         real_llama_profile: data.runtime_artifacts.real_llama_profile,
       }, null, 2);
       document.getElementById("validation-json").textContent = JSON.stringify({
@@ -637,6 +638,7 @@
         sglang_trace_adapter_validation_report: data.validation.sglang_trace_adapter_validation_report,
         cold_start_validation_report: data.validation.cold_start_validation_report,
         technology_gate_validation_report: data.validation.technology_gate_validation_report,
+        gpu_pgo_like_validation_report: data.validation.gpu_pgo_like_validation_report,
       }, null, 2);
     }
 

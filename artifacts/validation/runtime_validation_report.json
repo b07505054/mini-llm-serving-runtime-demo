@@ -601,7 +601,7 @@
       "Compiler/runtime decision",
       "Execution or serving metric impact"
     ],
-    "main_plan_count": 6,
+    "main_plan_count": 7,
     "remaining_count": 7,
     "invalid_main_plan_items": [],
     "remaining_without_next_step": [],
@@ -633,6 +633,13 @@
         "decision": "GPU attention placement plus CPU KV bookkeeping",
         "metric": "backend counts, placement latency, throughput",
         "status": "implemented"
+      },
+      {
+        "technology": "gpu_pgo_like_kernel_selection",
+        "input": "compiler-emitted HIR op plus runtime RMSNorm shape/workload distribution",
+        "decision": "profile-guided selection among CUDA/Triton/PyTorch RMSNorm candidates",
+        "metric": "kernel p95 latency, effective bandwidth, TPOT projection, throughput projection",
+        "status": "implemented_as_runtime_profile_feedback"
       },
       {
         "technology": "vllm_trace_adapter",
@@ -685,6 +692,74 @@
         "missing": "tool availability alone does not pass the gate",
         "next_step": "keep out of main plan until tied to a runnable frontend/runtime path"
       }
+    ]
+  },
+  "gpu_pgo_like_validation_report": {
+    "artifact_type": "gpu_pgo_like_validation_report",
+    "source": "heterogeneous-inference-runtime/results/cuda_transformer/gpu_pgo_like_rmsnorm_report.json",
+    "passed": true,
+    "technology_gate": {
+      "technology": "gpu_pgo_like_kernel_selection",
+      "input": "compiler-emitted HIR RMSNorm op plus runtime shape/workload distribution",
+      "decision": "profile-guided kernel selection among CUDA/Triton/PyTorch candidates by shape bucket",
+      "metric": "kernel p95 latency, effective bandwidth, TPOT projection, throughput projection",
+      "passes_gate": true
+    },
+    "missing_gate_fields": [],
+    "shape_decision_count": 12,
+    "representative_decision": {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "16x4096:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.09328,
+      "selected_p95_ms": 0.031424,
+      "p95_latency_delta_ms": 0.061856,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.09328,
+          "p50_ms": 0.088032,
+          "mean_ms": 0.088261,
+          "effective_bandwidth_gbps": 11.88,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.031424,
+          "p50_ms": 0.030208,
+          "mean_ms": 0.030196,
+          "effective_bandwidth_gbps": 34.726,
+          "speedup_vs_fallback": 2.923,
+          "reason": null
+        }
+      ]
+    },
+    "serving_impact": {
+      "method": "single-op p95 latency delta projected onto decode TPOT proxy",
+      "shape_bucket": "16x4096:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "baseline_tpot_p95_ms": 3.244,
+      "projected_tpot_p95_ms": 3.182144,
+      "tpot_delta_ms": 0.061856,
+      "baseline_tokens_per_second": 1236.142,
+      "projected_tokens_per_second_gain": 24.029,
+      "note": "This is a serving-level projection from kernel p95 evidence; full serving validation should replay the selected kernel in the decode path."
+    },
+    "remaining_work": [
+      "Replay selected RMSNorm kernel inside a full decode loop instead of projecting from per-kernel p95 latency.",
+      "Add fp16/bf16 candidate rows and vectorized CUDA candidate when kernels are implemented.",
+      "Attach real Nsight Compute occupancy/DRAM/stall metrics when ncu capture is available."
     ]
   }
 }

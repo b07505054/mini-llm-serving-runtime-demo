@@ -5,6 +5,7 @@
   "files": [
     "backend_validation_report.json",
     "cold_start_validation_report.json",
+    "gpu_pgo_like_validation_report.json",
     "kv_cache_analysis.json",
     "llm_validation_report.json",
     "request_timeline.json",

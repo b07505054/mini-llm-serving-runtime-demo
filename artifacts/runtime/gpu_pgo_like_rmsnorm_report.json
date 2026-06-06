@@ -1,0 +1,541 @@
+{
+  "artifact_type": "gpu_pgo_like_kernel_selection_report",
+  "format": "runtime.gpu_pgo_like.v1",
+  "status": "passed",
+  "technology_gate": {
+    "technology": "gpu_pgo_like_kernel_selection",
+    "input": "compiler-emitted HIR RMSNorm op plus runtime shape/workload distribution",
+    "decision": "profile-guided kernel selection among CUDA/Triton/PyTorch candidates by shape bucket",
+    "metric": "kernel p95 latency, effective bandwidth, TPOT projection, throughput projection",
+    "passes_gate": true
+  },
+  "input_sources": {
+    "cuda_profile": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+    "triton_profile": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_triton_benchmark.json",
+    "runtime_profile": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts/runtime_profile.json",
+    "prefill_decode": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts/prefill_decode_benchmark.json"
+  },
+  "profile_status": {
+    "cuda": "measured",
+    "triton": "unavailable",
+    "unavailable_candidates": [
+      {
+        "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_triton_benchmark.json",
+        "profile_status": "unavailable",
+        "reason": "import failed: No module named 'triton'"
+      }
+    ]
+  },
+  "shape_decisions": [
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "128x1024:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.093632,
+      "selected_p95_ms": 0.034144,
+      "p95_latency_delta_ms": 0.059488,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.093632,
+          "p50_ms": 0.086944,
+          "mean_ms": 0.087491,
+          "effective_bandwidth_gbps": 23.97,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.034144,
+          "p50_ms": 0.030688,
+          "mean_ms": 0.030821,
+          "effective_bandwidth_gbps": 68.043,
+          "speedup_vs_fallback": 2.8387,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "128x4096:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.18256,
+      "selected_p95_ms": 0.085248,
+      "p95_latency_delta_ms": 0.097312,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.18256,
+          "p50_ms": 0.181824,
+          "mean_ms": 0.181661,
+          "effective_bandwidth_gbps": 46.177,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.085248,
+          "p50_ms": 0.083872,
+          "mean_ms": 0.083712,
+          "effective_bandwidth_gbps": 100.208,
+          "speedup_vs_fallback": 2.1701,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "128x768:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.093792,
+      "selected_p95_ms": 0.031296,
+      "p95_latency_delta_ms": 0.062496,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.093792,
+          "p50_ms": 0.087872,
+          "mean_ms": 0.088295,
+          "effective_bandwidth_gbps": 17.814,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.031296,
+          "p50_ms": 0.030368,
+          "mean_ms": 0.03029,
+          "effective_bandwidth_gbps": 51.926,
+          "speedup_vs_fallback": 2.915,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "128x8192:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.339712,
+      "selected_p95_ms": 0.152896,
+      "p95_latency_delta_ms": 0.186816,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.339712,
+          "p50_ms": 0.336512,
+          "mean_ms": 0.336926,
+          "effective_bandwidth_gbps": 49.795,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.152896,
+          "p50_ms": 0.151424,
+          "mean_ms": 0.151385,
+          "effective_bandwidth_gbps": 110.825,
+          "speedup_vs_fallback": 2.2256,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "16x1024:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.09104,
+      "selected_p95_ms": 0.03312,
+      "p95_latency_delta_ms": 0.05792,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.09104,
+          "p50_ms": 0.08672,
+          "mean_ms": 0.087226,
+          "effective_bandwidth_gbps": 3.005,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.03312,
+          "p50_ms": 0.032096,
+          "mean_ms": 0.031602,
+          "effective_bandwidth_gbps": 8.295,
+          "speedup_vs_fallback": 2.7601,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "16x4096:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.09328,
+      "selected_p95_ms": 0.031424,
+      "p95_latency_delta_ms": 0.061856,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.09328,
+          "p50_ms": 0.088032,
+          "mean_ms": 0.088261,
+          "effective_bandwidth_gbps": 11.88,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.031424,
+          "p50_ms": 0.030208,
+          "mean_ms": 0.030196,
+          "effective_bandwidth_gbps": 34.726,
+          "speedup_vs_fallback": 2.923,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "16x768:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.093408,
+      "selected_p95_ms": 0.033216,
+      "p95_latency_delta_ms": 0.060192,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.093408,
+          "p50_ms": 0.087456,
+          "mean_ms": 0.087757,
+          "effective_bandwidth_gbps": 2.24,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.033216,
+          "p50_ms": 0.031936,
+          "mean_ms": 0.031847,
+          "effective_bandwidth_gbps": 6.173,
+          "speedup_vs_fallback": 2.7556,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "16x8192:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.092448,
+      "selected_p95_ms": 0.040896,
+      "p95_latency_delta_ms": 0.051552,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.092448,
+          "p50_ms": 0.087584,
+          "mean_ms": 0.087862,
+          "effective_bandwidth_gbps": 23.869,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.040896,
+          "p50_ms": 0.03792,
+          "mean_ms": 0.038131,
+          "effective_bandwidth_gbps": 54.998,
+          "speedup_vs_fallback": 2.3042,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "1x1024:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.09216,
+      "selected_p95_ms": 0.0328,
+      "p95_latency_delta_ms": 0.05936,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.09216,
+          "p50_ms": 0.086656,
+          "mean_ms": 0.08749,
+          "effective_bandwidth_gbps": 0.187,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.0328,
+          "p50_ms": 0.032192,
+          "mean_ms": 0.031624,
+          "effective_bandwidth_gbps": 0.518,
+          "speedup_vs_fallback": 2.7666,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "1x4096:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.09216,
+      "selected_p95_ms": 0.031008,
+      "p95_latency_delta_ms": 0.061152,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.09216,
+          "p50_ms": 0.086752,
+          "mean_ms": 0.087292,
+          "effective_bandwidth_gbps": 0.751,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.031008,
+          "p50_ms": 0.029664,
+          "mean_ms": 0.029779,
+          "effective_bandwidth_gbps": 2.201,
+          "speedup_vs_fallback": 2.9313,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "1x768:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.098336,
+      "selected_p95_ms": 0.036128,
+      "p95_latency_delta_ms": 0.062208,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.098336,
+          "p50_ms": 0.092064,
+          "mean_ms": 0.092775,
+          "effective_bandwidth_gbps": 0.132,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.036128,
+          "p50_ms": 0.03248,
+          "mean_ms": 0.032685,
+          "effective_bandwidth_gbps": 0.376,
+          "speedup_vs_fallback": 2.8384,
+          "reason": null
+        }
+      ]
+    },
+    {
+      "fusion_candidate": "rmsnorm",
+      "shape_bucket": "1x8192:fp32",
+      "selected_kernel": "fused_rmsnorm_cuda",
+      "selected_backend": "CUDA",
+      "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+      "baseline_kernel": "torch_rmsnorm",
+      "baseline_p95_ms": 0.091488,
+      "selected_p95_ms": 0.0352,
+      "p95_latency_delta_ms": 0.056288,
+      "candidate_kernels": [
+        {
+          "kernel": "torch_rmsnorm",
+          "backend": "PyTorch",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.091488,
+          "p50_ms": 0.086048,
+          "mean_ms": 0.086717,
+          "effective_bandwidth_gbps": 1.511,
+          "reason": null
+        },
+        {
+          "kernel": "fused_rmsnorm_cuda",
+          "backend": "CUDA",
+          "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+          "correct": true,
+          "selection_ready": true,
+          "p95_ms": 0.0352,
+          "p50_ms": 0.032768,
+          "mean_ms": 0.032861,
+          "effective_bandwidth_gbps": 3.989,
+          "speedup_vs_fallback": 2.6389,
+          "reason": null
+        }
+      ]
+    }
+  ],
+  "representative_decision": {
+    "fusion_candidate": "rmsnorm",
+    "shape_bucket": "16x4096:fp32",
+    "selected_kernel": "fused_rmsnorm_cuda",
+    "selected_backend": "CUDA",
+    "selection_reason": "gpu_pgo_like_lowest_p95_latency",
+    "baseline_kernel": "torch_rmsnorm",
+    "baseline_p95_ms": 0.09328,
+    "selected_p95_ms": 0.031424,
+    "p95_latency_delta_ms": 0.061856,
+    "candidate_kernels": [
+      {
+        "kernel": "torch_rmsnorm",
+        "backend": "PyTorch",
+        "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+        "correct": true,
+        "selection_ready": true,
+        "p95_ms": 0.09328,
+        "p50_ms": 0.088032,
+        "mean_ms": 0.088261,
+        "effective_bandwidth_gbps": 11.88,
+        "reason": null
+      },
+      {
+        "kernel": "fused_rmsnorm_cuda",
+        "backend": "CUDA",
+        "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/results/cuda_transformer/rmsnorm_benchmark.json",
+        "correct": true,
+        "selection_ready": true,
+        "p95_ms": 0.031424,
+        "p50_ms": 0.030208,
+        "mean_ms": 0.030196,
+        "effective_bandwidth_gbps": 34.726,
+        "speedup_vs_fallback": 2.923,
+        "reason": null
+      }
+    ]
+  },
+  "serving_impact": {
+    "method": "single-op p95 latency delta projected onto decode TPOT proxy",
+    "shape_bucket": "16x4096:fp32",
+    "selected_kernel": "fused_rmsnorm_cuda",
+    "baseline_tpot_p95_ms": 3.244,
+    "projected_tpot_p95_ms": 3.182144,
+    "tpot_delta_ms": 0.061856,
+    "baseline_tokens_per_second": 1236.142,
+    "projected_tokens_per_second_gain": 24.029,
+    "note": "This is a serving-level projection from kernel p95 evidence; full serving validation should replay the selected kernel in the decode path."
+  },
+  "remaining_work": [
+    "Replay selected RMSNorm kernel inside a full decode loop instead of projecting from per-kernel p95 latency.",
+    "Add fp16/bf16 candidate rows and vectorized CUDA candidate when kernels are implemented.",
+    "Attach real Nsight Compute occupancy/DRAM/stall metrics when ncu capture is available."
+  ]
+}

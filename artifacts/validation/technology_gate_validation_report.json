@@ -7,7 +7,7 @@
     "Compiler/runtime decision",
     "Execution or serving metric impact"
   ],
-  "main_plan_count": 6,
+  "main_plan_count": 7,
   "remaining_count": 7,
   "invalid_main_plan_items": [],
   "remaining_without_next_step": [],
@@ -39,6 +39,13 @@
       "decision": "GPU attention placement plus CPU KV bookkeeping",
       "metric": "backend counts, placement latency, throughput",
       "status": "implemented"
+    },
+    {
+      "technology": "gpu_pgo_like_kernel_selection",
+      "input": "compiler-emitted HIR op plus runtime RMSNorm shape/workload distribution",
+      "decision": "profile-guided selection among CUDA/Triton/PyTorch RMSNorm candidates",
+      "metric": "kernel p95 latency, effective bandwidth, TPOT projection, throughput projection",
+      "status": "implemented_as_runtime_profile_feedback"
     },
     {
       "technology": "vllm_trace_adapter",

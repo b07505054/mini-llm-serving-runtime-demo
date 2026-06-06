@@ -160,6 +160,7 @@ class MiniServingRuntime:
             "plan_benchmark_results": load_json(RUNTIME_ARTIFACTS / "plan_benchmark_results.json", {}),
             "real_llama_profile": load_json(RUNTIME_ARTIFACTS / "real_llama_profile.json", {}),
             "rmsnorm_benchmark": load_json(RUNTIME_ARTIFACTS / "rmsnorm_benchmark.json", {}),
+            "gpu_pgo_like_rmsnorm_report": load_json(RUNTIME_ARTIFACTS / "gpu_pgo_like_rmsnorm_report.json", {}),
             "serving_framework_report": load_json(RUNTIME_ARTIFACTS / "serving_framework_report.json", {}),
             "vllm_trace_adapter_report": load_json(RUNTIME_ARTIFACTS / "vllm_trace_adapter_report.json", {}),
             "sglang_trace_adapter_report": load_json(RUNTIME_ARTIFACTS / "sglang_trace_adapter_report.json", {}),
@@ -178,6 +179,7 @@ class MiniServingRuntime:
             "sglang_trace_adapter_validation_report": load_json(VALIDATION_ARTIFACTS / "sglang_trace_adapter_validation_report.json", {}),
             "cold_start_validation_report": load_json(VALIDATION_ARTIFACTS / "cold_start_validation_report.json", {}),
             "technology_gate_validation_report": load_json(VALIDATION_ARTIFACTS / "technology_gate_validation_report.json", {}),
+            "gpu_pgo_like_validation_report": load_json(VALIDATION_ARTIFACTS / "gpu_pgo_like_validation_report.json", {}),
         }
         self.reset()
 
