@@ -1,0 +1,124 @@
+{
+  "artifact_type": "sglang_trace_adapter_report",
+  "source": "scripts/generate_llm_runtime_artifacts.py",
+  "integration_level": "trace_adapter_not_framework_fork",
+  "technology_gate": {
+    "input": "sglang style synthetic request/decode trace",
+    "decision": "request/decode scheduling with prefix-reuse metadata",
+    "metric": "TTFT, TPOT, throughput, queue wait, KV pressure, decode batch efficiency",
+    "passes_gate": true
+  },
+  "positioning": "This is a sglang trace adapter. It maps framework-shaped request records into the local RuntimeScheduler model; it does not claim modified sglang internals.",
+  "source_trace_schema": [
+    {
+      "request_id": "req-001",
+      "arrival_ms": 10.231,
+      "input_tokens": 64,
+      "sampling_params": {
+        "max_new_tokens": 96
+      },
+      "prefix": "prefix-0",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-002",
+      "arrival_ms": 14.149,
+      "input_tokens": 128,
+      "sampling_params": {
+        "max_new_tokens": 32
+      },
+      "prefix": "prefix-1",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-003",
+      "arrival_ms": 24.976,
+      "input_tokens": 1024,
+      "sampling_params": {
+        "max_new_tokens": 32
+      },
+      "prefix": "prefix-2",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-004",
+      "arrival_ms": 34.424,
+      "input_tokens": 64,
+      "sampling_params": {
+        "max_new_tokens": 32
+      },
+      "prefix": "prefix-3",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-005",
+      "arrival_ms": 35.923,
+      "input_tokens": 128,
+      "sampling_params": {
+        "max_new_tokens": 32
+      },
+      "prefix": "prefix-0",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-006",
+      "arrival_ms": 44.903,
+      "input_tokens": 1024,
+      "sampling_params": {
+        "max_new_tokens": 128
+      },
+      "prefix": "prefix-1",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-007",
+      "arrival_ms": 48.43,
+      "input_tokens": 1024,
+      "sampling_params": {
+        "max_new_tokens": 96
+      },
+      "prefix": "prefix-2",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    },
+    {
+      "request_id": "req-008",
+      "arrival_ms": 61.381,
+      "input_tokens": 64,
+      "sampling_params": {
+        "max_new_tokens": 64
+      },
+      "prefix": "prefix-3",
+      "decode_program": "sglang_compatible_request_decode_trace"
+    }
+  ],
+  "imported_request_count": 32,
+  "mapped_runtime_request_fields": [
+    "request_id",
+    "arrival_ms",
+    "prompt_tokens",
+    "output_tokens",
+    "prefix_key"
+  ],
+  "runtime_decision": {
+    "scheduler_policy": "cost_aware_memory_pressure",
+    "lifecycle": "request program -> prefix lookup -> decode scheduling -> finish",
+    "decode_batch_events": 5,
+    "avg_decode_batch_size": 6.4,
+    "decode_batch_efficiency": 0.8,
+    "pressure_limited_candidates": 20,
+    "peak_kv_cache_mb": 868.75
+  },
+  "serving_metrics": {
+    "completed_requests": 32,
+    "rejected_requests": 0,
+    "delayed_requests": 0,
+    "throughput_tokens_per_s": 1236.142,
+    "e2e_p95_ms": 1716.077,
+    "peak_memory_mb": 1636.75,
+    "peak_kv_cache_mb": 868.75
+  },
+  "remaining_work": [
+    "replace synthetic sglang trace with exported trace from a live framework run",
+    "add round-trip comparison against real sglang scheduler logs"
+  ]
+}

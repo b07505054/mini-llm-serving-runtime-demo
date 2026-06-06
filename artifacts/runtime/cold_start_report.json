@@ -8,9 +8,9 @@
       "available": true,
       "artifact_bytes": 279771,
       "artifact_mb": 0.2668,
-      "cold_load_ms": 0.3686,
-      "warm_load_avg_ms": 0.019,
-      "warm_load_p95_ms": 0.0294,
+      "cold_load_ms": 0.4177,
+      "warm_load_avg_ms": 0.0197,
+      "warm_load_p95_ms": 0.031,
       "runs": 5
     },
     "tensorrt_fp16_engine": {
@@ -18,9 +18,9 @@
       "available": true,
       "artifact_bytes": 10799732,
       "artifact_mb": 10.2994,
-      "cold_load_ms": 1.8091,
-      "warm_load_avg_ms": 0.6499,
-      "warm_load_p95_ms": 0.8701,
+      "cold_load_ms": 1.9313,
+      "warm_load_avg_ms": 0.6001,
+      "warm_load_p95_ms": 0.8396,
       "runs": 5
     },
     "tensorrt_int8_engine": {
@@ -28,9 +28,9 @@
       "available": true,
       "artifact_bytes": 6805924,
       "artifact_mb": 6.4906,
-      "cold_load_ms": 1.3522,
-      "warm_load_avg_ms": 0.2684,
-      "warm_load_p95_ms": 0.3507,
+      "cold_load_ms": 1.4265,
+      "warm_load_avg_ms": 0.3137,
+      "warm_load_p95_ms": 0.3933,
       "runs": 5
     },
     "executorch_xnnpack_pte": {
@@ -38,9 +38,9 @@
       "available": true,
       "artifact_bytes": 13950240,
       "artifact_mb": 13.304,
-      "cold_load_ms": 2.378,
-      "warm_load_avg_ms": 0.7679,
-      "warm_load_p95_ms": 1.0689,
+      "cold_load_ms": 2.4443,
+      "warm_load_avg_ms": 1.1209,
+      "warm_load_p95_ms": 1.6363,
       "runs": 5
     }
   },

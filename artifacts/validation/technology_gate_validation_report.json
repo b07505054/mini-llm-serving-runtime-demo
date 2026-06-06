@@ -1,0 +1,95 @@
+{
+  "artifact_type": "technology_gate_validation_report",
+  "source": "heterogeneous-inference-runtime/technology_gate_audit.json",
+  "passed": true,
+  "gate_questions": [
+    "Input source",
+    "Compiler/runtime decision",
+    "Execution or serving metric impact"
+  ],
+  "main_plan_count": 6,
+  "remaining_count": 7,
+  "invalid_main_plan_items": [],
+  "remaining_without_next_step": [],
+  "main_plan": [
+    {
+      "technology": "runtime_scheduler",
+      "input": "generated LLM request trace",
+      "decision": "FCFS baseline vs cost-aware memory-pressure scheduler",
+      "metric": "TTFT, TPOT, throughput, p95 latency, queue wait",
+      "status": "implemented"
+    },
+    {
+      "technology": "continuous_batching",
+      "input": "pending decode candidates",
+      "decision": "decode batch membership under KV pressure cap",
+      "metric": "decode batch efficiency, throughput, queue wait",
+      "status": "implemented"
+    },
+    {
+      "technology": "kv_cache_planner",
+      "input": "prompt/output tokens and block capacity",
+      "decision": "KV block allocation/admission/delay/reject",
+      "metric": "peak KV MB, pressure level, OOM/reject count",
+      "status": "implemented"
+    },
+    {
+      "technology": "backend_dispatch",
+      "input": "prefill/decode/KV bookkeeping ops",
+      "decision": "GPU attention placement plus CPU KV bookkeeping",
+      "metric": "backend counts, placement latency, throughput",
+      "status": "implemented"
+    },
+    {
+      "technology": "vllm_trace_adapter",
+      "input": "vLLM-style request trace",
+      "decision": "continuous batching and paged-KV pressure mapping",
+      "metric": "TTFT, TPOT, throughput, queue wait, KV pressure",
+      "status": "implemented_as_adapter"
+    },
+    {
+      "technology": "sglang_trace_adapter",
+      "input": "SGLang-style request/decode trace",
+      "decision": "request/decode scheduling with prefix metadata",
+      "metric": "TTFT, TPOT, throughput, queue wait, KV pressure",
+      "status": "implemented_as_adapter"
+    }
+  ],
+  "remaining_not_in_main_plan": [
+    {
+      "technology": "StableHLO_native_pipeline",
+      "missing": "must connect StableHLO input to HIR kernel selection and benchmark",
+      "next_step": "StableHLO -> HIR -> kernel selection -> runtime benchmark report"
+    },
+    {
+      "technology": "JAX_tracing",
+      "missing": "must export JAX StableHLO and feed it into HIR/kernel selection",
+      "next_step": "jax.lower().compiler_ir('stablehlo') -> HIR -> runtime report"
+    },
+    {
+      "technology": "Triton_Server",
+      "missing": "must provide model repository/config.pbtxt/dynamic batching benchmark",
+      "next_step": "Triton deployment package plus validation report"
+    },
+    {
+      "technology": "TensorRT_LLM",
+      "missing": "must use LLM/transformer input, not only CV engine evidence",
+      "next_step": "Tiny transformer ONNX -> TensorRT engine -> serving metrics"
+    },
+    {
+      "technology": "Ray_Kubernetes",
+      "missing": "must connect deployment config to serving metrics and validation",
+      "next_step": "Ray/K8s deployment artifacts plus SLO report"
+    },
+    {
+      "technology": "multimodal_serving",
+      "missing": "must define text/vision/speech inputs sharing scheduler and metrics",
+      "next_step": "mixed workload simulator with per-modality latency metrics"
+    },
+    {
+      "technology": "OpenXLA_XLA_PJRT",
+      "missing": "tool availability alone does not pass the gate",
+      "next_step": "keep out of main plan until tied to a runnable frontend/runtime path"
+    }
+  ]
+}

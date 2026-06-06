@@ -161,7 +161,10 @@ class MiniServingRuntime:
             "real_llama_profile": load_json(RUNTIME_ARTIFACTS / "real_llama_profile.json", {}),
             "rmsnorm_benchmark": load_json(RUNTIME_ARTIFACTS / "rmsnorm_benchmark.json", {}),
             "serving_framework_report": load_json(RUNTIME_ARTIFACTS / "serving_framework_report.json", {}),
+            "vllm_trace_adapter_report": load_json(RUNTIME_ARTIFACTS / "vllm_trace_adapter_report.json", {}),
+            "sglang_trace_adapter_report": load_json(RUNTIME_ARTIFACTS / "sglang_trace_adapter_report.json", {}),
             "cold_start_report": load_json(RUNTIME_ARTIFACTS / "cold_start_report.json", {}),
+            "technology_gate_audit": load_json(RUNTIME_ARTIFACTS / "technology_gate_audit.json", {}),
         }
         self.validation = {
             "llm_validation_report": load_json(VALIDATION_ARTIFACTS / "llm_validation_report.json", {}),
@@ -171,7 +174,10 @@ class MiniServingRuntime:
             "plan_selection_report": load_json(VALIDATION_ARTIFACTS / "plan_selection_report.json", {}),
             "memory_validation_report": load_json(VALIDATION_ARTIFACTS / "memory_validation_report.json", {}),
             "serving_framework_validation_report": load_json(VALIDATION_ARTIFACTS / "serving_framework_validation_report.json", {}),
+            "vllm_trace_adapter_validation_report": load_json(VALIDATION_ARTIFACTS / "vllm_trace_adapter_validation_report.json", {}),
+            "sglang_trace_adapter_validation_report": load_json(VALIDATION_ARTIFACTS / "sglang_trace_adapter_validation_report.json", {}),
             "cold_start_validation_report": load_json(VALIDATION_ARTIFACTS / "cold_start_validation_report.json", {}),
+            "technology_gate_validation_report": load_json(VALIDATION_ARTIFACTS / "technology_gate_validation_report.json", {}),
         }
         self.reset()
 

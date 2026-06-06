@@ -14,6 +14,9 @@
     "runtime_validation_report.md",
     "scheduler_analysis.json",
     "serving_framework_validation_report.json",
-    "slo_report.json"
+    "sglang_trace_adapter_validation_report.json",
+    "slo_report.json",
+    "technology_gate_validation_report.json",
+    "vllm_trace_adapter_validation_report.json"
   ]
 }

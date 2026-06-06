@@ -13,7 +13,10 @@
     "plan_benchmark_results.json",
     "scheduler_decision_report.json",
     "serving_framework_report.json",
+    "vllm_trace_adapter_report.json",
+    "sglang_trace_adapter_report.json",
     "cold_start_report.json",
+    "technology_gate_audit.json",
     "real_llama_profile.json"
   ]
 }
