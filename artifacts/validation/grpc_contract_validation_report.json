@@ -1,0 +1,22 @@
+{
+  "artifact_type": "grpc_contract_validation_report",
+  "source": "heterogeneous-inference-runtime/grpc_contract_report.json",
+  "passed": true,
+  "technology_gate": {
+    "input": "distributed serving request, worker-health, route-decision, and KV-shard metadata",
+    "decision": "define RPC/control-plane schema for routing and failover boundaries",
+    "metric": "schema coverage for request routing, worker health, selected route, and KV shard metadata",
+    "passes_gate": true
+  },
+  "schema_messages": {
+    "GenerateRequest": true,
+    "GenerateResponse": true,
+    "WorkerHealth": true,
+    "RouteDecision": true,
+    "KVShardMetadata": true
+  },
+  "missing_messages": [],
+  "service_defined": true,
+  "stub_generation": "skipped_tool_not_installed",
+  "claim_boundary": "protobuf contract only; no production gRPC deployment is claimed"
+}

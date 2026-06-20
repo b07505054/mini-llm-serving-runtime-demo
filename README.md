@@ -1,7 +1,12 @@
-# MLIR Compiler-to-Runtime Optimization Workbench
+# HTML LLM Serving Runtime Demo Platform
 
-This is a self-contained demo project for showing a compiler/runtime optimization
-pipeline. It does not merge the source projects. Instead, it consumes committed
+This is the main interview demo surface for the compiler/runtime and LLM serving
+systems work. It replaces the fragile iPhone/CoreML live-demo path with a stable
+HTML experience: a PocketChef-style phone scenario asks a deterministic local
+food assistant, while the page shows KV-cache behavior, TTFT/TPOT, throughput,
+SLO validation, and the compiler/runtime artifacts behind the result.
+
+The demo does not merge the source projects. Instead, it consumes committed
 artifact snapshots from three independent systems:
 
 - `ml-graph-compiler-runtime`: MLIR source, annotated MLIR, lowered HIR JSON, execution plans
@@ -11,7 +16,10 @@ artifact snapshots from three independent systems:
 The main story is:
 
 ```text
-TinyGPT MLIR block
+Mock phone food snapshot
+  -> ingredient/nutrition/question context
+  -> deterministic LLM answer path
+  -> TinyGPT MLIR block
   -> MLIR fusion pass
   -> annotated MLIR
   -> lowered HIR JSON
@@ -21,8 +29,10 @@ TinyGPT MLIR block
   -> validation report
 ```
 
-The workload is LLM-shaped and is used to exercise compiler transformation,
-runtime lowering, backend dispatch, and validation.
+The interactive phone flow is deterministic so it can run during an interview
+without iPhone hardware, CoreML model bundles, Xcode signing, Ollama, a GPU, or
+network access. PocketChef-AI remains an optional mobile product shell; this repo
+is the primary HTML demonstration platform.
 
 ## Project Layout
 
@@ -32,6 +42,7 @@ runtime lowering, backend dispatch, and validation.
 ├── static/
 │   └── index.html
 └── artifacts/
+    ├── mobile_demo_scenarios.json
     ├── compiler/
     │   ├── tiny_gpt_serving.mlir
     │   ├── mlir_fused_graph.mlir
@@ -56,6 +67,20 @@ http://127.0.0.1:8765
 ```
 
 ## API
+
+Ask the phone-style LLM assistant:
+
+```bash
+curl -X POST http://127.0.0.1:8765/ask \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scenario_id": "breakfast_bowl",
+    "ingredients": ["egg", "rice", "spinach"],
+    "nutrition": {"calories": 520, "protein_g": 28},
+    "question": "How can I make this higher protein?",
+    "llm_mode": "combined"
+  }'
+```
 
 Run one workload instance:
 
@@ -85,6 +110,12 @@ curl -X POST http://127.0.0.1:8765/reset
 
 ## What the Dashboard Shows
 
+- Phone-style HTML demo input: mock camera panel, detected ingredients,
+  nutrition/recipe context, LLM question, and deterministic answer
+- LLM serving effect: TTFT, TPOT, E2E latency, tokens/sec, prefix-cache hit/miss,
+  prefill saved, SLO pass, and correctness pass
+- Memory evidence: compiler memory plan, runtime KV footprint, page-prefetch
+  memory guard, validation budget, and live prefix-cache memory effect
 - MLIR compiler pipeline: source MLIR, fusion pass, annotated MLIR, lowered HIR, runtime plan
 - Fusion details: fusion candidate, fusion group, lowered op type, backend, runtime action
 - Runtime lowering: `hir.fused_matmul_bias_relu` dispatched to the configured backend
@@ -109,6 +140,55 @@ curl -X POST http://127.0.0.1:8765/reset
   `admission_rejected`, and `prefix_cache_inserted`
 - Validation status: correctness pass/fail, SLO status, max logit diff
 - Raw artifact snapshots from compiler, runtime, and validation layers
+
+The top of the dashboard is the interview path:
+
+```text
+Phone Demo Input -> Ask LLM -> Serving Runtime Metrics -> Validation Evidence
+```
+
+The lower sections remain the evidence explorer for compiler, runtime, kernel,
+memory, and validation artifacts.
+
+## Memory Evidence
+
+The dashboard treats memory as a first-class serving metric. The visible memory
+panels combine committed artifacts with deterministic live prefix-cache state:
+
+```text
+Compiler memory plan
+  peak_decode_memory_mb = 673
+  memory_budget_mb = 8192
+  reuse_enabled = true
+  fits_memory_budget = true
+
+Runtime serving profile
+  peak_memory_mb = 1636.75
+  peak_kv_cache_mb = 868.75
+  oom_events = 0
+
+KV-cache analysis
+  total_blocks = 512
+  peak_blocks_used = 278
+  block_utilization = 0.543
+  fragmentation_ratio = 0.05
+  failed_allocations = 0
+```
+
+Validation reports the compiler-side memory budget result:
+
+```text
+budget_utilization = 0.0822
+allocations = 4
+reuse_events = 1
+frees = 3
+issues = []
+```
+
+The live HTML demo also reports current prefix-cache blocks, live KV MB, reused
+blocks, evictions, and prefill latency saved after repeated prompts. Those live
+values come from the deterministic in-process prefix-cache simulator. They are
+not real iPhone/CoreML memory measurements.
 
 ## Current Compiler/Runtime Evidence
 
@@ -235,11 +315,12 @@ python3 server.py
 
 ## Demo Narrative
 
-This repository turns three infrastructure projects into a visible compiler and
-runtime demo. The compiler emits MLIR and runtime-facing HIR artifacts. The
-runtime consumes the lowered plan and produces timing/profile artifacts. The
-validation platform turns runtime results into correctness and SLO reports. The
-demo shell ties them together as an optimization workbench.
+This repository turns three infrastructure projects into a visible phone-to-LLM
+serving demo. The HTML phone scenario provides the product-shaped input. The
+compiler emits MLIR and runtime-facing HIR artifacts. The runtime consumes the
+lowered plan and produces timing/profile artifacts. The validation platform
+turns runtime results into correctness and SLO reports. The demo shell ties them
+together as an optimization workbench that is stable enough for interviews.
 
 ## What Is Real Versus Simulated
 
@@ -249,9 +330,13 @@ demo shell ties them together as an optimization workbench.
 - Real: HuggingFace `LlamaForCausalLM` execution on available PyTorch backends
   in `real_llama_profile.json`
 - Real: validation artifact snapshots from `Inference-Validation-Platform`
+- Simulated: the interactive `/ask` phone demo answer is deterministic and uses
+  committed scenario inputs from `artifacts/mobile_demo_scenarios.json`
 - Simulated: the interactive `/generate` endpoint uses deterministic timing
   formulas so the dashboard remains portable without requiring a GPU or model
   download at demo time
+- Not claimed: real iPhone/CoreML inference, production vLLM/SGLang/Triton/
+  TensorRT-LLM serving, or live framework-internal modification
 
 This split is intentional: the dashboard is a presentation layer over committed
 compiler/runtime/validation evidence, while the live controls make that evidence

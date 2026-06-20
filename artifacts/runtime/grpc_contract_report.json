@@ -1,0 +1,23 @@
+{
+  "artifact_type": "grpc_contract_report",
+  "source": "/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/protos/distributed_serving.proto",
+  "integration_level": "protobuf_contract_no_production_grpc_server",
+  "technology_gate": {
+    "input": "distributed serving request, worker-health, route-decision, and KV-shard metadata",
+    "decision": "define RPC/control-plane schema for routing and failover boundaries",
+    "metric": "schema coverage for request routing, worker health, selected route, and KV shard metadata",
+    "passes_gate": true
+  },
+  "schema_messages": {
+    "GenerateRequest": true,
+    "GenerateResponse": true,
+    "WorkerHealth": true,
+    "RouteDecision": true,
+    "KVShardMetadata": true
+  },
+  "service_defined": true,
+  "grpcio_tools_available": false,
+  "protoc_available": false,
+  "stub_generation": "skipped_tool_not_installed",
+  "claim_boundary": "protobuf contract only; no production gRPC deployment is claimed"
+}

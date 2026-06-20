@@ -1,10 +1,10 @@
 {
   "source": "heterogeneous-inference-runtime/scheduler_trace.json",
-  "policy": "cost_aware_memory_pressure",
+  "policy": "cost_aware_memory_pressure_page_prefetch",
   "decode_batch_events": 5,
   "avg_decode_batch_size": 6.4,
   "max_active_requests": 8,
-  "avg_queue_wait_ms": 681.879,
-  "p95_queue_wait_ms": 1381.098,
+  "avg_queue_wait_ms": 571.0365,
+  "p95_queue_wait_ms": 1128.618,
   "decode_batch_efficiency": 0.8
 }

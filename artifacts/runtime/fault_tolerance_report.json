@@ -1,0 +1,41 @@
+{
+  "artifact_type": "fault_tolerance_report",
+  "source": "deployment.distributed_serving",
+  "technology_gate": {
+    "input": "vLLM-style serving trace plus worker queue/KV residency state",
+    "decision": "round-robin vs least-queue vs KV-aware request routing with failover",
+    "metric": "TTFT, TPOT, throughput, cache hit rate, queue wait, retry count, latency regression",
+    "passes_gate": true
+  },
+  "scenario": "worker-1 timeout after half of trace; retry to healthy worker; quarantine failed worker",
+  "selected_policy": "kv_aware_with_failover",
+  "worker_health": {
+    "timeout_enabled": true,
+    "retry_enabled": true,
+    "quarantine_enabled": true,
+    "failover_enabled": true
+  },
+  "metrics": {
+    "policy": "kv_aware",
+    "completed_requests": 32,
+    "failed_requests": 0,
+    "ttft_p95_ms": 1872.9261,
+    "tpot_p95_ms": 5.8519,
+    "e2e_p95_ms": 9748.4651,
+    "throughput_tokens_per_s": 189.2351,
+    "cache_hit_rate": 0.7812,
+    "queue_wait_p95_ms": 7069.3825,
+    "peak_worker_memory_pressure": 0.974,
+    "retry_count": 1,
+    "quarantine_count": 1,
+    "failover_count": 1
+  },
+  "latency_regression": {
+    "ttft_p95_delta_ms": -100.9461,
+    "tpot_p95_delta_ms": -0.2577,
+    "throughput_delta_tokens_per_s": 47.8422,
+    "retry_timeout_overhead_ms": 35.0,
+    "note": "global p95 can improve if quarantine removes an overloaded worker; retry_timeout_overhead_ms records the per-retry failure cost"
+  },
+  "passed": true
+}

@@ -10,12 +10,12 @@
     "decode_latency_budget_ms": 20.0,
     "e2e_latency_budget_ms": 1800.0,
     "prefill_latency_ms": 38.316,
-    "avg_decode_latency_ms": 2.519,
-    "p95_decode_latency_ms": 3.244,
-    "p99_decode_latency_ms": 3.384,
-    "p95_latency_ms": 1716.077,
-    "p99_latency_ms": 1727.51,
-    "tokens_per_second": 1236.142,
+    "avg_decode_latency_ms": 2.01,
+    "p95_decode_latency_ms": 2.511,
+    "p99_decode_latency_ms": 2.591,
+    "p95_latency_ms": 1406.597,
+    "p99_latency_ms": 1418.03,
+    "tokens_per_second": 1470.548,
     "peak_memory_mb": 1636.75,
     "oom_events": 0
   },
@@ -23,23 +23,23 @@
     "job_id": "runtime-artifact-validation-001",
     "passed": true,
     "ttft_p95_ms": 38.316,
-    "tpot_p95_ms": 3.244,
-    "e2e_p95_ms": 1716.077,
-    "queue_wait_p95_ms": 1381.098,
+    "tpot_p95_ms": 2.511,
+    "e2e_p95_ms": 1406.597,
+    "queue_wait_p95_ms": 1128.618,
     "slo_violation_rate": 0.0,
     "admission_rejection_rate": 0.0,
-    "tokens_per_second": 1236.142,
-    "requests_per_second": 16.4819,
+    "tokens_per_second": 1470.548,
+    "requests_per_second": 19.6073,
     "oom_events": 0
   },
   "scheduler_analysis": {
     "source": "heterogeneous-inference-runtime/scheduler_trace.json",
-    "policy": "cost_aware_memory_pressure",
+    "policy": "cost_aware_memory_pressure_page_prefetch",
     "decode_batch_events": 5,
     "avg_decode_batch_size": 6.4,
     "max_active_requests": 8,
-    "avg_queue_wait_ms": 681.879,
-    "p95_queue_wait_ms": 1381.098,
+    "avg_queue_wait_ms": 571.0365,
+    "p95_queue_wait_ms": 1128.618,
     "decode_batch_efficiency": 0.8
   },
   "kv_cache_analysis": {
@@ -81,7 +81,7 @@
         "arrival_ms": 10.231,
         "prefill_start_ms": 10.231,
         "decode_start_ms": 76.523,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 96,
         "queue_wait_ms": 0.0
@@ -91,27 +91,27 @@
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 32,
         "queue_wait_ms": 62.374
       },
       {
         "request_id": "req-003",
-        "arrival_ms": 317.285,
-        "prefill_start_ms": 317.285,
-        "decode_start_ms": 487.266,
-        "finish_ms": 825.69,
+        "arrival_ms": 257.825,
+        "prefill_start_ms": 257.825,
+        "decode_start_ms": 427.806,
+        "finish_ms": 714.03,
         "status": "completed",
         "tokens_generated": 32,
-        "queue_wait_ms": 292.309
+        "queue_wait_ms": 232.849
       },
       {
         "request_id": "req-004",
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 32,
         "queue_wait_ms": 42.099
@@ -121,37 +121,37 @@
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 32,
         "queue_wait_ms": 40.6
       },
       {
         "request_id": "req-006",
-        "arrival_ms": 487.266,
+        "arrival_ms": 427.806,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 825.69,
+        "finish_ms": 714.03,
         "status": "completed",
         "tokens_generated": 128,
-        "queue_wait_ms": 442.363
+        "queue_wait_ms": 382.903
       },
       {
         "request_id": "req-007",
-        "arrival_ms": 487.266,
+        "arrival_ms": 427.806,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 825.69,
+        "finish_ms": 714.03,
         "status": "completed",
         "tokens_generated": 96,
-        "queue_wait_ms": 438.836
+        "queue_wait_ms": 379.376
       },
       {
         "request_id": "req-008",
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 64,
         "queue_wait_ms": 15.142
@@ -161,7 +161,7 @@
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 96,
         "queue_wait_ms": 3.972
@@ -171,7 +171,7 @@
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 32,
         "queue_wait_ms": 1.484
@@ -181,220 +181,220 @@
         "arrival_ms": 76.523,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 317.285,
+        "finish_ms": 257.825,
         "status": "completed",
         "tokens_generated": 96,
         "queue_wait_ms": 0.0
       },
       {
         "request_id": "req-012",
-        "arrival_ms": 487.266,
+        "arrival_ms": 427.806,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 825.69,
+        "finish_ms": 714.03,
         "status": "completed",
         "tokens_generated": 96,
-        "queue_wait_ms": 397.183
+        "queue_wait_ms": 337.723
       },
       {
         "request_id": "req-013",
-        "arrival_ms": 825.69,
-        "prefill_start_ms": 825.69,
-        "decode_start_ms": 920.545,
-        "finish_ms": 1241.064,
+        "arrival_ms": 714.03,
+        "prefill_start_ms": 714.03,
+        "decode_start_ms": 808.885,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 32,
-        "queue_wait_ms": 722.693
+        "queue_wait_ms": 611.033
       },
       {
         "request_id": "req-014",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 32,
-        "queue_wait_ms": 801.978
+        "queue_wait_ms": 690.318
       },
       {
         "request_id": "req-015",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 96,
-        "queue_wait_ms": 793.146
+        "queue_wait_ms": 681.486
       },
       {
         "request_id": "req-016",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 32,
-        "queue_wait_ms": 783.908
+        "queue_wait_ms": 672.248
       },
       {
         "request_id": "req-017",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 32,
-        "queue_wait_ms": 773.328
+        "queue_wait_ms": 661.668
       },
       {
         "request_id": "req-018",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 128,
-        "queue_wait_ms": 759.643
+        "queue_wait_ms": 647.983
       },
       {
         "request_id": "req-019",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 64,
-        "queue_wait_ms": 755.195
+        "queue_wait_ms": 643.535
       },
       {
         "request_id": "req-020",
-        "arrival_ms": 920.545,
+        "arrival_ms": 808.885,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1241.064,
+        "finish_ms": 1065.324,
         "status": "completed",
         "tokens_generated": 96,
-        "queue_wait_ms": 749.272
+        "queue_wait_ms": 637.612
       },
       {
         "request_id": "req-021",
-        "arrival_ms": 1241.064,
-        "prefill_start_ms": 1241.064,
-        "decode_start_ms": 1271.539,
-        "finish_ms": 1609.152,
+        "arrival_ms": 1065.324,
+        "prefill_start_ms": 1065.324,
+        "decode_start_ms": 1095.799,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 64,
-        "queue_wait_ms": 1058.562
+        "queue_wait_ms": 882.822
       },
       {
         "request_id": "req-022",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 64,
-        "queue_wait_ms": 1080.491
+        "queue_wait_ms": 904.751
       },
       {
         "request_id": "req-023",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 64,
-        "queue_wait_ms": 1073.095
+        "queue_wait_ms": 897.355
       },
       {
         "request_id": "req-024",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 64,
-        "queue_wait_ms": 1062.141
+        "queue_wait_ms": 886.401
       },
       {
         "request_id": "req-025",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 128,
-        "queue_wait_ms": 1048.992
+        "queue_wait_ms": 873.252
       },
       {
         "request_id": "req-026",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 96,
-        "queue_wait_ms": 1044.708
+        "queue_wait_ms": 868.968
       },
       {
         "request_id": "req-027",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 128,
-        "queue_wait_ms": 1041.306
+        "queue_wait_ms": 865.566
       },
       {
         "request_id": "req-028",
-        "arrival_ms": 1271.539,
+        "arrival_ms": 1095.799,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1609.152,
+        "finish_ms": 1356.672,
         "status": "completed",
         "tokens_generated": 64,
-        "queue_wait_ms": 1027.151
+        "queue_wait_ms": 851.411
       },
       {
         "request_id": "req-029",
-        "arrival_ms": 1609.152,
-        "prefill_start_ms": 1609.152,
-        "decode_start_ms": 1647.468,
-        "finish_ms": 1941.525,
+        "arrival_ms": 1356.672,
+        "prefill_start_ms": 1356.672,
+        "decode_start_ms": 1394.988,
+        "finish_ms": 1632.045,
         "status": "completed",
         "tokens_generated": 96,
-        "queue_wait_ms": 1360.526
+        "queue_wait_ms": 1108.046
       },
       {
         "request_id": "req-030",
-        "arrival_ms": 1647.468,
+        "arrival_ms": 1394.988,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1941.525,
+        "finish_ms": 1632.045,
         "status": "completed",
         "tokens_generated": 128,
-        "queue_wait_ms": 1386.89
+        "queue_wait_ms": 1134.41
       },
       {
         "request_id": "req-031",
-        "arrival_ms": 1647.468,
+        "arrival_ms": 1394.988,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1941.525,
+        "finish_ms": 1632.045,
         "status": "completed",
         "tokens_generated": 128,
-        "queue_wait_ms": 1381.098
+        "queue_wait_ms": 1128.618
       },
       {
         "request_id": "req-032",
-        "arrival_ms": 1647.468,
+        "arrival_ms": 1394.988,
         "prefill_start_ms": null,
         "decode_start_ms": null,
-        "finish_ms": 1941.525,
+        "finish_ms": 1632.045,
         "status": "completed",
         "tokens_generated": 32,
-        "queue_wait_ms": 1379.643
+        "queue_wait_ms": 1127.163
       }
     ]
   },
@@ -403,18 +403,18 @@
     "total_requests": 32,
     "completed_requests": 32,
     "rejected_requests": 0,
-    "p50_latency_ms": 1193.992,
-    "p95_latency_ms": 1716.077,
-    "p99_latency_ms": 1727.51,
+    "p50_latency_ms": 1018.252,
+    "p95_latency_ms": 1406.597,
+    "p99_latency_ms": 1418.03,
     "peak_memory_mb": 1636.75,
     "peak_kv_cache_mb": 868.75,
     "oom_events": 0,
-    "tokens_per_second": 1236.142
+    "tokens_per_second": 1470.548
   },
   "runtime_decision_validation_report": {
     "artifact_type": "runtime_decision_validation_report",
     "source": "heterogeneous-inference-runtime/scheduler_decision_report.json",
-    "selected_policy": "cost_aware_memory_pressure",
+    "selected_policy": "cost_aware_memory_pressure_page_prefetch",
     "passed": true,
     "baseline_policy": {
       "policy": "fcfs_fixed_batch",
@@ -431,7 +431,10 @@
       },
       "batch_cap_reductions": 0,
       "pressure_limited_candidates": 0,
-      "finish_time_ms": 8052.433
+      "finish_time_ms": 8052.433,
+      "page_prefetch": {
+        "enabled": false
+      }
     },
     "optimized_policy": {
       "policy": "cost_aware_memory_pressure",
@@ -448,12 +451,46 @@
       },
       "batch_cap_reductions": 0,
       "pressure_limited_candidates": 20,
-      "finish_time_ms": 1941.525
+      "finish_time_ms": 1941.525,
+      "page_prefetch": {
+        "enabled": false
+      }
+    },
+    "page_prefetch_policy": {
+      "policy": "cost_aware_memory_pressure_page_prefetch",
+      "completed_requests": 32,
+      "rejected_requests": 0,
+      "delayed_requests": 0,
+      "p95_latency_ms": 1406.597,
+      "tokens_per_second": 1470.548,
+      "peak_kv_cache_mb": 868.75,
+      "avg_decode_batch_size": 6.4,
+      "decode_batch_efficiency": 0.8,
+      "pressure_level_counts": {
+        "low": 5
+      },
+      "batch_cap_reductions": 0,
+      "pressure_limited_candidates": 20,
+      "finish_time_ms": 1632.045,
+      "page_prefetch": {
+        "enabled": true,
+        "policy": "vllm_style_allocated_kv_page_prefetch",
+        "attempts": 4288,
+        "hits": 4228,
+        "misses": 572,
+        "hit_rate": 0.8808,
+        "wasted_prefetch_blocks": 60,
+        "pressure_skips": 0,
+        "max_prefetch_blocks_per_step": 12,
+        "pressure_disable_threshold": 0.82,
+        "hit_latency_saving_ms": 0.075,
+        "wasted_prefetch_penalty_ms": 0.015
+      }
     },
     "improvement": {
-      "tokens_per_second_delta": 938.095,
+      "tokens_per_second_delta": 1172.501,
       "decode_batch_efficiency_delta": 0.675,
-      "p95_latency_ms_delta": -5869.755
+      "p95_latency_ms_delta": -6179.235
     },
     "checks": {
       "selected_optimized": true,
@@ -471,34 +508,36 @@
     "selected_framework_style": "vllm_sglang_style",
     "framework_targets": [
       "vLLM continuous batching and paged KV-cache pressure",
+      "vLLM-style allocated KV page prefetch under memory-pressure budget",
       "SGLang request/decode scheduling and prefix/KV reuse hooks",
       "Triton Server dynamic batching and backend instance routing",
       "TensorRT engine/optimization-profile backend candidate selection"
     ],
-    "comparison_count": 4,
+    "comparison_count": 5,
     "available_framework_styles": [
       "baseline_fcfs",
       "tensorrt_style",
       "triton_server_style",
-      "vllm_sglang_style"
+      "vllm_sglang_style",
+      "vllm_style_page_prefetch"
     ],
     "missing_framework_styles": [],
     "missing_metrics": [],
     "metrics": {
       "ttft_ms": 38.316,
-      "tpot_p95_ms": 3.244,
-      "e2e_p95_ms": 1716.077,
-      "throughput_tokens_per_s": 1236.142,
+      "tpot_p95_ms": 2.511,
+      "e2e_p95_ms": 1406.597,
+      "throughput_tokens_per_s": 1470.548,
       "peak_kv_cache_mb": 868.75,
       "peak_memory_mb": 1636.75,
       "oom_events": 0
     },
     "improvement": {
-      "tokens_per_second_delta": 938.095,
+      "tokens_per_second_delta": 1172.501,
       "decode_batch_efficiency_delta": 0.675,
-      "p95_latency_ms_delta": -5869.755
+      "p95_latency_ms_delta": -6179.235
     },
-    "selection_reason": "cost-aware policy improved tokens/sec while staying within KV memory capacity"
+    "selection_reason": "page prefetch candidate improved TPOT/e2e/throughput without KV regression"
   },
   "cold_start_validation_report": {
     "artifact_type": "cold_start_validation_report",
@@ -514,8 +553,8 @@
     "cold_ttft_ms": 98.316,
     "warm_ttft_ms": 38.316,
     "first_request_penalty_ms": 60.0,
-    "steady_state_tpot_p95_ms": 3.244,
-    "steady_state_throughput_tokens_per_s": 1236.142,
+    "steady_state_tpot_p95_ms": 2.511,
+    "steady_state_throughput_tokens_per_s": 1470.548,
     "tensorrt_available": false,
     "tensorrt_reason": "TensorRT import failed: No module named 'tensorrt'",
     "recommendation_count": 4
@@ -534,7 +573,7 @@
     "missing_gate_fields": [],
     "imported_request_count": 32,
     "runtime_decision": {
-      "scheduler_policy": "cost_aware_memory_pressure",
+      "scheduler_policy": "cost_aware_memory_pressure_page_prefetch",
       "lifecycle": "arrival -> prefill -> continuous decode batch -> finish",
       "decode_batch_events": 5,
       "avg_decode_batch_size": 6.4,
@@ -546,8 +585,8 @@
       "completed_requests": 32,
       "rejected_requests": 0,
       "delayed_requests": 0,
-      "throughput_tokens_per_s": 1236.142,
-      "e2e_p95_ms": 1716.077,
+      "throughput_tokens_per_s": 1470.548,
+      "e2e_p95_ms": 1406.597,
       "peak_memory_mb": 1636.75,
       "peak_kv_cache_mb": 868.75
     },
@@ -570,7 +609,7 @@
     "missing_gate_fields": [],
     "imported_request_count": 32,
     "runtime_decision": {
-      "scheduler_policy": "cost_aware_memory_pressure",
+      "scheduler_policy": "cost_aware_memory_pressure_page_prefetch",
       "lifecycle": "request program -> prefix lookup -> decode scheduling -> finish",
       "decode_batch_events": 5,
       "avg_decode_batch_size": 6.4,
@@ -582,8 +621,8 @@
       "completed_requests": 32,
       "rejected_requests": 0,
       "delayed_requests": 0,
-      "throughput_tokens_per_s": 1236.142,
-      "e2e_p95_ms": 1716.077,
+      "throughput_tokens_per_s": 1470.548,
+      "e2e_p95_ms": 1406.597,
       "peak_memory_mb": 1636.75,
       "peak_kv_cache_mb": 868.75
     },
@@ -601,7 +640,7 @@
       "Compiler/runtime decision",
       "Execution or serving metric impact"
     ],
-    "main_plan_count": 7,
+    "main_plan_count": 11,
     "remaining_count": 7,
     "invalid_main_plan_items": [],
     "remaining_without_next_step": [],
@@ -649,11 +688,39 @@
         "status": "implemented_as_adapter"
       },
       {
+        "technology": "vllm_style_page_prefetch",
+        "input": "vLLM-style request/decode trace plus allocated KV block map",
+        "decision": "prefetch next decode KV pages when memory pressure is below budget",
+        "metric": "prefetch hit rate, wasted prefetch blocks, TPOT p95, throughput, OOM/rejection rate",
+        "status": "implemented_as_runtime_scheduler_candidate"
+      },
+      {
         "technology": "sglang_trace_adapter",
         "input": "SGLang-style request/decode trace",
         "decision": "request/decode scheduling with prefix metadata",
         "metric": "TTFT, TPOT, throughput, queue wait, KV pressure",
         "status": "implemented_as_adapter"
+      },
+      {
+        "technology": "distributed_kv_aware_routing",
+        "input": "vLLM-style serving trace plus worker queue/KV residency state",
+        "decision": "round-robin vs least-queue vs KV-aware request routing",
+        "metric": "TTFT, TPOT, throughput, cache hit rate, queue wait, peak worker pressure",
+        "status": "implemented_as_distributed_serving_control_plane"
+      },
+      {
+        "technology": "worker_health_failover",
+        "input": "distributed serving trace with injected worker timeout",
+        "decision": "timeout detection, retry, quarantine, failover routing",
+        "metric": "retry count, failover count, request loss, latency regression",
+        "status": "implemented_as_fault_tolerance_simulation"
+      },
+      {
+        "technology": "protobuf_serving_contract",
+        "input": "GenerateRequest/WorkerHealth/RouteDecision/KVShardMetadata schema",
+        "decision": "define distributed serving RPC/control-plane boundary",
+        "metric": "schema coverage for request routing, worker health, route decision, KV shard metadata",
+        "status": "implemented_as_contract_not_production_grpc"
       }
     ],
     "remaining_not_in_main_plan": [
@@ -693,6 +760,247 @@
         "next_step": "keep out of main plan until tied to a runnable frontend/runtime path"
       }
     ]
+  },
+  "page_prefetch_validation_report": {
+    "artifact_type": "page_prefetch_validation_report",
+    "source": "heterogeneous-inference-runtime/page_prefetch_report.json",
+    "passed": true,
+    "integration_level": "vllm_style_scheduler_simulation_not_framework_fork",
+    "technology_gate": {
+      "input": "vLLM-style request/decode trace plus allocated KV block map and pending decode candidates",
+      "decision": "prefetch next decode KV pages only when memory pressure is below the prefetch budget",
+      "metric": "prefetch hit rate, wasted prefetch blocks, TPOT p95, decode p95, throughput, queue wait, OOM/rejection rate",
+      "passes_gate": true
+    },
+    "missing_gate_fields": [],
+    "selected_policy": "cost_aware_memory_pressure_page_prefetch",
+    "candidate_policy": "cost_aware_memory_pressure_page_prefetch",
+    "fallback_policy": "cost_aware_memory_pressure",
+    "selection_reason": "page prefetch improved TPOT/e2e/throughput without OOM regression",
+    "metric": {
+      "prefetch_attempts": 4288,
+      "prefetch_hits": 4228,
+      "prefetch_misses": 572,
+      "prefetch_hit_rate": 0.8808,
+      "wasted_prefetch_blocks": 60,
+      "pressure_skips": 0,
+      "optimized_tpot_p95_ms": 3.2443,
+      "prefetch_tpot_p95_ms": 2.5111,
+      "tpot_p95_delta_ms": -0.7331,
+      "optimized_e2e_p95_ms": 1716.077,
+      "prefetch_e2e_p95_ms": 1406.597,
+      "e2e_p95_delta_ms": -309.48,
+      "optimized_tokens_per_second": 1236.142,
+      "prefetch_tokens_per_second": 1470.548,
+      "tokens_per_second_delta": 234.406,
+      "optimized_peak_kv_cache_mb": 868.75,
+      "prefetch_peak_kv_cache_mb": 868.75,
+      "oom_events": 0
+    },
+    "checks": {
+      "counters_valid": true,
+      "no_oom_regression": true,
+      "selected_policy_valid": true,
+      "fallback_guard_present": true
+    },
+    "remaining_work": [
+      "replace synthetic trace with exported vLLM scheduler logs",
+      "wire policy into a real vLLM fork before claiming framework-internal modification",
+      "measure physical GPU page/cache prefetch separately before claiming CUDA cp.async"
+    ]
+  },
+  "distributed_serving_validation_report": {
+    "artifact_type": "distributed_serving_validation_report",
+    "source": "heterogeneous-inference-runtime/distributed_serving_report.json",
+    "passed": true,
+    "technology_gate": {
+      "input": "vLLM-style serving trace plus worker queue/KV residency state",
+      "decision": "round-robin vs least-queue vs KV-aware request routing with failover",
+      "metric": "TTFT, TPOT, throughput, cache hit rate, queue wait, retry count, latency regression",
+      "passes_gate": true
+    },
+    "selected_policy": "least_queue",
+    "selection_reason": "least-queue retained because KV-aware routing regressed TPOT or throughput",
+    "missing_policies": [],
+    "policy_summaries": {
+      "round_robin": {
+        "policy": "round_robin",
+        "completed_requests": 32,
+        "failed_requests": 0,
+        "ttft_p95_ms": 1287.1881,
+        "tpot_p95_ms": 4.765,
+        "e2e_p95_ms": 7682.3232,
+        "throughput_tokens_per_s": 240.5951,
+        "cache_hit_rate": 0.625,
+        "queue_wait_p95_ms": 5785.2111,
+        "peak_worker_memory_pressure": 1.0,
+        "retry_count": 0,
+        "quarantine_count": 0,
+        "failover_count": 0
+      },
+      "least_queue": {
+        "policy": "least_queue",
+        "completed_requests": 32,
+        "failed_requests": 0,
+        "ttft_p95_ms": 1244.5644,
+        "tpot_p95_ms": 4.6866,
+        "e2e_p95_ms": 7433.7792,
+        "throughput_tokens_per_s": 283.2506,
+        "cache_hit_rate": 0.625,
+        "queue_wait_p95_ms": 5589.3308,
+        "peak_worker_memory_pressure": 0.776,
+        "retry_count": 0,
+        "quarantine_count": 0,
+        "failover_count": 0
+      },
+      "kv_aware": {
+        "policy": "kv_aware",
+        "completed_requests": 32,
+        "failed_requests": 0,
+        "ttft_p95_ms": 1973.8722,
+        "tpot_p95_ms": 6.1096,
+        "e2e_p95_ms": 11412.1901,
+        "throughput_tokens_per_s": 141.3929,
+        "cache_hit_rate": 0.8438,
+        "queue_wait_p95_ms": 8947.529,
+        "peak_worker_memory_pressure": 0.9375,
+        "retry_count": 0,
+        "quarantine_count": 0,
+        "failover_count": 0
+      }
+    },
+    "checks": {
+      "selected_policy_valid": true,
+      "metrics_present": true,
+      "kv_cache_hit_rate_not_worse_than_least_queue": true
+    }
+  },
+  "load_balancing_validation_report": {
+    "artifact_type": "load_balancing_validation_report",
+    "source": "heterogeneous-inference-runtime/load_balancing_report.json",
+    "passed": true,
+    "selected_policy": "least_queue",
+    "selection_reason": "least-queue retained because KV-aware routing regressed TPOT or throughput",
+    "policy_count": 3,
+    "comparisons": {
+      "cache_hit_rate_delta": 0.2188,
+      "tpot_p95_delta_ms": 1.423,
+      "throughput_delta_tokens_per_s": -141.8577
+    },
+    "policies": {
+      "round_robin": {
+        "policy": "round_robin",
+        "completed_requests": 32,
+        "failed_requests": 0,
+        "ttft_p95_ms": 1287.1881,
+        "tpot_p95_ms": 4.765,
+        "e2e_p95_ms": 7682.3232,
+        "throughput_tokens_per_s": 240.5951,
+        "cache_hit_rate": 0.625,
+        "queue_wait_p95_ms": 5785.2111,
+        "peak_worker_memory_pressure": 1.0,
+        "retry_count": 0,
+        "quarantine_count": 0,
+        "failover_count": 0
+      },
+      "least_queue": {
+        "policy": "least_queue",
+        "completed_requests": 32,
+        "failed_requests": 0,
+        "ttft_p95_ms": 1244.5644,
+        "tpot_p95_ms": 4.6866,
+        "e2e_p95_ms": 7433.7792,
+        "throughput_tokens_per_s": 283.2506,
+        "cache_hit_rate": 0.625,
+        "queue_wait_p95_ms": 5589.3308,
+        "peak_worker_memory_pressure": 0.776,
+        "retry_count": 0,
+        "quarantine_count": 0,
+        "failover_count": 0
+      },
+      "kv_aware": {
+        "policy": "kv_aware",
+        "completed_requests": 32,
+        "failed_requests": 0,
+        "ttft_p95_ms": 1973.8722,
+        "tpot_p95_ms": 6.1096,
+        "e2e_p95_ms": 11412.1901,
+        "throughput_tokens_per_s": 141.3929,
+        "cache_hit_rate": 0.8438,
+        "queue_wait_p95_ms": 8947.529,
+        "peak_worker_memory_pressure": 0.9375,
+        "retry_count": 0,
+        "quarantine_count": 0,
+        "failover_count": 0
+      }
+    }
+  },
+  "fault_tolerance_validation_report": {
+    "artifact_type": "fault_tolerance_validation_report",
+    "source": "heterogeneous-inference-runtime/fault_tolerance_report.json",
+    "passed": true,
+    "technology_gate": {
+      "input": "vLLM-style serving trace plus worker queue/KV residency state",
+      "decision": "round-robin vs least-queue vs KV-aware request routing with failover",
+      "metric": "TTFT, TPOT, throughput, cache hit rate, queue wait, retry count, latency regression",
+      "passes_gate": true
+    },
+    "worker_health": {
+      "timeout_enabled": true,
+      "retry_enabled": true,
+      "quarantine_enabled": true,
+      "failover_enabled": true
+    },
+    "metrics": {
+      "policy": "kv_aware",
+      "completed_requests": 32,
+      "failed_requests": 0,
+      "ttft_p95_ms": 1872.9261,
+      "tpot_p95_ms": 5.8519,
+      "e2e_p95_ms": 9748.4651,
+      "throughput_tokens_per_s": 189.2351,
+      "cache_hit_rate": 0.7812,
+      "queue_wait_p95_ms": 7069.3825,
+      "peak_worker_memory_pressure": 0.974,
+      "retry_count": 1,
+      "quarantine_count": 1,
+      "failover_count": 1
+    },
+    "latency_regression": {
+      "ttft_p95_delta_ms": -100.9461,
+      "tpot_p95_delta_ms": -0.2577,
+      "throughput_delta_tokens_per_s": 47.8422,
+      "retry_timeout_overhead_ms": 35.0,
+      "note": "global p95 can improve if quarantine removes an overloaded worker; retry_timeout_overhead_ms records the per-retry failure cost"
+    },
+    "checks": {
+      "timeout_seen": true,
+      "failover_seen": true,
+      "quarantined_worker_seen": true,
+      "no_request_loss": true
+    }
+  },
+  "grpc_contract_validation_report": {
+    "artifact_type": "grpc_contract_validation_report",
+    "source": "heterogeneous-inference-runtime/grpc_contract_report.json",
+    "passed": true,
+    "technology_gate": {
+      "input": "distributed serving request, worker-health, route-decision, and KV-shard metadata",
+      "decision": "define RPC/control-plane schema for routing and failover boundaries",
+      "metric": "schema coverage for request routing, worker health, selected route, and KV shard metadata",
+      "passes_gate": true
+    },
+    "schema_messages": {
+      "GenerateRequest": true,
+      "GenerateResponse": true,
+      "WorkerHealth": true,
+      "RouteDecision": true,
+      "KVShardMetadata": true
+    },
+    "missing_messages": [],
+    "service_defined": true,
+    "stub_generation": "skipped_tool_not_installed",
+    "claim_boundary": "protobuf contract only; no production gRPC deployment is claimed"
   },
   "gpu_pgo_like_validation_report": {
     "artifact_type": "gpu_pgo_like_validation_report",

@@ -1,0 +1,91 @@
+{
+  "artifact_type": "mobile_demo_scenarios",
+  "schema_version": 1,
+  "truth_boundary": {
+    "real": [
+      "The HTML demo uses committed compiler, runtime, and validation artifacts.",
+      "The interactive LLM answer is deterministic so the interview demo works without CoreML, iPhone, Xcode, Ollama, or GPU setup."
+    ],
+    "not_claimed": [
+      "These scenarios are not real iPhone camera captures.",
+      "The demo does not run production vLLM, SGLang, Triton, TensorRT-LLM, or live CoreML inference."
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "breakfast_bowl",
+      "label": "Breakfast Bowl",
+      "camera_label": "Mock iPhone snapshot",
+      "default_mode": "combined",
+      "default_question": "What can I cook from this?",
+      "answer_seed": "spinach egg rice bowl",
+      "ingredients": [
+        {"name": "egg", "confidence": 0.94},
+        {"name": "rice", "confidence": 0.91},
+        {"name": "spinach", "confidence": 0.88},
+        {"name": "tomato", "confidence": 0.81}
+      ],
+      "nutrition": {
+        "calories": 520,
+        "protein_g": 28,
+        "carbs_g": 58,
+        "fat_g": 18,
+        "fiber_g": 6
+      },
+      "recipe": {
+        "title": "Spinach egg rice bowl",
+        "subtitle": "Fast breakfast bowl with warm rice, greens, and egg."
+      }
+    },
+    {
+      "id": "high_protein",
+      "label": "High Protein",
+      "camera_label": "Mock meal-prep snapshot",
+      "default_mode": "runtime",
+      "default_question": "How can I make this higher protein?",
+      "answer_seed": "protein meal prep bowl",
+      "ingredients": [
+        {"name": "chicken", "confidence": 0.93},
+        {"name": "broccoli", "confidence": 0.9},
+        {"name": "rice", "confidence": 0.87},
+        {"name": "yogurt", "confidence": 0.72}
+      ],
+      "nutrition": {
+        "calories": 610,
+        "protein_g": 46,
+        "carbs_g": 62,
+        "fat_g": 16,
+        "fiber_g": 8
+      },
+      "recipe": {
+        "title": "Chicken broccoli protein bowl",
+        "subtitle": "Meal-prep bowl with a yogurt sauce option."
+      }
+    },
+    {
+      "id": "low_waste",
+      "label": "Low Waste",
+      "camera_label": "Mock fridge-cleanout snapshot",
+      "default_mode": "compiler",
+      "default_question": "How do I use these leftovers without wasting them?",
+      "answer_seed": "leftover vegetable fried rice",
+      "ingredients": [
+        {"name": "rice", "confidence": 0.89},
+        {"name": "carrot", "confidence": 0.86},
+        {"name": "mushroom", "confidence": 0.82},
+        {"name": "green onion", "confidence": 0.78}
+      ],
+      "nutrition": {
+        "calories": 470,
+        "protein_g": 14,
+        "carbs_g": 72,
+        "fat_g": 12,
+        "fiber_g": 7
+      },
+      "recipe": {
+        "title": "Leftover vegetable fried rice",
+        "subtitle": "Use small leftover portions in one hot pan."
+      }
+    }
+  ]
+}

@@ -14,9 +14,18 @@
     "scheduler_decision_report.json",
     "serving_framework_report.json",
     "vllm_trace_adapter_report.json",
+    "page_prefetch_report.json",
+    "page_prefetch_trace.json",
     "sglang_trace_adapter_report.json",
     "cold_start_report.json",
     "technology_gate_audit.json",
+    "distributed_serving_report.json",
+    "distributed_serving_trace.json",
+    "load_balancing_report.json",
+    "worker_health_report.json",
+    "fault_tolerance_report.json",
+    "failover_trace.json",
+    "grpc_contract_report.json",
     "real_llama_profile.json"
   ]
 }

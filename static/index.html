@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MLIR Compiler Runtime Workbench</title>
+  <title>LLM Serving Runtime Demo</title>
   <style>
     :root {
       --bg: #101214;
@@ -43,7 +43,7 @@
       align-items: center;
       margin-bottom: 18px;
     }
-    button, input {
+    button, input, select, textarea {
       background: var(--panel-2);
       color: var(--text);
       border: 1px solid var(--line);
@@ -56,6 +56,8 @@
     button.danger { background: #3a1818; border-color: #7d2a2a; }
     label { color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
     input { width: 96px; }
+    select { min-width: 132px; }
+    textarea { width: 100%; min-height: 86px; resize: vertical; }
     .grid {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
@@ -151,18 +153,105 @@
       font-size: 12px;
     }
     .small { color: var(--muted); font-size: 12px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 0.9fr) minmax(300px, 1.1fr) minmax(280px, 1fr) minmax(240px, 0.9fr);
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .phone-frame {
+      min-height: 410px;
+      border: 1px solid #3c4652;
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), transparent 18%),
+        #0c0e11;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .camera-window {
+      flex: 1;
+      min-height: 190px;
+      border-radius: 16px;
+      border: 1px solid #324050;
+      background:
+        linear-gradient(135deg, rgba(126,231,135,0.2), rgba(121,192,255,0.12)),
+        linear-gradient(180deg, #27333c, #11161b);
+      position: relative;
+      overflow: hidden;
+    }
+    .camera-window::before {
+      content: "";
+      position: absolute;
+      inset: 34px 42px 52px 36px;
+      border: 2px solid rgba(126,231,135,0.75);
+      border-radius: 45% 55% 48% 52%;
+      background: rgba(126,231,135,0.12);
+    }
+    .camera-window::after {
+      content: "segmentation mask";
+      position: absolute;
+      left: 18px;
+      bottom: 14px;
+      color: var(--text);
+      font-size: 12px;
+      background: rgba(0,0,0,0.42);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      padding: 5px 9px;
+    }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip {
+      border: 1px solid #3b4652;
+      background: #20242a;
+      color: #d8dee9;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .answer-box {
+      min-height: 148px;
+      background: #0c0e11;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px;
+      white-space: pre-wrap;
+    }
+    .evidence-note {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .memory-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px;
+    }
+    .memory-card h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+    .event-allocate { color: var(--blue); }
+    .event-reuse { color: var(--green); }
+    .event-free { color: var(--yellow); }
     @media (max-width: 980px) {
       .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
-      .flow, .compare { grid-template-columns: 1fr; }
+      .flow, .compare, .hero-grid, .memory-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>MLIR Compiler-to-Runtime Optimization Workbench</h1>
+    <h1>Phone Demo to LLM Serving Runtime</h1>
     <div class="subtitle">
-      A TinyGPT MLIR block is used as the workload. The demo shows how an MLIR fusion pass
-      annotates the graph, lowers it into HIR JSON, and feeds a heterogeneous runtime execution plan.
+      A stable HTML demo that replaces the fragile iPhone/CoreML path with deterministic mobile-style
+      inputs, LLM answers, KV-cache serving metrics, and validation-backed runtime evidence.
     </div>
   </header>
 
@@ -175,6 +264,55 @@
       <label>Output tokens <input id="output" type="number" value="128" min="1" step="1"></label>
       <span class="small" id="status">Loading compiler artifacts...</span>
     </div>
+
+    <section class="hero-grid">
+      <div class="panel">
+        <h2>Phone Demo Input</h2>
+        <div class="phone-frame">
+          <div class="small" id="phone-label">Mock iPhone snapshot</div>
+          <div class="camera-window"></div>
+          <div class="chip-row" id="ingredient-chips"></div>
+          <div id="nutrition-metrics"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Ask the Local Food Assistant</h2>
+        <div class="hero-actions" id="scenario-buttons"></div>
+        <label>LLM mode
+          <select id="llm-mode">
+            <option value="combined">Combined</option>
+            <option value="runtime">Runtime</option>
+            <option value="compiler">Compiler</option>
+            <option value="base">Base</option>
+          </select>
+        </label>
+        <div style="height:10px"></div>
+        <textarea id="mobile-question">What can I cook from this?</textarea>
+        <div class="hero-actions">
+          <button class="primary" id="ask-llm">Ask LLM</button>
+          <button id="repeat-ask">Ask Same Context</button>
+          <button id="batch-demo">Batch Burst</button>
+        </div>
+        <div class="evidence-note">
+          Deterministic answer path. The metrics come from committed runtime and validation artifacts plus the local KV-cache simulator.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>LLM Answer + Serving Effect</h2>
+        <div class="answer-box" id="llm-answer">Choose a scenario and ask the LLM.</div>
+        <div id="llm-answer-metrics"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Memory Effect</h2>
+        <div id="memory-effect-metrics"></div>
+        <div class="evidence-note">
+          Live values come from the deterministic prefix-cache state; peak and budget values come from committed artifacts.
+        </div>
+      </div>
+    </section>
 
     <section class="grid">
       <div class="panel span-12">
@@ -265,7 +403,44 @@
       </div>
 
       <div class="panel span-12">
+        <h2>Memory Evidence</h2>
+        <div class="memory-grid">
+          <div class="memory-card">
+            <h3>Compiler Plan</h3>
+            <div id="compiler-memory-metrics"></div>
+          </div>
+          <div class="memory-card">
+            <h3>Runtime KV Footprint</h3>
+            <div id="runtime-memory-metrics"></div>
+          </div>
+          <div class="memory-card">
+            <h3>Validation Budget</h3>
+            <div id="validation-memory-metrics"></div>
+          </div>
+          <div class="memory-card">
+            <h3>Page Prefetch Guard</h3>
+            <div id="prefetch-memory-metrics"></div>
+          </div>
+        </div>
+        <div class="evidence-note" id="memory-boundary-note"></div>
+      </div>
+
+      <div class="panel span-12">
         <h2>Memory Timeline</h2>
+        <div class="compare" style="margin-bottom:10px">
+          <div class="compare-card">
+            <h3>Peak</h3>
+            <div id="timeline-peak-metrics"></div>
+          </div>
+          <div class="compare-card">
+            <h3>Reuse</h3>
+            <div id="timeline-reuse-metrics"></div>
+          </div>
+          <div class="compare-card">
+            <h3>Budget</h3>
+            <div id="timeline-budget-metrics"></div>
+          </div>
+        </div>
         <table>
           <thead>
             <tr>
@@ -383,6 +558,7 @@
   <script>
     let snapshot = null;
     let selectedStage = "source";
+    let currentScenarioId = "breakfast_bowl";
 
     const fmt = (value, suffix = "") => {
       if (value === undefined || value === null) return "n/a";
@@ -392,6 +568,14 @@
 
     const metric = (name, value, cls = "") =>
       `<div class="metric"><span>${name}</span><strong class="${cls}">${value}</strong></div>`;
+
+    const scenarioList = data =>
+      (((data || {}).live || {}).mobile_demo || {}).scenarios || [];
+
+    const selectedScenario = data => {
+      const scenarios = scenarioList(data);
+      return scenarios.find(scenario => scenario.id === currentScenarioId) || scenarios[0] || {};
+    };
 
     const stageLabel = {
       source: "MLIR Source",
@@ -430,9 +614,13 @@
       const candidatePlans = data.compiler.candidate_execution_plans || {};
       const planBenchmarks = data.runtime_artifacts.plan_benchmark_results || {};
       const realProfile = data.runtime_artifacts.real_llama_profile || {};
+      const pagePrefetch = data.runtime_artifacts.page_prefetch_report || {};
       const memoryTimeline = data.compiler.memory_timeline || {};
       const memoryValidation = data.validation.memory_validation_report || {};
+      const memorySummary = data.live.memory_summary || {};
       renderStage(data);
+      renderMobileDemo(data);
+      renderMemoryEvidence(data);
 
       document.getElementById("workload-metrics").innerHTML = [
         metric("Workload", cr.workload || "TinyGPT MLIR block", "blue"),
@@ -517,7 +705,7 @@
       document.getElementById("memory-timeline").innerHTML = (memoryTimeline.events || []).map(event => `
         <tr>
           <td>${event.step}</td>
-          <td class="${event.event === "reuse" ? "pass" : ""}">${event.event}</td>
+          <td class="event-${event.event}">${event.event}</td>
           <td><code>${event.buffer}</code></td>
           <td>${event.size_mb === undefined ? "-" : `${event.size_mb} MB`}</td>
           <td>${event.lifetime ? event.lifetime.join(" → ") : "-"}</td>
@@ -623,6 +811,15 @@
         prefill_decode_benchmark: data.runtime_artifacts.prefill_decode,
         serving_framework_report: data.runtime_artifacts.serving_framework_report,
         vllm_trace_adapter_report: data.runtime_artifacts.vllm_trace_adapter_report,
+        page_prefetch_report: data.runtime_artifacts.page_prefetch_report,
+        page_prefetch_trace: data.runtime_artifacts.page_prefetch_trace,
+        distributed_serving_report: data.runtime_artifacts.distributed_serving_report,
+        distributed_serving_trace: data.runtime_artifacts.distributed_serving_trace,
+        load_balancing_report: data.runtime_artifacts.load_balancing_report,
+        worker_health_report: data.runtime_artifacts.worker_health_report,
+        fault_tolerance_report: data.runtime_artifacts.fault_tolerance_report,
+        failover_trace: data.runtime_artifacts.failover_trace,
+        grpc_contract_report: data.runtime_artifacts.grpc_contract_report,
         sglang_trace_adapter_report: data.runtime_artifacts.sglang_trace_adapter_report,
         cold_start_report: data.runtime_artifacts.cold_start_report,
         technology_gate_audit: data.runtime_artifacts.technology_gate_audit,
@@ -635,11 +832,149 @@
         slo_report: data.validation.slo_report,
         serving_framework_validation_report: data.validation.serving_framework_validation_report,
         vllm_trace_adapter_validation_report: data.validation.vllm_trace_adapter_validation_report,
+        page_prefetch_validation_report: data.validation.page_prefetch_validation_report,
+        distributed_serving_validation_report: data.validation.distributed_serving_validation_report,
+        load_balancing_validation_report: data.validation.load_balancing_validation_report,
+        fault_tolerance_validation_report: data.validation.fault_tolerance_validation_report,
+        grpc_contract_validation_report: data.validation.grpc_contract_validation_report,
         sglang_trace_adapter_validation_report: data.validation.sglang_trace_adapter_validation_report,
         cold_start_validation_report: data.validation.cold_start_validation_report,
         technology_gate_validation_report: data.validation.technology_gate_validation_report,
         gpu_pgo_like_validation_report: data.validation.gpu_pgo_like_validation_report,
       }, null, 2);
+    }
+
+    function renderMemoryEvidence(data) {
+      const memory = data.live.memory_summary || {};
+      const compiler = memory.compiler_memory_plan || {};
+      const runtime = memory.runtime_memory || {};
+      const kv = memory.kv_cache || {};
+      const budget = memory.validation_budget || {};
+      const prefetch = memory.page_prefetch_guard || {};
+      const live = memory.live_prefix_cache || {};
+
+      document.getElementById("memory-effect-metrics").innerHTML = [
+        metric("Live KV", fmt(live.current_mb, " MB"), live.current_mb > 0 ? "pass" : ""),
+        metric("Cache entries", fmt(live.entries)),
+        metric("Reused blocks", fmt(live.reused_blocks), live.reused_blocks > 0 ? "pass" : ""),
+        metric("Prefill saved", fmt(live.prefill_latency_saved_ms, " ms"), live.prefill_latency_saved_ms > 0 ? "pass" : ""),
+        metric("Artifact peak KV", fmt(runtime.peak_kv_cache_mb, " MB"), "blue"),
+        metric("OOM", fmt(runtime.oom_events), runtime.oom_events === 0 ? "pass" : "fail"),
+        metric("Budget", budget.passed ? "passed" : "n/a", budget.passed ? "pass" : "warn"),
+      ].join("");
+
+      document.getElementById("compiler-memory-metrics").innerHTML = [
+        metric("Prefill peak", fmt(compiler.peak_prefill_memory_mb, " MB")),
+        metric("Decode peak", fmt(compiler.peak_decode_memory_mb, " MB"), "blue"),
+        metric("Activation prefill", fmt((compiler.activation_memory_mb || {}).prefill, " MB")),
+        metric("Decode step act.", fmt((compiler.activation_memory_mb || {}).decode_step, " MB")),
+        metric("Temp buffer", fmt(compiler.temporary_buffer_mb, " MB")),
+        metric("Reuse enabled", compiler.reuse_enabled ? "true" : "false", compiler.reuse_enabled ? "pass" : "warn"),
+      ].join("");
+
+      document.getElementById("runtime-memory-metrics").innerHTML = [
+        metric("Peak memory", fmt(runtime.peak_memory_mb, " MB"), "blue"),
+        metric("Peak KV", fmt(runtime.peak_kv_cache_mb, " MB"), "blue"),
+        metric("KV blocks", `${fmt(kv.peak_blocks_used)} / ${fmt(kv.trace_total_blocks || kv.total_blocks)}`),
+        metric("Block size", fmt(kv.block_size_tokens, " tokens")),
+        metric("Utilization", fmt((kv.block_utilization || 0) * 100, "%")),
+        metric("Fragmentation", fmt((kv.fragmentation_ratio || 0) * 100, "%")),
+        metric("Failed allocs", fmt(kv.failed_allocations), kv.failed_allocations === 0 ? "pass" : "fail"),
+      ].join("");
+
+      document.getElementById("validation-memory-metrics").innerHTML = [
+        metric("Passed", budget.passed ? "true" : "false", budget.passed ? "pass" : "fail"),
+        metric("Peak", fmt(budget.peak_memory_mb, " MB")),
+        metric("Budget", fmt(budget.memory_budget_mb, " MB")),
+        metric("Budget used", fmt((budget.budget_utilization || 0) * 100, "%"), "pass"),
+        metric("Allocations", fmt(budget.allocations)),
+        metric("Reuse events", fmt(budget.reuse_events), budget.reuse_events > 0 ? "pass" : ""),
+        metric("Issues", fmt((budget.issues || []).length), (budget.issues || []).length === 0 ? "pass" : "warn"),
+      ].join("");
+
+      document.getElementById("prefetch-memory-metrics").innerHTML = [
+        metric("Policy", prefetch.policy || "n/a", "blue"),
+        metric("Pressure guard", fmt(prefetch.pressure_disable_threshold)),
+        metric("Hit rate", fmt((prefetch.prefetch_hit_rate || 0) * 100, "%"), "pass"),
+        metric("Wasted blocks", fmt(prefetch.wasted_prefetch_blocks), prefetch.wasted_prefetch_blocks > 0 ? "warn" : "pass"),
+        metric("Pressure skips", fmt(prefetch.pressure_skips), prefetch.pressure_skips > 0 ? "warn" : "pass"),
+        metric("Peak KV unchanged", prefetch.optimized_peak_kv_cache_mb === prefetch.prefetch_peak_kv_cache_mb ? "yes" : "check", prefetch.optimized_peak_kv_cache_mb === prefetch.prefetch_peak_kv_cache_mb ? "pass" : "warn"),
+      ].join("");
+
+      document.getElementById("memory-boundary-note").textContent = memory.truth_boundary || "";
+      document.getElementById("timeline-peak-metrics").innerHTML = [
+        metric("Timeline peak", fmt(compiler.timeline_peak_memory_mb, " MB"), "blue"),
+        metric("Runtime peak", fmt(runtime.peak_memory_mb, " MB")),
+      ].join("");
+      document.getElementById("timeline-reuse-metrics").innerHTML = [
+        metric("Reuse enabled", compiler.reuse_enabled ? "true" : "false", compiler.reuse_enabled ? "pass" : "warn"),
+        metric("Timeline events", fmt(compiler.timeline_event_count)),
+      ].join("");
+      document.getElementById("timeline-budget-metrics").innerHTML = [
+        metric("Budget", fmt(compiler.memory_budget_mb || budget.memory_budget_mb, " MB")),
+        metric("Fits budget", compiler.fits_memory_budget ? "true" : "false", compiler.fits_memory_budget ? "pass" : "fail"),
+      ].join("");
+    }
+
+    function renderMobileDemo(data) {
+      const scenario = selectedScenario(data);
+      const latest = data.live.latest_llm_answer || {};
+      const nutrition = scenario.nutrition || {};
+      const ingredients = scenario.ingredients || [];
+      document.getElementById("phone-label").textContent = scenario.camera_label || "Mock iPhone snapshot";
+      document.getElementById("ingredient-chips").innerHTML = ingredients.map(item => {
+        const name = typeof item === "string" ? item : item.name;
+        const confidence = typeof item === "string" ? "" : ` ${Math.round((item.confidence || 0) * 100)}%`;
+        return `<span class="chip">${name}${confidence}</span>`;
+      }).join("");
+      document.getElementById("nutrition-metrics").innerHTML = [
+        metric("Calories", fmt(nutrition.calories, " kcal")),
+        metric("Protein", fmt(nutrition.protein_g, " g"), "pass"),
+        metric("Carbs", fmt(nutrition.carbs_g, " g")),
+        metric("Fat", fmt(nutrition.fat_g, " g")),
+      ].join("");
+
+      const scenarios = scenarioList(data);
+      document.getElementById("scenario-buttons").innerHTML = scenarios.map(item => `
+        <button class="${item.id === currentScenarioId ? "primary" : ""}" data-scenario="${item.id}">${item.label}</button>
+      `).join("");
+      document.querySelectorAll("[data-scenario]").forEach(button => {
+        button.addEventListener("click", () => {
+          currentScenarioId = button.dataset.scenario;
+          const next = selectedScenario(snapshot);
+          document.getElementById("mobile-question").value = next.default_question || "What can I cook from this?";
+          document.getElementById("llm-mode").value = next.default_mode || "combined";
+          renderMobileDemo(snapshot);
+        });
+      });
+
+      if (!latest.answer) {
+        document.getElementById("llm-answer").textContent = "Choose a scenario and ask the LLM.";
+        document.getElementById("llm-answer-metrics").innerHTML = [
+          metric("SLO", "waiting"),
+          metric("Prefix cache", "waiting"),
+          metric("TTFT", "n/a"),
+          metric("Tokens/sec", "n/a"),
+        ].join("");
+        return;
+      }
+
+      document.getElementById("llm-answer").textContent = latest.answer;
+      const validation = latest.validation || {};
+      document.getElementById("llm-answer-metrics").innerHTML = [
+        metric("Mode", latest.mode || "combined", "blue"),
+        metric("Prefix cache", latest.prefix_cache || "n/a", latest.prefix_cache === "hit" ? "pass" : ""),
+        metric("TTFT", fmt(latest.ttft_ms, " ms"), "pass"),
+        metric("Total latency", fmt(latest.e2e_latency_ms, " ms"), "pass"),
+        metric("TPOT", fmt(latest.tpot_ms, " ms/token")),
+        metric("Tokens/sec", fmt(latest.tokens_per_second, " tok/s"), "pass"),
+        metric("Request blocks", fmt((latest.memory || {}).request_blocks)),
+        metric("Reused blocks", fmt((latest.memory || {}).reused_blocks), (latest.memory || {}).reused_blocks > 0 ? "pass" : ""),
+        metric("Live KV", fmt((latest.memory || {}).live_prefix_cache_mb, " MB")),
+        metric("Artifact peak KV", fmt((latest.memory || {}).artifact_peak_kv_cache_mb, " MB")),
+        metric("SLO", validation.slo_passed ? "passed" : "n/a", validation.slo_passed ? "pass" : "warn"),
+        metric("Correctness", validation.correctness_passed ? "passed" : "n/a", validation.correctness_passed ? "pass" : "warn"),
+      ].join("");
     }
 
     function renderStage(data) {
@@ -707,6 +1042,29 @@
       await refresh();
     }
 
+    async function askCurrentScenario() {
+      const scenario = selectedScenario(snapshot);
+      const ingredients = (scenario.ingredients || []).map(item => {
+        if (typeof item === "string") return item;
+        return {name: item.name, confidence: item.confidence};
+      });
+      const payload = {
+        scenario_id: scenario.id || currentScenarioId,
+        ingredients,
+        nutrition: scenario.nutrition || {},
+        recipe: scenario.recipe || {},
+        question: document.getElementById("mobile-question").value,
+        llm_mode: document.getElementById("llm-mode").value,
+      };
+      const result = await api("/ask", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+      document.getElementById("llm-answer").textContent = result.answer || "No answer returned.";
+      await refresh();
+    }
+
     document.getElementById("run-one").addEventListener("click", async () => {
       await generate(Number(document.getElementById("prompt").value), Number(document.getElementById("output").value));
     });
@@ -717,6 +1075,30 @@
         [128, 32], [4096, 64], [512, 256], [1024, 128]
       ];
       for (const [p, o] of workload) await generate(p, o);
+    });
+
+    document.getElementById("ask-llm").addEventListener("click", askCurrentScenario);
+
+    document.getElementById("repeat-ask").addEventListener("click", async () => {
+      await askCurrentScenario();
+      await askCurrentScenario();
+    });
+
+    document.getElementById("batch-demo").addEventListener("click", async () => {
+      const scenarios = scenarioList(snapshot);
+      for (const scenario of scenarios) {
+        currentScenarioId = scenario.id;
+        document.getElementById("mobile-question").value = scenario.default_question || "What can I cook from this?";
+        document.getElementById("llm-mode").value = scenario.default_mode || "combined";
+        await askCurrentScenario();
+      }
+      const first = scenarios[0];
+      if (first) {
+        currentScenarioId = first.id;
+        document.getElementById("mobile-question").value = first.default_question || "What can I cook from this?";
+        document.getElementById("llm-mode").value = first.default_mode || "combined";
+        await askCurrentScenario();
+      }
     });
 
     document.getElementById("reset").addEventListener("click", async () => {
@@ -731,7 +1113,11 @@
       });
     });
 
-    refresh();
+    refresh().then(() => {
+      const scenario = selectedScenario(snapshot);
+      document.getElementById("mobile-question").value = scenario.default_question || "What can I cook from this?";
+      document.getElementById("llm-mode").value = scenario.default_mode || "combined";
+    });
     setInterval(refresh, 3000);
   </script>
 </body>

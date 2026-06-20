@@ -1,0 +1,67 @@
+{
+  "artifact_type": "worker_health_report",
+  "source": "deployment.distributed_serving",
+  "events": [
+    {
+      "time_ms": 160.902,
+      "event": "worker_timeout",
+      "request_id": "req-018",
+      "worker_id": "worker-1",
+      "policy": "kv_aware",
+      "action": "quarantine_and_retry"
+    },
+    {
+      "time_ms": 160.902,
+      "event": "request_failover",
+      "request_id": "req-018",
+      "from_worker_id": "worker-1",
+      "to_worker_id": "worker-2",
+      "retry_count": 1
+    }
+  ],
+  "final_worker_state": [
+    {
+      "worker_id": "worker-0",
+      "queue_depth": 0,
+      "resident_prefix_keys": [
+        "prefix-0",
+        "prefix-2",
+        "prefix-3"
+      ],
+      "resident_kv_pages": 220,
+      "memory_pressure": 0.5729,
+      "healthy": true,
+      "quarantined": false,
+      "handled_requests": 13
+    },
+    {
+      "worker_id": "worker-1",
+      "queue_depth": 0,
+      "resident_prefix_keys": [
+        "prefix-1",
+        "prefix-3"
+      ],
+      "resident_kv_pages": 224,
+      "memory_pressure": 0.5833,
+      "healthy": false,
+      "quarantined": true,
+      "handled_requests": 8
+    },
+    {
+      "worker_id": "worker-2",
+      "queue_depth": 0,
+      "resident_prefix_keys": [
+        "prefix-1",
+        "prefix-2"
+      ],
+      "resident_kv_pages": 374,
+      "memory_pressure": 0.974,
+      "healthy": true,
+      "quarantined": false,
+      "handled_requests": 11
+    }
+  ],
+  "retry_count": 1,
+  "quarantine_count": 1,
+  "failover_count": 1
+}

@@ -12,8 +12,8 @@
   "cold_ttft_ms": 98.316,
   "warm_ttft_ms": 38.316,
   "first_request_penalty_ms": 60.0,
-  "steady_state_tpot_p95_ms": 3.244,
-  "steady_state_throughput_tokens_per_s": 1236.142,
+  "steady_state_tpot_p95_ms": 2.511,
+  "steady_state_throughput_tokens_per_s": 1470.548,
   "tensorrt_available": false,
   "tensorrt_reason": "TensorRT import failed: No module named 'tensorrt'",
   "recommendation_count": 4

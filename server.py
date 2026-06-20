@@ -24,6 +24,9 @@ RUNTIME_ARTIFACTS = Path(
 VALIDATION_ARTIFACTS = Path(
     os.environ.get("VALIDATION_ARTIFACTS", ARTIFACT_ROOT / "validation")
 )
+MOBILE_DEMO_SCENARIOS = Path(
+    os.environ.get("MOBILE_DEMO_SCENARIOS", ARTIFACT_ROOT / "mobile_demo_scenarios.json")
+)
 
 
 @dataclass
@@ -163,6 +166,15 @@ class MiniServingRuntime:
             "gpu_pgo_like_rmsnorm_report": load_json(RUNTIME_ARTIFACTS / "gpu_pgo_like_rmsnorm_report.json", {}),
             "serving_framework_report": load_json(RUNTIME_ARTIFACTS / "serving_framework_report.json", {}),
             "vllm_trace_adapter_report": load_json(RUNTIME_ARTIFACTS / "vllm_trace_adapter_report.json", {}),
+            "page_prefetch_report": load_json(RUNTIME_ARTIFACTS / "page_prefetch_report.json", {}),
+            "page_prefetch_trace": load_json(RUNTIME_ARTIFACTS / "page_prefetch_trace.json", {}),
+            "distributed_serving_report": load_json(RUNTIME_ARTIFACTS / "distributed_serving_report.json", {}),
+            "distributed_serving_trace": load_json(RUNTIME_ARTIFACTS / "distributed_serving_trace.json", {}),
+            "load_balancing_report": load_json(RUNTIME_ARTIFACTS / "load_balancing_report.json", {}),
+            "worker_health_report": load_json(RUNTIME_ARTIFACTS / "worker_health_report.json", {}),
+            "fault_tolerance_report": load_json(RUNTIME_ARTIFACTS / "fault_tolerance_report.json", {}),
+            "failover_trace": load_json(RUNTIME_ARTIFACTS / "failover_trace.json", {}),
+            "grpc_contract_report": load_json(RUNTIME_ARTIFACTS / "grpc_contract_report.json", {}),
             "sglang_trace_adapter_report": load_json(RUNTIME_ARTIFACTS / "sglang_trace_adapter_report.json", {}),
             "cold_start_report": load_json(RUNTIME_ARTIFACTS / "cold_start_report.json", {}),
             "technology_gate_audit": load_json(RUNTIME_ARTIFACTS / "technology_gate_audit.json", {}),
@@ -174,13 +186,27 @@ class MiniServingRuntime:
             "request_timeline": load_json(VALIDATION_ARTIFACTS / "request_timeline.json", {}),
             "plan_selection_report": load_json(VALIDATION_ARTIFACTS / "plan_selection_report.json", {}),
             "memory_validation_report": load_json(VALIDATION_ARTIFACTS / "memory_validation_report.json", {}),
+            "runtime_decision_validation_report": load_json(VALIDATION_ARTIFACTS / "runtime_decision_validation_report.json", {}),
             "serving_framework_validation_report": load_json(VALIDATION_ARTIFACTS / "serving_framework_validation_report.json", {}),
             "vllm_trace_adapter_validation_report": load_json(VALIDATION_ARTIFACTS / "vllm_trace_adapter_validation_report.json", {}),
+            "page_prefetch_validation_report": load_json(VALIDATION_ARTIFACTS / "page_prefetch_validation_report.json", {}),
+            "distributed_serving_validation_report": load_json(VALIDATION_ARTIFACTS / "distributed_serving_validation_report.json", {}),
+            "load_balancing_validation_report": load_json(VALIDATION_ARTIFACTS / "load_balancing_validation_report.json", {}),
+            "fault_tolerance_validation_report": load_json(VALIDATION_ARTIFACTS / "fault_tolerance_validation_report.json", {}),
+            "grpc_contract_validation_report": load_json(VALIDATION_ARTIFACTS / "grpc_contract_validation_report.json", {}),
             "sglang_trace_adapter_validation_report": load_json(VALIDATION_ARTIFACTS / "sglang_trace_adapter_validation_report.json", {}),
             "cold_start_validation_report": load_json(VALIDATION_ARTIFACTS / "cold_start_validation_report.json", {}),
             "technology_gate_validation_report": load_json(VALIDATION_ARTIFACTS / "technology_gate_validation_report.json", {}),
             "gpu_pgo_like_validation_report": load_json(VALIDATION_ARTIFACTS / "gpu_pgo_like_validation_report.json", {}),
         }
+        self.mobile_demo = load_json(
+            MOBILE_DEMO_SCENARIOS,
+            {
+                "artifact_type": "mobile_demo_scenarios",
+                "truth_boundary": "Deterministic HTML demo input, not real iPhone/CoreML inference.",
+                "scenarios": [],
+            },
+        )
         self.reset()
 
     def reset(self):
@@ -212,6 +238,8 @@ class MiniServingRuntime:
         self.kv_blocks_reused = 0
         self.kv_blocks_evicted = 0
         self.prefill_latency_saved_ms = 0.0
+        self.ask_history = []
+        self.latest_llm_answer = None
 
     def _now_ms(self):
         return round((time.time() - self.started_at) * 1000, 3)
@@ -442,6 +470,295 @@ class MiniServingRuntime:
         )
         return result
 
+    def _scenario_by_id(self, scenario_id):
+        for scenario in self.mobile_demo.get("scenarios", []):
+            if scenario.get("id") == scenario_id:
+                return scenario
+        scenarios = self.mobile_demo.get("scenarios", [])
+        return scenarios[0] if scenarios else {}
+
+    def _normalize_ingredients(self, payload, scenario):
+        ingredients = payload.get("ingredients")
+        if not ingredients:
+            ingredients = scenario.get("ingredients", [])
+        normalized = []
+        for item in ingredients:
+            if isinstance(item, dict):
+                name = str(item.get("name", "")).strip()
+                confidence = float(item.get("confidence", 0.86))
+            else:
+                name = str(item).strip()
+                confidence = 0.86
+            if name:
+                normalized.append({"name": name, "confidence": round(confidence, 3)})
+        return normalized
+
+    def _prompt_contract(self, payload, scenario, ingredients, question, llm_mode):
+        nutrition = payload.get("nutrition") or scenario.get("nutrition", {})
+        recipe = payload.get("recipe") or scenario.get("recipe", {})
+        ingredient_names = [item["name"] for item in ingredients]
+        return {
+            "source": "html_mobile_demo",
+            "truth_boundary": "PocketChef-style deterministic input; not real iPhone/CoreML inference.",
+            "llm_mode": llm_mode,
+            "system_rules": [
+                "Use only detected ingredients as visual facts.",
+                "Mark assumptions clearly.",
+                "Keep the answer concise and practical.",
+                "No medical claims.",
+            ],
+            "visual_facts": ingredient_names,
+            "nutrition_estimate": nutrition,
+            "recipe_context": recipe,
+            "question": question,
+        }
+
+    def _estimate_prompt_tokens(self, prompt_contract):
+        visual = len(prompt_contract.get("visual_facts", []))
+        question_words = len(prompt_contract.get("question", "").split())
+        mode = prompt_contract.get("llm_mode", "combined")
+        mode_adjustment = {
+            "base": 120,
+            "runtime": 96,
+            "compiler": 80,
+            "combined": 72,
+        }.get(mode, 96)
+        return max(128, min(2048, mode_adjustment + visual * 34 + question_words * 7))
+
+    def _estimate_output_tokens(self, question, llm_mode):
+        base = 112 if len(question.split()) > 8 else 88
+        if llm_mode == "compiler":
+            base -= 16
+        if llm_mode == "combined":
+            base -= 24
+        return max(48, min(160, base))
+
+    def _deterministic_answer(self, prompt_contract, scenario):
+        ingredients = prompt_contract.get("visual_facts", [])
+        nutrition = prompt_contract.get("nutrition_estimate", {})
+        question = prompt_contract.get("question", "")
+        mode = prompt_contract.get("llm_mode", "combined")
+        names = ", ".join(ingredients[:4]) or "the detected ingredients"
+        protein = nutrition.get("protein_g") or nutrition.get("protein") or "unknown"
+        calories = nutrition.get("calories", "unknown")
+        recipe = prompt_contract.get("recipe_context", {})
+        title = recipe.get("title") or scenario.get("answer_seed", "quick bowl")
+
+        lowered = "I would keep the visual facts as"
+        if mode in {"compiler", "combined"}:
+            lowered = "After prompt lowering, the visual facts are"
+        runtime_note = "The runtime path reuses the shared context when this scenario repeats."
+        if mode == "base":
+            runtime_note = "This is the baseline deterministic answer path."
+        if mode == "runtime":
+            runtime_note = "The runtime policy keeps the serving context warm for lower TTFT."
+
+        if "protein" in question.lower():
+            advice = (
+                f"Add a second egg, tofu, Greek yogurt sauce, or canned tuna if it fits the meal. "
+                f"The current estimate is about {protein}g protein at {calories} kcal."
+            )
+        elif "waste" in question.lower() or "leftover" in question.lower():
+            advice = (
+                "Turn the detected items into a bowl, wrap, or fried rice. Use the softest greens first "
+                "and keep sauce separate so leftovers survive one more meal."
+            )
+        elif "cook" in question.lower() or "make" in question.lower():
+            advice = (
+                f"Make {title}: warm the base, add {names}, season with salt, acid, and a little fat, "
+                "then finish with a crunchy topping if available."
+            )
+        else:
+            advice = (
+                f"{title} is the safest plan from {names}. Add seasoning, balance protein and fiber, "
+                "and treat anything outside the detections as an assumption."
+            )
+
+        return f"{lowered}: {names}. {advice} {runtime_note}"
+
+    def ask(self, payload):
+        scenario_id = payload.get("scenario_id") or "breakfast_bowl"
+        scenario = self._scenario_by_id(scenario_id)
+        llm_mode = payload.get("llm_mode") or scenario.get("default_mode") or "combined"
+        question = (payload.get("question") or scenario.get("default_question") or "What can I make from this?").strip()
+        ingredients = self._normalize_ingredients(payload, scenario)
+        prompt_contract = self._prompt_contract(
+            payload,
+            scenario,
+            ingredients,
+            question,
+            llm_mode,
+        )
+        prompt_tokens = int(payload.get("prompt_tokens") or self._estimate_prompt_tokens(prompt_contract))
+        output_tokens = int(payload.get("max_output_tokens") or self._estimate_output_tokens(question, llm_mode))
+        prefix = "|".join(
+            [
+                "mobile-demo",
+                scenario_id,
+                llm_mode,
+                ",".join(item["name"].lower() for item in ingredients),
+            ]
+        )
+        request_id = payload.get("request_id") or f"ask_{uuid.uuid4().hex[:8]}"
+        runtime_result = self.generate(
+            {
+                "request_id": request_id,
+                "prompt_tokens": prompt_tokens,
+                "max_output_tokens": output_tokens,
+                "prefix_tokens": min(prompt_tokens, max(64, prompt_tokens - 32)),
+                "prefix": prefix,
+                "prompt": question,
+            }
+        )
+        answer = self._deterministic_answer(prompt_contract, scenario)
+        validation = {
+            "slo_passed": bool(self.validation["llm_validation_report"].get("passed", False)),
+            "correctness_passed": bool(self.validation["llm_validation_report"].get("correctness_passed", False)),
+            "source": "artifacts/validation/llm_validation_report.json",
+        }
+        memory = {
+            "request_blocks": runtime_result.get("required_blocks", 0),
+            "allocated_blocks": runtime_result.get("allocated_blocks", 0),
+            "reused_blocks": runtime_result.get("reused_blocks", 0),
+            "prefix_cache": runtime_result.get("prefix_cache"),
+            "live_prefix_cache_blocks": self.prefix_cache.used_blocks(),
+            "live_prefix_cache_mb": round(
+                self.prefix_cache.used_blocks() * self.bytes_per_block / (1024 * 1024),
+                3,
+            ),
+            "artifact_peak_kv_cache_mb": self.runtime_artifacts["runtime_profile"].get("peak_kv_cache_mb"),
+            "artifact_peak_memory_mb": self.runtime_artifacts["runtime_profile"].get("peak_memory_mb"),
+            "prefill_latency_saved_ms": runtime_result.get("prefill_latency_saved_ms", 0),
+            "validation_budget_passed": bool(self.validation["memory_validation_report"].get("passed", False)),
+            "memory_budget_mb": self.validation["memory_validation_report"].get("memory_budget_mb"),
+            "source": "live_prefix_cache_state_plus_committed_memory_artifacts",
+        }
+        response = {
+            **runtime_result,
+            "answer": answer,
+            "mode": llm_mode,
+            "scenario_id": scenario_id,
+            "ingredients": ingredients,
+            "nutrition": prompt_contract.get("nutrition_estimate", {}),
+            "question": question,
+            "prompt_contract": prompt_contract,
+            "prompt_tokens": prompt_tokens,
+            "generated_tokens": output_tokens,
+            "tokens_per_second": self.runtime_artifacts["runtime_profile"].get(
+                "tokens_per_second",
+                self.metrics().get("tokens_per_second", 0),
+            ),
+            "validation": validation,
+            "memory": memory,
+            "evidence": {
+                "runtime_profile": "artifacts/runtime/runtime_profile.json",
+                "prefill_decode": "artifacts/runtime/prefill_decode_benchmark.json",
+                "validation_report": "artifacts/validation/llm_validation_report.json",
+                "slo_report": "artifacts/validation/slo_report.json",
+            },
+        }
+        self.latest_llm_answer = response
+        self.ask_history.append(response)
+        self.ask_history = self.ask_history[-20:]
+        self._event(
+            "mobile_llm_answer_ready",
+            request_id,
+            scenario_id=scenario_id,
+            mode=llm_mode,
+            prefix_cache=response.get("prefix_cache"),
+        )
+        return response
+
+    def memory_summary(self):
+        memory_plan = self.compiler.get("memory_plan", {})
+        memory_timeline = self.compiler.get("memory_timeline", {})
+        kv_plan = self.compiler.get("kv_cache_plan", {})
+        runtime_profile = self.runtime_artifacts.get("runtime_profile", {})
+        kv_analysis = self.validation.get("kv_cache_analysis", {})
+        memory_validation = self.validation.get("memory_validation_report", {})
+        page_prefetch = self.runtime_artifacts.get("page_prefetch_report", {})
+        prefetch_metric = page_prefetch.get("metric", {})
+        prefetch_decision = page_prefetch.get("decision", {})
+        live_blocks = self.prefix_cache.used_blocks()
+        live_mb = round(live_blocks * self.bytes_per_block / (1024 * 1024), 3)
+        full_capacity_mb = kv_plan.get("memory_mb_at_full_capacity")
+        utilization = round(live_blocks / self.total_blocks, 4) if self.total_blocks else 0.0
+
+        return {
+            "truth_boundary": (
+                "Memory figures combine committed compiler/runtime/validation artifacts "
+                "with deterministic live prefix-cache state; no real iPhone/CoreML memory is claimed."
+            ),
+            "compiler_memory_plan": {
+                "peak_prefill_memory_mb": memory_plan.get("peak_prefill_memory_mb"),
+                "peak_decode_memory_mb": memory_plan.get("peak_decode_memory_mb"),
+                "activation_memory_mb": memory_plan.get("activation_memory_mb", {}),
+                "temporary_buffer_mb": memory_plan.get("temporary_buffer_mb"),
+                "reuse_enabled": memory_plan.get("reuse_enabled", memory_timeline.get("reuse_enabled")),
+                "memory_budget_mb": memory_plan.get("memory_budget_mb"),
+                "fits_memory_budget": memory_plan.get("fits_memory_budget"),
+                "timeline_peak_memory_mb": memory_timeline.get("peak_memory_mb"),
+                "timeline_event_count": len(memory_timeline.get("events", [])),
+            },
+            "runtime_memory": {
+                "peak_memory_mb": runtime_profile.get("peak_memory_mb"),
+                "peak_kv_cache_mb": runtime_profile.get("peak_kv_cache_mb"),
+                "oom_events": runtime_profile.get("oom_events"),
+                "completed_requests": runtime_profile.get("completed_requests"),
+                "profile_source": "artifacts/runtime/runtime_profile.json",
+            },
+            "kv_cache": {
+                "block_size_tokens": kv_plan.get("block_size_tokens"),
+                "total_blocks": kv_plan.get("num_blocks", self.total_blocks),
+                "trace_total_blocks": kv_analysis.get("total_blocks"),
+                "bytes_per_block": kv_plan.get("bytes_per_block", self.bytes_per_block),
+                "full_capacity_mb": full_capacity_mb,
+                "peak_blocks_used": kv_analysis.get("peak_blocks_used"),
+                "block_utilization": kv_analysis.get("block_utilization"),
+                "fragmentation_ratio": kv_analysis.get("fragmentation_ratio"),
+                "peak_kv_cache_mb": kv_analysis.get("peak_kv_cache_mb"),
+                "avg_blocks_per_request": kv_analysis.get("avg_blocks_per_request"),
+                "max_blocks_per_request": kv_analysis.get("max_blocks_per_request"),
+                "failed_allocations": kv_analysis.get("failed_allocations"),
+                "evictions": kv_analysis.get("evictions"),
+                "allocation_strategy": kv_plan.get("allocation_strategy"),
+                "admission_policy": kv_plan.get("admission_policy"),
+                "eviction_policy": kv_plan.get("eviction_policy"),
+            },
+            "page_prefetch_guard": {
+                "policy": page_prefetch.get("candidate_policy"),
+                "pressure_disable_threshold": prefetch_decision.get("pressure_disable_threshold"),
+                "max_prefetch_blocks_per_step": prefetch_decision.get("max_prefetch_blocks_per_step"),
+                "prefetch_hit_rate": prefetch_metric.get("prefetch_hit_rate"),
+                "wasted_prefetch_blocks": prefetch_metric.get("wasted_prefetch_blocks"),
+                "pressure_skips": prefetch_metric.get("pressure_skips"),
+                "optimized_peak_kv_cache_mb": prefetch_metric.get("optimized_peak_kv_cache_mb"),
+                "prefetch_peak_kv_cache_mb": prefetch_metric.get("prefetch_peak_kv_cache_mb"),
+                "oom_events": prefetch_metric.get("oom_events"),
+            },
+            "validation_budget": {
+                "passed": memory_validation.get("passed"),
+                "peak_memory_mb": memory_validation.get("peak_memory_mb"),
+                "memory_budget_mb": memory_validation.get("memory_budget_mb"),
+                "budget_utilization": memory_validation.get("budget_utilization"),
+                "reuse_events": memory_validation.get("reuse_events"),
+                "allocations": memory_validation.get("allocations"),
+                "frees": memory_validation.get("frees"),
+                "issues": memory_validation.get("issues", []),
+            },
+            "live_prefix_cache": {
+                "current_blocks": live_blocks,
+                "current_mb": live_mb,
+                "utilization": utilization,
+                "entries": len(self.prefix_cache.entries),
+                "hits": self.prefix_cache_hits,
+                "misses": self.prefix_cache_misses,
+                "reused_blocks": self.kv_blocks_reused,
+                "evicted_blocks": self.kv_blocks_evicted,
+                "prefill_latency_saved_ms": round(self.prefill_latency_saved_ms, 3),
+            },
+        }
+
     def metrics(self):
         elapsed_s = max(time.time() - self.started_at, 0.001)
         completed = [r for r in self.requests if r.get("status") == "completed"]
@@ -614,6 +931,10 @@ class MiniServingRuntime:
             "validation": self.validation,
             "live": {
                 "metrics": self.metrics(),
+                "mobile_demo": self.mobile_demo,
+                "ask_history": self.ask_history[-20:],
+                "latest_llm_answer": self.latest_llm_answer,
+                "memory_summary": self.memory_summary(),
                 "compiler_runtime": self.compiler_runtime_summary(),
                 "rmsnorm_kernel_selection": self.rmsnorm_kernel_selection_summary(),
                 "requests": self.requests[-20:],
@@ -696,6 +1017,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == "/ask":
+            self._send_json(RUNTIME.ask(self._read_json()))
+            return
         if path == "/generate":
             self._send_json(RUNTIME.generate(self._read_json()))
             return

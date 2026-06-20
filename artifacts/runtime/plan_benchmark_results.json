@@ -6,28 +6,28 @@
       "plan_id": "plan_metal",
       "backend": "Metal",
       "source": "runtime_cost_model_calibrated_measurement",
-      "measured_latency_ms": 2.519,
-      "p95_latency_ms": 3.244,
+      "measured_latency_ms": 2.01,
+      "p95_latency_ms": 2.511,
       "peak_memory_mb": 1636.75,
-      "throughput_tokens_per_s": 1236.142
+      "throughput_tokens_per_s": 1470.548
     },
     {
       "plan_id": "plan_cpu",
       "backend": "CPU",
       "source": "runtime_cost_model_projection",
-      "measured_latency_ms": 5.92,
-      "p95_latency_ms": 6.812,
+      "measured_latency_ms": 4.723,
+      "p95_latency_ms": 5.273,
       "peak_memory_mb": 1476.75,
-      "throughput_tokens_per_s": 519.18
+      "throughput_tokens_per_s": 617.63
     },
     {
       "plan_id": "plan_hybrid",
       "backend": "Hybrid",
       "source": "runtime_cost_model_projection",
-      "measured_latency_ms": 3.073,
-      "p95_latency_ms": 3.828,
+      "measured_latency_ms": 2.452,
+      "p95_latency_ms": 2.963,
       "peak_memory_mb": 1540.75,
-      "throughput_tokens_per_s": 964.191
+      "throughput_tokens_per_s": 1147.027
     }
   ],
   "selected_plan_id": "plan_metal",

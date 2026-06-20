@@ -50,11 +50,39 @@
       "status": "implemented_as_adapter"
     },
     {
+      "technology": "vllm_style_page_prefetch",
+      "input": "vLLM-style request/decode trace plus allocated KV block map",
+      "decision": "prefetch next decode KV pages when memory pressure is below budget",
+      "metric": "prefetch hit rate, wasted prefetch blocks, TPOT p95, throughput, OOM/rejection rate",
+      "status": "implemented_as_runtime_scheduler_candidate"
+    },
+    {
       "technology": "sglang_trace_adapter",
       "input": "SGLang-style request/decode trace",
       "decision": "request/decode scheduling with prefix metadata",
       "metric": "TTFT, TPOT, throughput, queue wait, KV pressure",
       "status": "implemented_as_adapter"
+    },
+    {
+      "technology": "distributed_kv_aware_routing",
+      "input": "vLLM-style serving trace plus worker queue/KV residency state",
+      "decision": "round-robin vs least-queue vs KV-aware request routing",
+      "metric": "TTFT, TPOT, throughput, cache hit rate, queue wait, peak worker pressure",
+      "status": "implemented_as_distributed_serving_control_plane"
+    },
+    {
+      "technology": "worker_health_failover",
+      "input": "distributed serving trace with injected worker timeout",
+      "decision": "timeout detection, retry, quarantine, failover routing",
+      "metric": "retry count, failover count, request loss, latency regression",
+      "status": "implemented_as_fault_tolerance_simulation"
+    },
+    {
+      "technology": "protobuf_serving_contract",
+      "input": "GenerateRequest/WorkerHealth/RouteDecision/KVShardMetadata schema",
+      "decision": "define distributed serving RPC/control-plane boundary",
+      "metric": "schema coverage for request routing, worker health, route decision, KV shard metadata",
+      "status": "implemented_as_contract_not_production_grpc"
     }
   ],
   "remaining_not_in_main_plan": [
