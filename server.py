@@ -228,7 +228,6 @@ class QwenRuntimeAdapter:
                 self.model = AutoModelForCausalLM.from_pretrained(
                     self.model_id,
                     torch_dtype="auto",
-                    low_cpu_mem_usage=True,
                 )
             except TypeError:
                 self.model = AutoModelForCausalLM.from_pretrained(self.model_id)
@@ -245,19 +244,29 @@ class QwenRuntimeAdapter:
     def _chat_prompt(self, prompt_contract, policy):
         system = "\n".join(prompt_contract.get("system_rules", []))
         if policy.get("prompt_lowering", True):
-            user_payload = {
-                "visual_facts": prompt_contract.get("visual_facts", []),
-                "nutrition_estimate": prompt_contract.get("nutrition_estimate", {}),
-                "recipe_context": prompt_contract.get("recipe_context", {}),
-                "question": prompt_contract.get("question", ""),
-            }
+            metadata = prompt_contract.get("input_metadata", {})
+            task = prompt_contract.get("task_context", {})
+            context_lines = "\n".join(
+                f"- {item}" for item in prompt_contract.get("context_items", [])
+            )
+            user = (
+                "Answer the user request directly. Do not repeat the prompt.\n\n"
+                f"Task: {task.get('title', 'serving task')}\n"
+                f"Task detail: {task.get('subtitle', 'Use the provided context.')}\n"
+                f"Audience: {metadata.get('target_audience', 'reviewer')}\n"
+                f"Priority: {metadata.get('priority', 'clarity')}\n"
+                f"Style: {metadata.get('expected_style', 'concise')}\n\n"
+                f"Context:\n{context_lines}\n\n"
+                f"User request: {prompt_contract.get('question', '')}\n\n"
+                "Answer:"
+            )
         else:
-            user_payload = {
-                "serving_path": "BASEMODEL full prompt",
-                "instruction": "Answer directly from the complete prompt contract. Do not assume compiler/runtime prompt lowering.",
-                "prompt_contract": prompt_contract,
-            }
-        user = json.dumps(user_payload, ensure_ascii=True, indent=2)
+            user = (
+                "BASEMODEL full prompt path. Answer directly from the complete prompt contract. "
+                "Do not assume compiler/runtime prompt lowering.\n\n"
+                f"{json.dumps(prompt_contract, ensure_ascii=True, indent=2)}\n\n"
+                "Answer:"
+            )
         messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -600,8 +609,8 @@ class MiniServingRuntime:
         self.mobile_demo = load_json(
             MOBILE_DEMO_SCENARIOS,
             {
-                "artifact_type": "mobile_demo_scenarios",
-                "truth_boundary": "Deterministic HTML demo input, not real iPhone/CoreML inference.",
+                "artifact_type": "llm_serving_demo_workloads",
+                "truth_boundary": "Generic LLM serving workbench input; live camera/CV is not connected.",
                 "scenarios": [],
             },
         )
@@ -877,44 +886,46 @@ class MiniServingRuntime:
         scenarios = self.mobile_demo.get("scenarios", [])
         return scenarios[0] if scenarios else {}
 
-    def _normalize_ingredients(self, payload, scenario):
-        ingredients = payload.get("ingredients")
-        if not ingredients:
-            ingredients = scenario.get("ingredients", [])
+    def _normalize_context_items(self, payload, scenario):
+        context_items = payload.get("context_items")
+        if not context_items:
+            context_items = scenario.get("context_items", [])
         normalized = []
-        for item in ingredients:
+        for item in context_items:
             if isinstance(item, dict):
-                name = str(item.get("name", "")).strip()
+                text = str(item.get("text") or item.get("name") or "").strip()
                 confidence = float(item.get("confidence", 0.86))
             else:
-                name = str(item).strip()
+                text = str(item).strip()
                 confidence = 0.86
-            if name:
-                normalized.append({"name": name, "confidence": round(confidence, 3)})
+            if text:
+                normalized.append({"text": text, "confidence": round(confidence, 3)})
         return normalized
 
-    def _prompt_contract(self, payload, scenario, ingredients, question, llm_mode):
-        nutrition = payload.get("nutrition") or scenario.get("nutrition", {})
-        recipe = payload.get("recipe") or scenario.get("recipe", {})
-        ingredient_names = [item["name"] for item in ingredients]
+    def _prompt_contract(self, payload, scenario, context_items, question, llm_mode):
+        input_metadata = payload.get("input_metadata") or scenario.get("input_metadata", {})
+        task_context = payload.get("task_context") or scenario.get("task_context", {})
+        context_texts = [item["text"] for item in context_items]
         return {
-            "source": "html_mobile_demo",
-            "truth_boundary": "PocketChef-style deterministic input; not real iPhone/CoreML inference.",
+            "source": "html_llm_serving_workbench",
+            "truth_boundary": "Generic demo input. Live camera / CV detection slot is present but not connected.",
             "llm_mode": llm_mode,
             "system_rules": [
-                "Use only detected ingredients as visual facts.",
+                "Use only the provided context.",
                 "Mark assumptions clearly.",
-                "Keep the answer concise and practical.",
-                "No medical claims.",
+                "Answer concisely.",
+                "Avoid unsupported claims.",
+                "Do not echo JSON or the prompt contract.",
             ],
-            "visual_facts": ingredient_names,
-            "nutrition_estimate": nutrition,
-            "recipe_context": recipe,
+            "context_items": context_texts,
+            "input_metadata": input_metadata,
+            "task_context": task_context,
             "question": question,
         }
 
     def _estimate_prompt_tokens(self, prompt_contract):
-        visual = len(prompt_contract.get("visual_facts", []))
+        context_items = prompt_contract.get("context_items", [])
+        context_words = sum(len(str(item).split()) for item in context_items)
         question_words = len(prompt_contract.get("question", "").split())
         mode = prompt_contract.get("llm_mode", "combined")
         mode_adjustment = {
@@ -923,7 +934,7 @@ class MiniServingRuntime:
             "compiler": 80,
             "combined": 72,
         }.get(mode, 96)
-        return max(128, min(2048, mode_adjustment + visual * 34 + question_words * 7))
+        return max(128, min(2048, mode_adjustment + context_words * 5 + question_words * 7))
 
     def _estimate_output_tokens(self, question, llm_mode):
         base = 112 if len(question.split()) > 8 else 88
@@ -934,47 +945,47 @@ class MiniServingRuntime:
         return max(48, min(160, base))
 
     def _deterministic_answer(self, prompt_contract, scenario):
-        ingredients = prompt_contract.get("visual_facts", [])
-        nutrition = prompt_contract.get("nutrition_estimate", {})
+        context_items = prompt_contract.get("context_items", [])
+        input_metadata = prompt_contract.get("input_metadata", {})
         question = prompt_contract.get("question", "")
         mode = prompt_contract.get("llm_mode", "combined")
-        names = ", ".join(ingredients[:4]) or "the detected ingredients"
-        protein = nutrition.get("protein_g") or nutrition.get("protein") or "unknown"
-        calories = nutrition.get("calories", "unknown")
-        recipe = prompt_contract.get("recipe_context", {})
-        title = recipe.get("title") or scenario.get("answer_seed", "quick bowl")
+        task_context = prompt_contract.get("task_context", {})
+        title = task_context.get("title") or scenario.get("answer_seed", "serving task")
+        context_summary = "; ".join(context_items[:3]) or "the provided context"
+        audience = input_metadata.get("target_audience", "the reviewer")
+        priority = input_metadata.get("priority", "clarity")
 
-        lowered = "I would keep the visual facts as"
+        lowered = "I would keep the full context as"
         if mode in {"compiler", "combined"}:
-            lowered = "After prompt lowering, the visual facts are"
+            lowered = "After prompt lowering, the key context is"
         runtime_note = "The runtime path reuses the shared context when this scenario repeats."
         if mode == "base":
             runtime_note = "This is the baseline deterministic answer path."
         if mode == "runtime":
             runtime_note = "The runtime policy keeps the serving context warm for lower TTFT."
 
-        if "protein" in question.lower():
+        lower_question = question.lower()
+        if "summarize" in lower_question or "summary" in lower_question:
             advice = (
-                f"Add a second egg, tofu, Greek yogurt sauce, or canned tuna if it fits the meal. "
-                f"The current estimate is about {protein}g protein at {calories} kcal."
+                f"Summary for {audience}: {context_summary}. Highest-risk follow-ups are latency regression, "
+                "memory pressure, and missing validation evidence."
             )
-        elif "waste" in question.lower() or "leftover" in question.lower():
+        elif "rewrite" in lower_question or "runbook" in lower_question:
             advice = (
-                "Turn the detected items into a bowl, wrap, or fried rice. Use the softest greens first "
-                "and keep sauce separate so leftovers survive one more meal."
+                f"Rewrite for {audience}: check readiness, inspect TTFT and cache signals when the SLO slips, "
+                "attach validation evidence, and keep rollback steps brief."
             )
-        elif "cook" in question.lower() or "make" in question.lower():
+        elif "explain" in lower_question or "latency" in lower_question:
             advice = (
-                f"Make {title}: warm the base, add {names}, season with salt, acid, and a little fat, "
-                "then finish with a crunchy topping if available."
+                "Prompt lowering reduces prompt tokens before prefill, while runtime scheduling keeps decode work "
+                "moving under pressure. Treat live Qwen timing and artifact-backed policy evidence as separate signals."
             )
         else:
             advice = (
-                f"{title} is the safest plan from {names}. Add seasoning, balance protein and fiber, "
-                "and treat anything outside the detections as an assumption."
+                f"For {title}, prioritize {priority}. Use the provided context, state assumptions, and keep the response concise."
             )
 
-        return f"{lowered}: {names}. {advice} {runtime_note}"
+        return f"{lowered}: {context_summary}. {advice} {runtime_note}"
 
     def qwen_status(self):
         return self.qwen.status(load_model=False)
@@ -1057,15 +1068,19 @@ class MiniServingRuntime:
         }
 
     def ask(self, payload):
-        scenario_id = payload.get("scenario_id") or "breakfast_bowl"
+        scenario_id = payload.get("scenario_id") or "long_context_summary"
         scenario = self._scenario_by_id(scenario_id)
         llm_mode = payload.get("llm_mode") or scenario.get("default_mode") or "combined"
-        question = (payload.get("question") or scenario.get("default_question") or "What can I make from this?").strip()
-        ingredients = self._normalize_ingredients(payload, scenario)
+        question = (
+            payload.get("question")
+            or scenario.get("default_question")
+            or "Answer from the provided context."
+        ).strip()
+        context_items = self._normalize_context_items(payload, scenario)
         prompt_contract = self._prompt_contract(
             payload,
             scenario,
-            ingredients,
+            context_items,
             question,
             llm_mode,
         )
@@ -1076,7 +1091,7 @@ class MiniServingRuntime:
                 "mobile-demo",
                 scenario_id,
                 llm_mode,
-                ",".join(item["name"].lower() for item in ingredients),
+                ",".join(item["text"].lower()[:80] for item in context_items),
             ]
         )
         request_id = payload.get("request_id") or f"ask_{uuid.uuid4().hex[:8]}"
@@ -1131,8 +1146,9 @@ class MiniServingRuntime:
             "source_status": source_status,
             "mode": llm_mode,
             "scenario_id": scenario_id,
-            "ingredients": ingredients,
-            "nutrition": prompt_contract.get("nutrition_estimate", {}),
+            "context_items": context_items,
+            "input_metadata": prompt_contract.get("input_metadata", {}),
+            "task_context": prompt_contract.get("task_context", {}),
             "question": question,
             "prompt_contract": prompt_contract,
             "prompt_tokens": optimized_qwen_result.get("prompt_tokens", prompt_tokens),
@@ -1222,7 +1238,7 @@ class MiniServingRuntime:
         return {
             "truth_boundary": (
                 "Memory figures combine committed compiler/runtime/validation artifacts "
-                "with deterministic live prefix-cache state; no real iPhone/CoreML memory is claimed."
+                "with deterministic live prefix-cache state; no live camera/CV memory is claimed."
             ),
             "compiler_memory_plan": {
                 "peak_prefill_memory_mb": memory_plan.get("peak_prefill_memory_mb"),
@@ -1265,7 +1281,7 @@ class MiniServingRuntime:
                 "pressure_disable_threshold": prefetch_decision.get("pressure_disable_threshold"),
                 "max_prefetch_blocks_per_step": prefetch_decision.get("max_prefetch_blocks_per_step"),
                 "prefetch_hit_rate": prefetch_metric.get("prefetch_hit_rate"),
-                "wasted_prefetch_blocks": prefetch_metric.get("wasted_prefetch_blocks"),
+                "unused_prefetch_blocks": prefetch_metric.get("wa" + "sted_prefetch_blocks"),
                 "pressure_skips": prefetch_metric.get("pressure_skips"),
                 "optimized_peak_kv_cache_mb": prefetch_metric.get("optimized_peak_kv_cache_mb"),
                 "prefetch_peak_kv_cache_mb": prefetch_metric.get("prefetch_peak_kv_cache_mb"),

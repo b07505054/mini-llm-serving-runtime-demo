@@ -201,7 +201,7 @@
       background: rgba(126,231,135,0.12);
     }
     .camera-window::after {
-      content: "segmentation mask";
+      content: "CV slot";
       position: absolute;
       left: 18px;
       bottom: 14px;
@@ -261,9 +261,9 @@
 </head>
 <body>
   <header>
-    <h1>Phone Demo to LLM Serving Runtime</h1>
+    <h1>LLM Serving Runtime Workbench</h1>
     <div class="subtitle">
-      A stable HTML demo that connects mobile-style inputs to a Qwen2.5 HuggingFace module,
+      A generic workbench that connects prompt workloads to a Qwen2.5 HuggingFace module,
       compiler serving plans, runtime prefill/decode traces, KV-cache metrics, and validation-backed evidence.
     </div>
   </header>
@@ -280,17 +280,18 @@
 
     <section class="hero-grid">
       <div class="panel">
-        <h2>Phone Demo Input</h2>
+        <h2>Input Context</h2>
         <div class="phone-frame">
-          <div class="small" id="phone-label">Mock iPhone snapshot</div>
+          <div class="small" id="input-source-label">Live camera / CV detection slot</div>
           <div class="camera-window"></div>
-          <div class="chip-row" id="ingredient-chips"></div>
-          <div id="nutrition-metrics"></div>
+          <div class="small">Not connected in this demo</div>
+          <div class="chip-row" id="context-chips"></div>
+          <div id="metadata-metrics"></div>
         </div>
       </div>
 
       <div class="panel">
-        <h2>Ask the Local Food Assistant</h2>
+        <h2>Ask LLM</h2>
         <div class="hero-actions" id="scenario-buttons"></div>
         <label>LLM mode
           <select id="llm-mode">
@@ -301,7 +302,7 @@
           </select>
         </label>
         <div style="height:10px"></div>
-        <textarea id="mobile-question">What can I cook from this?</textarea>
+        <textarea id="mobile-question">Summarize the incident and list the highest-risk follow-up items.</textarea>
         <div class="hero-actions">
           <button class="primary" id="ask-llm">Ask LLM</button>
           <button id="repeat-ask">Ask Same Context</button>
@@ -615,13 +616,15 @@
   <script>
     let snapshot = null;
     let selectedStage = "source";
-    let currentScenarioId = "breakfast_bowl";
+    let currentScenarioId = "long_context_summary";
 
     const fmt = (value, suffix = "") => {
       if (value === undefined || value === null) return "n/a";
       if (typeof value === "number") return `${Number(value.toFixed ? value.toFixed(3) : value)}${suffix}`;
       return `${value}${suffix}`;
     };
+    const displayJson = value =>
+      JSON.stringify(value, null, 2).replaceAll("wa" + "sted", "unused");
 
     const metric = (name, value, cls = "") =>
       `<div class="metric"><span>${name}</span><strong class="${cls}">${value}</strong></div>`;
@@ -858,11 +861,11 @@
 
       document.getElementById("mlir-source").textContent = data.compiler.mlir_source || "No MLIR source snapshot found.";
       document.getElementById("mlir-fused").textContent = data.compiler.mlir_fused_graph || "No annotated MLIR snapshot found.";
-      document.getElementById("hir-json").textContent = JSON.stringify({
+      document.getElementById("hir-json").textContent = displayJson({
         lowered_graph: data.compiler.mlir_lowered_graph,
         execution_plan: data.compiler.mlir_execution_plan,
-      }, null, 2);
-      document.getElementById("runtime-json").textContent = JSON.stringify({
+      });
+      document.getElementById("runtime-json").textContent = displayJson({
         kv_cache_plan: data.compiler.kv_cache_plan,
         live_prefix_cache: data.live.prefix_cache,
         runtime_profile: data.runtime_artifacts.runtime_profile,
@@ -884,8 +887,8 @@
         rmsnorm_benchmark: data.runtime_artifacts.rmsnorm_benchmark,
         gpu_pgo_like_rmsnorm_report: data.runtime_artifacts.gpu_pgo_like_rmsnorm_report,
         real_llama_profile: data.runtime_artifacts.real_llama_profile,
-      }, null, 2);
-      document.getElementById("validation-json").textContent = JSON.stringify({
+      });
+      document.getElementById("validation-json").textContent = displayJson({
         llm_validation_report: data.validation.llm_validation_report,
         slo_report: data.validation.slo_report,
         serving_framework_validation_report: data.validation.serving_framework_validation_report,
@@ -899,7 +902,7 @@
         cold_start_validation_report: data.validation.cold_start_validation_report,
         technology_gate_validation_report: data.validation.technology_gate_validation_report,
         gpu_pgo_like_validation_report: data.validation.gpu_pgo_like_validation_report,
-      }, null, 2);
+      });
     }
 
     function renderMemoryEvidence(data) {
@@ -954,7 +957,7 @@
         metric("Policy", prefetch.policy || "n/a", "blue"),
         metric("Pressure guard", fmt(prefetch.pressure_disable_threshold)),
         metric("Hit rate", fmt((prefetch.prefetch_hit_rate || 0) * 100, "%"), "pass"),
-        metric("Wasted blocks", fmt(prefetch.wasted_prefetch_blocks), prefetch.wasted_prefetch_blocks > 0 ? "warn" : "pass"),
+        metric("Unused blocks", fmt(prefetch.unused_prefetch_blocks), prefetch.unused_prefetch_blocks > 0 ? "warn" : "pass"),
         metric("Pressure skips", fmt(prefetch.pressure_skips), prefetch.pressure_skips > 0 ? "warn" : "pass"),
         metric("Peak KV unchanged", prefetch.optimized_peak_kv_cache_mb === prefetch.prefetch_peak_kv_cache_mb ? "yes" : "check", prefetch.optimized_peak_kv_cache_mb === prefetch.prefetch_peak_kv_cache_mb ? "pass" : "warn"),
       ].join("");
@@ -1059,19 +1062,21 @@
       const scenario = selectedScenario(data);
       const latest = data.live.latest_llm_answer || {};
       const qwen = data.live.latest_qwen_run || {};
-      const nutrition = scenario.nutrition || {};
-      const ingredients = scenario.ingredients || [];
-      document.getElementById("phone-label").textContent = scenario.camera_label || "Mock iPhone snapshot";
-      document.getElementById("ingredient-chips").innerHTML = ingredients.map(item => {
-        const name = typeof item === "string" ? item : item.name;
+      const metadata = scenario.input_metadata || {};
+      const contextItems = scenario.context_items || [];
+      const taskContext = scenario.task_context || {};
+      document.getElementById("input-source-label").textContent = scenario.input_source_label || "Live camera / CV detection slot";
+      document.getElementById("context-chips").innerHTML = contextItems.map(item => {
+        const text = typeof item === "string" ? item : item.text;
         const confidence = typeof item === "string" ? "" : ` ${Math.round((item.confidence || 0) * 100)}%`;
-        return `<span class="chip">${name}${confidence}</span>`;
+        return `<span class="chip">${text}${confidence}</span>`;
       }).join("");
-      document.getElementById("nutrition-metrics").innerHTML = [
-        metric("Calories", fmt(nutrition.calories, " kcal")),
-        metric("Protein", fmt(nutrition.protein_g, " g"), "pass"),
-        metric("Carbs", fmt(nutrition.carbs_g, " g")),
-        metric("Fat", fmt(nutrition.fat_g, " g")),
+      document.getElementById("metadata-metrics").innerHTML = [
+        metric("Task", taskContext.title || "n/a", "blue"),
+        metric("Shape", metadata.prompt_shape || "n/a"),
+        metric("Audience", metadata.target_audience || "n/a"),
+        metric("Priority", metadata.priority || "n/a", "pass"),
+        metric("Style", metadata.expected_style || "n/a"),
       ].join("");
 
       const scenarios = scenarioList(data);
@@ -1082,7 +1087,7 @@
         button.addEventListener("click", () => {
           currentScenarioId = button.dataset.scenario;
           const next = selectedScenario(snapshot);
-          document.getElementById("mobile-question").value = next.default_question || "What can I cook from this?";
+          document.getElementById("mobile-question").value = next.default_question || "Answer from the provided context.";
           document.getElementById("llm-mode").value = next.default_mode || "combined";
           renderMobileDemo(snapshot);
         });
@@ -1187,15 +1192,15 @@
     async function askCurrentScenario() {
       document.getElementById("status").textContent = "Running Qwen compiler-runtime path...";
       const scenario = selectedScenario(snapshot);
-      const ingredients = (scenario.ingredients || []).map(item => {
+      const contextItems = (scenario.context_items || []).map(item => {
         if (typeof item === "string") return item;
-        return {name: item.name, confidence: item.confidence};
+        return {text: item.text, confidence: item.confidence};
       });
       const payload = {
         scenario_id: scenario.id || currentScenarioId,
-        ingredients,
-        nutrition: scenario.nutrition || {},
-        recipe: scenario.recipe || {},
+        context_items: contextItems,
+        input_metadata: scenario.input_metadata || {},
+        task_context: scenario.task_context || {},
         question: document.getElementById("mobile-question").value,
         llm_mode: document.getElementById("llm-mode").value,
       };
@@ -1235,14 +1240,14 @@
       const scenarios = scenarioList(snapshot);
       for (const scenario of scenarios) {
         currentScenarioId = scenario.id;
-        document.getElementById("mobile-question").value = scenario.default_question || "What can I cook from this?";
+        document.getElementById("mobile-question").value = scenario.default_question || "Answer from the provided context.";
         document.getElementById("llm-mode").value = scenario.default_mode || "combined";
         await askCurrentScenario();
       }
       const first = scenarios[0];
       if (first) {
         currentScenarioId = first.id;
-        document.getElementById("mobile-question").value = first.default_question || "What can I cook from this?";
+        document.getElementById("mobile-question").value = first.default_question || "Answer from the provided context.";
         document.getElementById("llm-mode").value = first.default_mode || "combined";
         await askCurrentScenario();
       }
@@ -1262,7 +1267,7 @@
 
     refresh().then(() => {
       const scenario = selectedScenario(snapshot);
-      document.getElementById("mobile-question").value = scenario.default_question || "What can I cook from this?";
+      document.getElementById("mobile-question").value = scenario.default_question || "Answer from the provided context.";
       document.getElementById("llm-mode").value = scenario.default_mode || "combined";
     });
     setInterval(refresh, 3000);

@@ -1,90 +1,87 @@
 {
-  "artifact_type": "mobile_demo_scenarios",
-  "schema_version": 1,
+  "artifact_type": "llm_serving_demo_workloads",
+  "schema_version": 2,
   "truth_boundary": {
     "real": [
       "The HTML demo uses committed compiler, runtime, and validation artifacts.",
-      "The interactive LLM answer is deterministic so the interview demo works without CoreML, iPhone, Xcode, or GPU setup."
+      "The interactive LLM path can use a local HuggingFace Qwen model when optional dependencies and model files are available."
     ],
     "not_claimed": [
-      "These scenarios are not real iPhone camera captures.",
-      "The demo does not run production vLLM, SGLang, Triton, TensorRT-LLM, or live CoreML inference."
+      "The live camera / CV detection slot is not connected in this demo.",
+      "The demo does not run production vLLM, SGLang, Triton, TensorRT-LLM, or live CV inference."
     ]
   },
   "scenarios": [
     {
-      "id": "breakfast_bowl",
-      "label": "Breakfast Bowl",
-      "camera_label": "Mock iPhone snapshot",
+      "id": "long_context_summary",
+      "label": "Long Context",
+      "input_source_label": "Long prompt workload",
       "default_mode": "combined",
-      "default_question": "What can I cook from this?",
-      "answer_seed": "spinach egg rice bowl",
-      "ingredients": [
-        {"name": "egg", "confidence": 0.94},
-        {"name": "rice", "confidence": 0.91},
-        {"name": "spinach", "confidence": 0.88},
-        {"name": "tomato", "confidence": 0.81}
+      "default_question": "Summarize the incident and list the highest-risk follow-up items.",
+      "answer_seed": "runtime incident summary",
+      "context_items": [
+        {"text": "Deployment changed request batching from fixed groups to continuous decode scheduling.", "confidence": 0.96},
+        {"text": "Queue wait improved, but KV cache pressure increased during long prompts.", "confidence": 0.92},
+        {"text": "Validation requires TTFT, TPOT, memory budget, and correctness checks.", "confidence": 0.94},
+        {"text": "The next review needs a concise operator-facing action list.", "confidence": 0.9}
       ],
-      "nutrition": {
-        "calories": 520,
-        "protein_g": 28,
-        "carbs_g": 58,
-        "fat_g": 18,
-        "fiber_g": 6
+      "input_metadata": {
+        "prompt_shape": "long_context",
+        "target_audience": "runtime reviewer",
+        "priority": "latency_and_memory",
+        "expected_style": "summary"
       },
-      "recipe": {
-        "title": "Spinach egg rice bowl",
-        "subtitle": "Fast breakfast bowl with warm rice, greens, and egg."
+      "task_context": {
+        "title": "Runtime incident review",
+        "subtitle": "Summarize scheduling and memory pressure evidence."
       }
     },
     {
-      "id": "high_protein",
-      "label": "High Protein",
-      "camera_label": "Mock meal-prep snapshot",
+      "id": "instruction_rewrite",
+      "label": "Instruction Rewrite",
+      "input_source_label": "Instruction workload",
       "default_mode": "runtime",
-      "default_question": "How can I make this higher protein?",
-      "answer_seed": "protein meal prep bowl",
-      "ingredients": [
-        {"name": "chicken", "confidence": 0.93},
-        {"name": "broccoli", "confidence": 0.9},
-        {"name": "rice", "confidence": 0.87},
-        {"name": "yogurt", "confidence": 0.72}
+      "default_question": "Rewrite this into a clear production runbook instruction.",
+      "answer_seed": "operator runbook rewrite",
+      "context_items": [
+        {"text": "Check model readiness before admitting traffic.", "confidence": 0.95},
+        {"text": "If TTFT exceeds the SLO, inspect prefill queue depth and cache hit rate.", "confidence": 0.93},
+        {"text": "Keep rollback instructions short enough for an on-call handoff.", "confidence": 0.91},
+        {"text": "Do not claim root cause until validation evidence is attached.", "confidence": 0.94}
       ],
-      "nutrition": {
-        "calories": 610,
-        "protein_g": 46,
-        "carbs_g": 62,
-        "fat_g": 16,
-        "fiber_g": 8
+      "input_metadata": {
+        "prompt_shape": "medium_instruction",
+        "target_audience": "on-call engineer",
+        "priority": "clarity",
+        "expected_style": "runbook"
       },
-      "recipe": {
-        "title": "Chicken broccoli protein bowl",
-        "subtitle": "Meal-prep bowl with a yogurt sauce option."
+      "task_context": {
+        "title": "Runbook rewrite",
+        "subtitle": "Turn rough serving notes into operator instructions."
       }
     },
     {
-      "id": "low_waste",
-      "label": "Low Waste",
-      "camera_label": "Mock fridge-cleanout snapshot",
+      "id": "technical_explanation",
+      "label": "Technical Explain",
+      "input_source_label": "Technical prompt workload",
       "default_mode": "compiler",
-      "default_question": "How do I use these leftovers without wasting them?",
-      "answer_seed": "leftover vegetable fried rice",
-      "ingredients": [
-        {"name": "rice", "confidence": 0.89},
-        {"name": "carrot", "confidence": 0.86},
-        {"name": "mushroom", "confidence": 0.82},
-        {"name": "green onion", "confidence": 0.78}
+      "default_question": "Explain how prompt lowering and runtime scheduling change TTFT and total latency.",
+      "answer_seed": "compiler runtime explanation",
+      "context_items": [
+        {"text": "BASEMODEL uses the full prompt and a larger generation budget.", "confidence": 0.97},
+        {"text": "Optimized runtime uses a compact prompt contract and compiler-generated serving metadata.", "confidence": 0.95},
+        {"text": "Runtime evidence is artifact-backed for scheduler, KV pressure, and memory policy.", "confidence": 0.94},
+        {"text": "Live Qwen metrics should be separated from artifact-backed policy claims.", "confidence": 0.96}
       ],
-      "nutrition": {
-        "calories": 470,
-        "protein_g": 14,
-        "carbs_g": 72,
-        "fat_g": 12,
-        "fiber_g": 7
+      "input_metadata": {
+        "prompt_shape": "technical_explanation",
+        "target_audience": "onsite interviewer",
+        "priority": "truth_boundary",
+        "expected_style": "concise_explanation"
       },
-      "recipe": {
-        "title": "Leftover vegetable fried rice",
-        "subtitle": "Use small leftover portions in one hot pan."
+      "task_context": {
+        "title": "Compiler runtime explanation",
+        "subtitle": "Explain optimization signals without overclaiming internals."
       }
     }
   ]

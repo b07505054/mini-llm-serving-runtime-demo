@@ -1,38 +1,34 @@
-# HTML LLM Serving Runtime Demo Platform
+# LLM Serving Runtime Workbench
 
-This is the main interview demo surface for the compiler/runtime and LLM serving
-systems work. It replaces the fragile iPhone/CoreML live-demo path with a stable
-HTML experience: a PocketChef-style phone scenario can ask a real local
-`Qwen/Qwen2.5-0.5B-Instruct` HuggingFace model through a PyTorch prefill/decode
-loop, while the page shows KV-cache behavior, TTFT/TPOT, throughput, SLO
-validation, and the compiler/runtime artifacts behind the result. If the
-optional Qwen dependencies or model files are unavailable, the app falls back to
-the deterministic offline answer and labels that fallback explicitly.
+This repository is the interview demo surface for the LLM compiler/runtime
+stack. It presents a generic serving workbench: choose a prompt workload, ask a
+local Qwen model when available, compare a direct BASEMODEL path against an
+optimized compiler/runtime policy, and inspect the artifact-backed production
+evidence behind the optimization story.
 
-The demo does not merge the source projects. Instead, it consumes committed
-artifact snapshots from three independent systems:
+The demo consumes committed snapshots from three independent projects:
 
-- `ml-graph-compiler-runtime`: MLIR source, annotated MLIR, lowered HIR JSON, execution plans
-- `heterogeneous-inference-runtime`: runtime profile and workload timing artifacts
-- `Inference-Validation-Platform`: correctness, SLO, scheduler, and validation reports
+- `ml-graph-compiler-runtime`: MLIR source, compiler annotations, lowered HIR,
+  execution plans, KV contract, and memory plan
+- `heterogeneous-inference-runtime`: prefill/decode, scheduler, KV pressure,
+  memory, kernel, and serving-policy evidence
+- `Inference-Validation-Platform`: correctness, SLO, memory-budget, scheduler,
+  and validation reports
 
-The main story is:
+The main path is:
 
 ```text
-Mock phone food snapshot
-  -> ingredient/nutrition/question context
+Prompt workload
   -> BASEMODEL: full prompt, max_new_tokens=180, direct Qwen decode
-  -> Optimized: lowered prompt, compiler plan, runtime policy
+  -> Optimized: compact prompt contract, compiler plan, runtime policy
   -> PyTorch prefill/decode with past_key_values
   -> optimized answer text plus BASEMODEL delta
   -> artifact-backed KV/scheduler/memory evidence
   -> validation report
 ```
 
-The interactive phone flow remains safe for interviews: without optional model
-dependencies it still runs offline through a deterministic fallback. PocketChef-AI
-remains an optional mobile product shell; this repo is the primary HTML
-demonstration platform.
+There is also a neutral future input slot labeled `Live camera / CV detection
+slot`. It is not connected in this demo.
 
 ## Project Layout
 
@@ -44,18 +40,14 @@ demonstration platform.
 └── artifacts/
     ├── mobile_demo_scenarios.json
     ├── compiler/
-    │   ├── tiny_gpt_serving.mlir
-    │   ├── mlir_fused_graph.mlir
-    │   ├── mlir_lowered_graph.json
-    │   └── mlir_execution_plan.json
     ├── runtime/
     └── validation/
 ```
 
 ## Run
 
-No third-party Python dependencies are required for the artifact dashboard and
-deterministic fallback.
+The artifact dashboard and deterministic fallback use only the Python standard
+library:
 
 ```bash
 python3 server.py
@@ -67,55 +59,69 @@ Open:
 http://127.0.0.1:8765
 ```
 
-### Optional Qwen Runtime Path
-
-Install optional dependencies in the Python environment used to start
-`server.py`:
+For the live Qwen path, run the server with an environment that has `torch`,
+`transformers`, and `accelerate`. The companion runtime project venv can be used
+directly:
 
 ```bash
-pip install torch transformers accelerate
+cd /Users/allen/Documents/Codex/project/mini-llm-serving-runtime-demo
+/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/.venv/bin/python server.py
 ```
-
-The companion runtime project also documents equivalent dependencies in
-`heterogeneous-inference-runtime/requirements.txt`.
 
 The default model is
 [`Qwen/Qwen2.5-0.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct).
-You can override the live path with:
+Environment overrides:
 
 ```bash
 HF_QWEN_MODEL=Qwen/Qwen2.5-0.5B-Instruct \
 QWEN_DEVICE=auto \
 QWEN_MAX_NEW_TOKENS=96 \
+BASEMODEL_MAX_NEW_TOKENS=180 \
 python3 server.py
 ```
 
-`BASEMODEL` uses the same Qwen model with `BASEMODEL_MAX_NEW_TOKENS=180` by
-default. It intentionally disables prompt lowering, chunked prefill, and
-pressure-aware policy so the dashboard can compare direct serving against the
-compiler/runtime policy.
+When Qwen dependencies or model files are unavailable, `/ask` and
+`/api/qwen/ask` return an explicit deterministic fallback status. The fallback
+is only an offline demo path, not fake live evidence.
 
-When `torch`, `transformers`, or the model files are missing, `/ask` and
-`/api/qwen/ask` return a deterministic fallback with
-`source_status` ending in `deterministic_fallback`.
+## Workloads
+
+The demo uses functional prompt workloads:
+
+- `long_context_summary`: long-context summarization and follow-up extraction
+- `instruction_rewrite`: production instruction rewrite
+- `technical_explanation`: compiler/runtime optimization explanation
+
+Each workload has:
+
+- `context_items`: prompt facts or notes
+- `input_metadata`: prompt shape, audience, priority, and expected style
+- `task_context`: title and short task description
+- `default_question`: the prompt shown in the text box
 
 ## API
 
-Ask the phone-style LLM assistant:
+Ask the Qwen compiler/runtime path:
 
 ```bash
-curl -X POST http://127.0.0.1:8765/ask \
+curl -X POST http://127.0.0.1:8765/api/qwen/ask \
   -H "Content-Type: application/json" \
   -d '{
-    "scenario_id": "breakfast_bowl",
-    "ingredients": ["egg", "rice", "spinach"],
-    "nutrition": {"calories": 520, "protein_g": 28},
-    "question": "How can I make this higher protein?",
+    "scenario_id": "long_context_summary",
+    "question": "Summarize the incident and list the highest-risk follow-up items.",
     "llm_mode": "combined"
   }'
 ```
 
-Run one workload instance:
+The response includes:
+
+- `base_model.live_qwen_metrics`
+- `optimized.live_qwen_metrics`
+- `improvement`
+- `decode_steps` and `runtime_trace`
+- explicit fallback status when the live path is unavailable
+
+Run one runtime artifact simulator request:
 
 ```bash
 curl -X POST http://127.0.0.1:8765/generate \
@@ -123,33 +129,11 @@ curl -X POST http://127.0.0.1:8765/generate \
   -d '{"prompt_tokens": 1024, "max_output_tokens": 128}'
 ```
 
-Read the full dashboard snapshot:
+Read dashboard state:
 
 ```bash
 curl http://127.0.0.1:8765/api/snapshot
-```
-
-Read Qwen runtime readiness:
-
-```bash
 curl http://127.0.0.1:8765/api/qwen/status
-```
-
-Run the Qwen compiler/runtime path directly:
-
-```bash
-curl -X POST http://127.0.0.1:8765/api/qwen/ask \
-  -H "Content-Type: application/json" \
-  -d '{
-    "scenario_id": "breakfast_bowl",
-    "question": "How can I make this higher protein?",
-    "llm_mode": "combined"
-  }'
-```
-
-Read live metrics:
-
-```bash
 curl http://127.0.0.1:8765/api/metrics
 ```
 
@@ -159,150 +143,80 @@ Reset runtime state:
 curl -X POST http://127.0.0.1:8765/reset
 ```
 
-## What the Dashboard Shows
+## What The Dashboard Shows
 
-- Phone-style HTML demo input: mock camera panel, detected ingredients,
-  nutrition/recipe context, LLM question, and Qwen/fallback answer
-- BASEMODEL vs Qwen compiler runtime comparison: Qwen direct serving with full
-  prompt and `max_new_tokens=180` compared with the optimized compiler/runtime
-  policy path
-- Qwen compiler runtime path: HuggingFace tokenizer/model status, generated
-  compiler serving plan, PyTorch prefill, token-by-token decode traces for both
-  paths, and optimized final answer
-- LLM serving effect: TTFT, TPOT, E2E latency, tokens/sec, prefix-cache hit/miss,
-  prefill saved, SLO pass, and correctness pass
-- Memory evidence: compiler memory plan, runtime KV footprint, page-prefetch
-  memory guard, validation budget, and live prefix-cache memory effect
-- MLIR compiler pipeline: source MLIR, fusion pass, annotated MLIR, lowered HIR, runtime plan
-- Fusion details: fusion candidate, fusion group, lowered op type, backend, runtime action
-- Runtime lowering: `hir.fused_matmul_bias_relu` dispatched to the configured backend
-- Runtime-aware kernel selection: `hir.fused_rmsnorm` selects
-  `fused_rmsnorm_cuda` over `torch_rmsnorm` only when runtime benchmark evidence
-  proves the custom CUDA kernel is faster and correct
-- Artifact provenance: compiler version, git commit, pass pipeline, artifact hashes
-- Plan comparison: Metal, CPU, and Hybrid candidate plans with estimated and measured metrics
-- KV runtime policy: prefix-cache hit rate, reused/evicted KV blocks, admission rejects,
-  and prefill latency saved from cached prefixes
-- Memory timeline: allocation, reuse, and free events with validation status
-- Real backend profiling: HuggingFace LlamaForCausalLM profiling on available PyTorch backends
-  with TTFT, TPOT, batch/sequence scaling, and operator bottleneck breakdown
-- BASEMODEL vs Qwen compiler runtime comparison: TTFT, TPOT, total latency,
-  throughput, prompt tokens, generated tokens, policy flags, and delta metrics
-- Serving-framework comparison artifacts for vLLM/SGLang-style scheduling,
-  Triton Server-style dynamic batching/backend routing, and TensorRT-style
-  engine/profile dispatch
-- Cold-start artifacts showing model load, backend initialization, TensorRT
-  engine deserialize/context creation, first-token warmup, and steady-state metrics
-- Runtime events: `mlir_pattern_matched`, `lowered_to_hir`, prefill/decode events, completion
-- KV policy events: `prefix_cache_hit`, `prefix_cache_miss`, `kv_blocks_evicted`,
-  `admission_rejected`, and `prefix_cache_inserted`
-- Validation status: correctness pass/fail, SLO status, max logit diff
-- Raw artifact snapshots from compiler, runtime, and validation layers
+- Input Context: generic prompt workload, context chips, metadata, and a neutral
+  future live camera/CV slot
+- Ask LLM: sends the selected workload through BASEMODEL and optimized Qwen
+  paths
+- LLM Answer + Serving Effect: optimized answer, source status, TTFT, total
+  latency, TPOT, tokens/sec, prefix-cache state, SLO, and correctness
+- Memory Effect: live deterministic prefix-cache state plus committed memory and
+  KV evidence
+- BASEMODEL vs Qwen Compiler Runtime: direct full-prompt Qwen versus compact
+  compiler/runtime policy
+- Decode traces: completed token-by-token traces for BASEMODEL and optimized
+  paths
+- Compiler/runtime/validation explorer: MLIR, HIR, execution plans, KV plans,
+  memory timeline, scheduler evidence, and validation reports
 
-The top of the dashboard is the interview path:
+## BASEMODEL Comparison
+
+`BASEMODEL` is a real Qwen direct path when optional dependencies and model files
+are available:
 
 ```text
-Phone Demo Input -> Ask LLM -> Serving Runtime Metrics -> Validation Evidence
+full prompt
+max_new_tokens = 180
+no prompt lowering
+no chunked prefill
+no pressure-aware policy
 ```
 
-The lower sections remain the evidence explorer for compiler, runtime, kernel,
-memory, and validation artifacts.
-
-## Memory Evidence
-
-The dashboard treats memory as a first-class serving metric. The visible memory
-panels combine committed artifacts with deterministic live prefix-cache state:
+The optimized path uses the same Qwen model with:
 
 ```text
-Compiler memory plan
-  peak_decode_memory_mb = 673
-  memory_budget_mb = 8192
-  reuse_enabled = true
-  fits_memory_budget = true
-
-Runtime serving profile
-  peak_memory_mb = 1636.75
-  peak_kv_cache_mb = 868.75
-  oom_events = 0
-
-KV-cache analysis
-  total_blocks = 512
-  peak_blocks_used = 278
-  block_utilization = 0.543
-  fragmentation_ratio = 0.05
-  failed_allocations = 0
+compact prompt contract
+compiler-generated serving plan from Qwen config
+runtime prefill/decode loop
+artifact-backed scheduler, KV, memory, and policy evidence
 ```
 
-Validation reports the compiler-side memory budget result:
+The comparison reports TTFT, prefill latency, TPOT, total latency, prompt tokens,
+generated tokens, tokens/sec, max token budget, and policy deltas.
 
-```text
-budget_utilization = 0.0822
-allocations = 4
-reuse_events = 1
-frees = 3
-issues = []
-```
+## Compiler/Runtime Evidence
 
-The live HTML demo also reports current prefix-cache blocks, live KV MB, reused
-blocks, evictions, and prefill latency saved after repeated prompts. Those live
-values come from the deterministic in-process prefix-cache simulator. They are
-not real iPhone/CoreML memory measurements.
-
-## Current Compiler/Runtime Evidence
-
-The committed artifacts currently demonstrate:
+The compiler artifacts demonstrate:
 
 - MLIR pattern fusion for `linalg.matmul + bias_add + relu`
-- Fusion metadata emitted into annotated MLIR:
-  `fusion.candidate`, `fusion.group`, and `fusion.role`
+- Fusion metadata emitted into annotated MLIR
 - MLIR-to-HIR lowering into `hir.fused_matmul_bias_relu`
-- Backend placement for the lowered op, currently targeting `Metal`
-- Runtime execution-plan generation with `dispatch_fused_kernel`
+- Runtime execution-plan generation with backend dispatch contract
+- Qwen config conversion into an in-memory serving plan for the live path
+- KV cache contract, prefix-cache policy, memory plan, and scheduling plan
+
+The runtime artifacts demonstrate:
+
+- Prefill/decode timing evidence
+- Scheduler and admission-policy behavior
+- KV pressure and memory footprint reports
 - Runtime-aware RMSNorm kernel selection:
   `llm.rmsnorm -> hir.fused_rmsnorm -> fused_rmsnorm_cuda`
-  using measured PyTorch-vs-custom-CUDA benchmark evidence from
-  `heterogeneous-inference-runtime`
-- Lightweight cost metadata: estimated FLOPs, memory traffic, arithmetic intensity,
-  and launch overhead
-- TinyGPT-style planning artifacts: prefill/decode phase split, KV-cache block
-  plan, prefix-cache/admission policy, memory budget, and scheduling contract
+- Page-prefetch guardrails, load balancing, cold start, and serving-framework
+  comparison artifacts
 
-The demo consumes `kv_cache_plan.json` from `ml-graph-compiler-runtime` and
-enforces the KV policy at request time. Requests compute a prefix hash, reuse
-resident prefix KV blocks on cache hit, evict finished prefixes with LRU when
-capacity is tight, and reject admission only after eviction cannot free enough
-blocks.
+The validation artifacts demonstrate:
 
-The strongest compiler claim in this snapshot is the MLIR fusion-to-runtime
-bridge:
+- Correctness and SLO checks
+- Memory-budget validation
+- Runtime decision validation
+- Serving-framework validation
+- Scheduler/KV/policy validation reports
 
-```text
-linalg.matmul + bias add + ReLU
-  -> fusion annotation
-  -> HIR fused op
-  -> runtime execution plan
-  -> backend dispatch contract
-```
+## Truth Boundary
 
-The RMSNorm path demonstrates the runtime-aware compiler loop:
-
-```text
-llm.rmsnorm
-  -> hir.fused_rmsnorm
-  -> PyTorch RMSNorm vs custom CUDA RMSNorm benchmark
-  -> compiler selects fused_rmsnorm_cuda
-```
-
-The committed benchmark snapshot on an NVIDIA GTX 1650 Max-Q records
-`fused_rmsnorm_cuda` at `0.02975 ms` versus `torch_rmsnorm` at `0.086751 ms`
-for the representative shape, with correctness passing and a `2.916x` speedup.
-
-The LLM-shaped workload is used to exercise this compiler/runtime path. It is
-not presented as a full LLM serving framework.
-
-## Qwen Truth Boundary
-
-The Qwen path claims these live pieces when optional dependencies are available:
+Real when available:
 
 - HuggingFace `AutoTokenizer` and `AutoModelForCausalLM`
 - PyTorch module execution
@@ -310,63 +224,41 @@ The Qwen path claims these live pieces when optional dependencies are available:
 - Token-by-token greedy decode using PyTorch `past_key_values`
 - Prompt tokens, generated tokens, prefill latency, TTFT, TPOT, total latency,
   tokens/sec, token ids, token fragments, and decode-step latency
-- BASEMODEL direct serving with full prompt and `max_new_tokens=180`
-- Optimized serving with compact prompt lowering and the configured
-  `QWEN_MAX_NEW_TOKENS` cap
 
-The compiler/runtime connection is also real, but intentionally scoped:
+Artifact-backed:
 
-- Qwen live config is converted into an in-memory serving-plan artifact with
-  graph IR, prefill/decode execution plan, KV cache plan, memory plan, and
-  scheduling plan compatible with the existing compiler artifact schema
-- Existing committed artifacts still provide the production evidence for MLIR,
-  HIR, scheduler, KV/memory, validation, chunked-prefill policy, and
-  pressure-aware runtime policy panels
+- Compiler MLIR/HIR/plan evidence
+- Scheduler, KV pressure, memory, and policy evidence
+- Validation and SLO reports
 
-This pass does not claim full custom-kernel lowering of every Qwen operator, full
-Qwen weight lowering through the compiler, live vLLM/SGLang/Triton internals, or
-live KV block telemetry from Qwen/PyTorch internals.
+Not claimed:
 
-## Production-Oriented Artifacts
+- Full custom-kernel lowering of every Qwen operator
+- Full Qwen weight lowering through the compiler
+- Live KV block telemetry from PyTorch internals
+- Production vLLM/SGLang/Triton/TensorRT-LLM internals
+- Connected live camera/CV inference
 
-This snapshot also includes three production-style artifact groups:
+## Local Qwen Smoke-Test Results
 
-- `artifact_provenance.json`: compiler version, git commit, pass pipeline, and
-  SHA-256 hashes for emitted compiler artifacts
-- `candidate_execution_plans.json` and `plan_benchmark_results.json`: candidate
-  Metal, CPU, and Hybrid plans with compiler estimates and runtime benchmark
-  results
-- `memory_timeline.json` and `memory_validation_report.json`: allocation,
-  reuse, free events, peak memory, budget utilization, and validation status
-- `real_llama_profile.json`: real PyTorch backend execution profile for a
-  HuggingFace LlamaForCausalLM model, including MPS/CPU availability,
-  TTFT/TPOT across batch and sequence shapes, and per-operator bottleneck
-  breakdown
+Recorded on 2026-06-20 using
+`heterogeneous-inference-runtime/.venv/bin/python` with cached
+`Qwen/Qwen2.5-0.5B-Instruct` weights. Each row runs both BASEMODEL and optimized
+paths through `/api/qwen/ask`.
 
-These artifacts make the demo auditable: the dashboard can show which compiler
-produced the plan, which backend plan was selected, and how memory was allocated
-and reused over the workload. Real backend profiling is separated from the
-deterministic demo estimates so the dashboard can distinguish measured backend
-evidence from simulated serving-path estimates.
+| Workload | BASEMODEL TTFT | Optimized TTFT | BASEMODEL total | Optimized total | Prompt tokens | Generated tokens | Result |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Long Context | 331.506 ms | 62.976 ms | 998.644 ms | 1363.754 ms | 320 -> 163 | 46 -> 88 | Prompt tokens reduced; total latency grew because output length increased |
+| Instruction Rewrite | 92.359 ms | 99.774 ms | 255.530 ms | 1320.946 ms | 313 -> 155 | 12 -> 88 | Prompt tokens reduced; optimized answer generated more detail |
+| Technical Explain | 93.506 ms | 62.082 ms | 507.964 ms | 986.309 ms | 328 -> 167 | 29 -> 67 | TTFT and prompt size improved; total depends on output length |
 
-## BASEMODEL Comparison
-
-The dashboard includes a Qwen comparison between:
-
-- `BASEMODEL`: direct Qwen serving with full prompt, `max_new_tokens=180`, no
-  prompt lowering, no chunked prefill, and no pressure-aware policy
-- `Optimized compiler runtime`: the same Qwen model with compact prompt
-  lowering, generated compiler serving plan, runtime decode loop, and
-  artifact-backed scheduler/KV/memory policy evidence
-
-When optional Qwen dependencies are available, timing and token metrics come
-from live HuggingFace/PyTorch execution. When they are unavailable, the dashboard
-shows explicit deterministic fallback status instead of fake live evidence.
+Interpretation: the stable demo signal is prompt-token reduction plus the live
+BASEMODEL/optimized timing trace. Total latency must be read together with
+generated-token count because the two policies can stop at different lengths.
 
 ## Refreshing Artifacts
 
-The committed snapshots live under `artifacts/`. To refresh them from the
-source projects, copy new exports into:
+Copy refreshed exports from the source projects into:
 
 ```text
 artifacts/compiler/
@@ -374,23 +266,7 @@ artifacts/runtime/
 artifacts/validation/
 ```
 
-Current source artifact locations:
-
-```text
-/Users/allen/Desktop/project/ml-graph-compiler-runtime/integration_bundle/apple_demo_artifacts
-/Users/allen/Desktop/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts
-/Users/allen/Desktop/project/inference-validation-platform/integration_artifacts
-```
-
-Example refresh:
-
-```bash
-cp /Users/allen/Desktop/project/ml-graph-compiler-runtime/integration_bundle/apple_demo_artifacts/* artifacts/compiler/
-cp /Users/allen/Desktop/project/heterogeneous-inference-runtime/results/llm_runtime_artifacts/* artifacts/runtime/
-cp /Users/allen/Desktop/project/inference-validation-platform/integration_artifacts/* artifacts/validation/
-```
-
-For local testing against live artifact directories, set environment variables:
+For local testing against live artifact directories:
 
 ```bash
 export COMPILER_ARTIFACTS=/path/to/compiler/artifacts
@@ -399,31 +275,12 @@ export VALIDATION_ARTIFACTS=/path/to/validation/artifacts
 python3 server.py
 ```
 
-## Demo Narrative
+## Verification
 
-This repository turns three infrastructure projects into a visible phone-to-LLM
-serving demo. The HTML phone scenario provides the product-shaped input. The
-compiler emits MLIR and runtime-facing HIR artifacts. The runtime consumes the
-lowered plan and produces timing/profile artifacts. The validation platform
-turns runtime results into correctness and SLO reports. The demo shell ties them
-together as an optimization workbench that is stable enough for interviews.
+```bash
+python3 -m py_compile server.py
+/Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/.venv/bin/python server.py
+```
 
-## What Is Real Versus Simulated
-
-- Real: committed MLIR/HIR/compiler artifacts from `ml-graph-compiler-runtime`
-- Real: committed runtime and profiling artifacts from
-  `heterogeneous-inference-runtime`
-- Real: HuggingFace `LlamaForCausalLM` execution on available PyTorch backends
-  in `real_llama_profile.json`
-- Real: validation artifact snapshots from `Inference-Validation-Platform`
-- Simulated: the interactive `/ask` phone demo answer is deterministic and uses
-  committed scenario inputs from `artifacts/mobile_demo_scenarios.json`
-- Simulated: the interactive `/generate` endpoint uses deterministic timing
-  formulas so the dashboard remains portable without requiring a GPU or model
-  download at demo time
-- Not claimed: real iPhone/CoreML inference, production vLLM/SGLang/Triton/
-  TensorRT-LLM serving, or live framework-internal modification
-
-This split is intentional: the dashboard is a presentation layer over committed
-compiler/runtime/validation evidence, while the live controls make that evidence
-easy to inspect during an interview.
+Expected result: old product-theme wording is absent, `py_compile` succeeds,
+and the dashboard renders with the three generic workloads.
