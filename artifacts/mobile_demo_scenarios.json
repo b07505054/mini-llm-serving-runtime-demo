@@ -4,7 +4,7 @@
   "truth_boundary": {
     "real": [
       "The HTML demo uses committed compiler, runtime, and validation artifacts.",
-      "The interactive LLM answer is deterministic so the interview demo works without CoreML, iPhone, Xcode, Ollama, or GPU setup."
+      "The interactive LLM answer is deterministic so the interview demo works without CoreML, iPhone, Xcode, or GPU setup."
     ],
     "not_claimed": [
       "These scenarios are not real iPhone camera captures.",

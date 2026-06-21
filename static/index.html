@@ -69,6 +69,7 @@
       border-radius: 8px;
       padding: 16px;
       min-height: 120px;
+      min-width: 0;
     }
     .span-3 { grid-column: span 3; }
     .span-4 { grid-column: span 4; }
@@ -80,14 +81,20 @@
     .panel h2 { margin: 0 0 12px; font-size: 15px; color: #d8dee9; letter-spacing: 0; }
     .metric {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, auto);
       gap: 8px;
       padding: 7px 0;
       border-bottom: 1px solid rgba(255,255,255,0.06);
+      min-width: 0;
     }
     .metric:last-child { border-bottom: 0; }
     .metric span:first-child { color: var(--muted); }
-    .metric strong { font-size: 15px; text-align: right; }
+    .metric strong {
+      font-size: 15px;
+      text-align: right;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
     .pass { color: var(--green); }
     .warn { color: var(--yellow); }
     .fail { color: var(--red); }
@@ -124,12 +131,15 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
+      min-width: 0;
     }
     .compare-card {
       background: var(--panel-2);
       border: 1px solid var(--line);
       border-radius: 7px;
       padding: 12px;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
     .compare-card h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -241,8 +251,11 @@
     .event-reuse { color: var(--green); }
     .event-free { color: var(--yellow); }
     @media (max-width: 980px) {
+      header { padding: 20px 14px 12px; }
+      main { padding: 16px 14px 28px; }
       .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
       .flow, .compare, .hero-grid, .memory-grid { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
     }
   </style>
 </head>
@@ -250,8 +263,8 @@
   <header>
     <h1>Phone Demo to LLM Serving Runtime</h1>
     <div class="subtitle">
-      A stable HTML demo that replaces the fragile iPhone/CoreML path with deterministic mobile-style
-      inputs, LLM answers, KV-cache serving metrics, and validation-backed runtime evidence.
+      A stable HTML demo that connects mobile-style inputs to a Qwen2.5 HuggingFace module,
+      compiler serving plans, runtime prefill/decode traces, KV-cache metrics, and validation-backed evidence.
     </div>
   </header>
 
@@ -295,7 +308,8 @@
           <button id="batch-demo">Batch Burst</button>
         </div>
         <div class="evidence-note">
-          Deterministic answer path. The metrics come from committed runtime and validation artifacts plus the local KV-cache simulator.
+          Ask LLM runs the Qwen compiler-runtime path when optional torch/transformers/model files are available.
+          Otherwise it falls back explicitly to the deterministic offline answer.
         </div>
       </div>
 
@@ -315,6 +329,49 @@
     </section>
 
     <section class="grid">
+      <div class="panel span-12">
+        <h2>BASEMODEL vs Qwen Compiler Runtime</h2>
+        <div class="compare">
+          <div class="compare-card">
+            <h3>BASEMODEL / Qwen Direct</h3>
+            <div id="qwen-status-metrics"></div>
+          </div>
+          <div class="compare-card">
+            <h3>Optimized / Compiler Runtime</h3>
+            <div id="qwen-compiler-metrics"></div>
+          </div>
+          <div class="compare-card">
+            <h3>Optimization Effect</h3>
+            <div id="qwen-runtime-metrics"></div>
+          </div>
+        </div>
+        <div class="flow" style="margin-top:10px">
+          <button class="active">HF Qwen model</button>
+          <button class="active">PyTorch module</button>
+          <button class="active">FX-style adapter</button>
+          <button class="active">Compiler plan</button>
+          <button class="active">Runtime prefill</button>
+          <button class="active">Decode loop</button>
+          <button class="active">Final answer</button>
+        </div>
+        <div style="height:10px"></div>
+        <div class="compare">
+          <div class="compare-card">
+            <h3>BASEMODEL Decode Trace</h3>
+            <pre id="qwen-base-decode-trace">No BASEMODEL run yet.</pre>
+          </div>
+          <div class="compare-card">
+            <h3>Optimized Decode Trace</h3>
+            <pre id="qwen-decode-trace">No optimized run yet.</pre>
+          </div>
+          <div class="compare-card">
+            <h3>Policy Boundary</h3>
+            <div class="small" id="qwen-policy-boundary"></div>
+          </div>
+        </div>
+        <div class="evidence-note" id="qwen-boundary-note"></div>
+      </div>
+
       <div class="panel span-12">
         <h2>Compiler + Runtime Pipeline</h2>
         <div class="flow">
@@ -621,6 +678,7 @@
       renderStage(data);
       renderMobileDemo(data);
       renderMemoryEvidence(data);
+      renderQwenPath(data);
 
       document.getElementById("workload-metrics").innerHTML = [
         metric("Workload", cr.workload || "TinyGPT MLIR block", "blue"),
@@ -916,9 +974,91 @@
       ].join("");
     }
 
+    function renderQwenPath(data) {
+      const status = data.live.qwen_status || {};
+      const latest = data.live.latest_qwen_run || {};
+      const base = latest.base_model || {};
+      const optimizedRun = latest.optimized || {};
+      const improvement = latest.improvement || {};
+      const baseMetrics = base.live_qwen_metrics || {};
+      const optMetrics = optimizedRun.live_qwen_metrics || {};
+      const basePolicy = base.policy || {};
+      const optPolicy = optimizedRun.policy || {};
+      const plan = optimizedRun.compiler_plan || latest.compiler_plan || {};
+      const model = plan.model || {};
+      const kv = plan.kv_cache_plan || {};
+      const baseTrace = base.decode_steps || [];
+      const trace = optimizedRun.decode_steps || latest.decode_steps || [];
+      const ready = status.ready || latest.source_status === "qwen_live";
+      const deps = status.dependencies || {};
+      const missing = status.missing_dependencies || [];
+      const yesNo = value => value === true ? "yes" : value === false ? "no" : "n/a";
+      const traceText = (steps, emptyText, error) => {
+        if (!steps.length) return error ? `Qwen path unavailable: ${error}` : emptyText;
+        return steps.slice(0, 32).map(step =>
+          `${String(step.step).padStart(2, "0")}  token=${step.token_id}  ${fmt(step.latency_ms, " ms")}  ${JSON.stringify(step.text)}`
+        ).join("\n");
+      };
+
+      document.getElementById("qwen-status-metrics").innerHTML = [
+        metric("Status", base.status || status.status || "waiting", base.status === "completed" ? "pass" : "warn"),
+        metric("Model", baseMetrics.model_id || latest.model_id || status.model_id || "Qwen/Qwen2.5-0.5B-Instruct", "blue"),
+        metric("Prompt", basePolicy.prompt_mode || "full_prompt"),
+        metric("Max new tokens", fmt(basePolicy.max_new_tokens || baseMetrics.max_new_tokens)),
+        metric("Prompt lowering", yesNo(basePolicy.prompt_lowering), basePolicy.prompt_lowering === false ? "warn" : ""),
+        metric("Chunked prefill", yesNo(basePolicy.chunked_prefill), basePolicy.chunked_prefill === false ? "warn" : ""),
+        metric("Pressure-aware", yesNo(basePolicy.pressure_aware_policy), basePolicy.pressure_aware_policy === false ? "warn" : ""),
+        metric("TTFT", fmt(baseMetrics.ttft_ms, " ms")),
+        metric("Total latency", fmt(baseMetrics.total_latency_ms, " ms")),
+        metric("Tokens/sec", fmt(baseMetrics.tokens_per_second, " tok/s")),
+        metric("Fallback", base.error ? base.error : "none", base.error ? "warn" : "pass"),
+      ].join("");
+
+      document.getElementById("qwen-compiler-metrics").innerHTML = [
+        metric("Status", optimizedRun.status || status.status || "waiting", optimizedRun.status === "completed" ? "pass" : "warn"),
+        metric("Model", optMetrics.model_id || latest.model_id || status.model_id || "Qwen/Qwen2.5-0.5B-Instruct", "blue"),
+        metric("Prompt", optPolicy.prompt_mode || "compact_lowered_prompt"),
+        metric("Max new tokens", fmt(optPolicy.max_new_tokens || optMetrics.max_new_tokens)),
+        metric("Prompt lowering", yesNo(optPolicy.prompt_lowering), optPolicy.prompt_lowering ? "pass" : ""),
+        metric("Chunked prefill", yesNo(optPolicy.chunked_prefill), optPolicy.chunked_prefill ? "pass" : ""),
+        metric("Pressure-aware", yesNo(optPolicy.pressure_aware_policy), optPolicy.pressure_aware_policy ? "pass" : ""),
+        metric("Artifact source", plan.artifact_source || "waiting", plan.artifact_source ? "pass" : ""),
+        metric("TTFT", fmt(optMetrics.ttft_ms, " ms"), optMetrics.ttft_ms ? "pass" : ""),
+        metric("Total latency", fmt(optMetrics.total_latency_ms, " ms"), optMetrics.total_latency_ms ? "pass" : ""),
+        metric("Layers", fmt(model.num_layers)),
+        metric("Hidden", fmt(model.hidden_size)),
+      ].join("");
+
+      document.getElementById("qwen-runtime-metrics").innerHTML = [
+        metric("Latency gain", fmt(improvement.total_latency_gain_pct, "%"), improvement.total_latency_gain_pct > 0 ? "pass" : ""),
+        metric("TPOT gain", fmt(improvement.tpot_gain_pct, "%"), improvement.tpot_gain_pct > 0 ? "pass" : ""),
+        metric("Throughput gain", fmt(improvement.tokens_per_second_gain_pct, "%"), improvement.tokens_per_second_gain_pct > 0 ? "pass" : ""),
+        metric("Prompt token delta", fmt(improvement.prompt_token_reduction, " tokens"), improvement.prompt_token_reduction > 0 ? "pass" : ""),
+        metric("Generated token delta", fmt(improvement.generated_token_reduction, " tokens")),
+        metric("BASEMODEL tokens", `${fmt(baseMetrics.prompt_tokens)} / ${fmt(baseMetrics.generated_tokens)}`),
+        metric("Optimized tokens", `${fmt(optMetrics.prompt_tokens)} / ${fmt(optMetrics.generated_tokens)}`),
+        metric("KV source", kv.cache_type || "artifact-backed / n/a"),
+      ].join("");
+
+      document.getElementById("qwen-base-decode-trace").textContent =
+        traceText(baseTrace, "No BASEMODEL decode trace yet. Click Ask LLM to run both paths.", base.error);
+      document.getElementById("qwen-decode-trace").textContent =
+        traceText(trace, "No optimized decode trace yet. Click Ask LLM to run both paths.", optimizedRun.error || latest.error);
+      document.getElementById("qwen-policy-boundary").innerHTML = [
+        metric("torch", deps.torch ? "available" : "missing", deps.torch ? "pass" : "warn"),
+        metric("transformers", deps.transformers ? "available" : "missing", deps.transformers ? "pass" : "warn"),
+        metric("Missing deps", missing.length ? missing.join(", ") : "none", missing.length ? "warn" : "pass"),
+        metric("Policy delta", ((improvement.policy_delta || {}).max_new_tokens) || "180 -> optimized cap"),
+      ].join("");
+
+      document.getElementById("qwen-boundary-note").textContent =
+        improvement.evidence_boundary || "Truth boundary: live Qwen uses HuggingFace tokenizer/model and PyTorch past_key_values prefill/decode when available. Compiler, scheduler, KV, memory, chunked-prefill, and pressure-aware evidence is artifact-backed; no live Qwen KV block telemetry is claimed.";
+    }
+
     function renderMobileDemo(data) {
       const scenario = selectedScenario(data);
       const latest = data.live.latest_llm_answer || {};
+      const qwen = data.live.latest_qwen_run || {};
       const nutrition = scenario.nutrition || {};
       const ingredients = scenario.ingredients || [];
       document.getElementById("phone-label").textContent = scenario.camera_label || "Mock iPhone snapshot";
@@ -951,8 +1091,8 @@
       if (!latest.answer) {
         document.getElementById("llm-answer").textContent = "Choose a scenario and ask the LLM.";
         document.getElementById("llm-answer-metrics").innerHTML = [
-          metric("SLO", "waiting"),
-          metric("Prefix cache", "waiting"),
+          metric("Qwen path", (data.live.qwen_status || {}).status || "checking"),
+          metric("Source", "waiting"),
           metric("TTFT", "n/a"),
           metric("Tokens/sec", "n/a"),
         ].join("");
@@ -962,12 +1102,14 @@
       document.getElementById("llm-answer").textContent = latest.answer;
       const validation = latest.validation || {};
       document.getElementById("llm-answer-metrics").innerHTML = [
+        metric("Source", latest.source_status || qwen.source_status || "simulator", latest.source_status === "qwen_live" ? "pass" : "warn"),
         metric("Mode", latest.mode || "combined", "blue"),
         metric("Prefix cache", latest.prefix_cache || "n/a", latest.prefix_cache === "hit" ? "pass" : ""),
         metric("TTFT", fmt(latest.ttft_ms, " ms"), "pass"),
         metric("Total latency", fmt(latest.e2e_latency_ms, " ms"), "pass"),
         metric("TPOT", fmt(latest.tpot_ms, " ms/token")),
         metric("Tokens/sec", fmt(latest.tokens_per_second, " tok/s"), "pass"),
+        metric("Qwen cache", latest.cache_type || qwen.cache_type || "n/a"),
         metric("Request blocks", fmt((latest.memory || {}).request_blocks)),
         metric("Reused blocks", fmt((latest.memory || {}).reused_blocks), (latest.memory || {}).reused_blocks > 0 ? "pass" : ""),
         metric("Live KV", fmt((latest.memory || {}).live_prefix_cache_mb, " MB")),
@@ -1043,6 +1185,7 @@
     }
 
     async function askCurrentScenario() {
+      document.getElementById("status").textContent = "Running Qwen compiler-runtime path...";
       const scenario = selectedScenario(snapshot);
       const ingredients = (scenario.ingredients || []).map(item => {
         if (typeof item === "string") return item;
@@ -1056,12 +1199,16 @@
         question: document.getElementById("mobile-question").value,
         llm_mode: document.getElementById("llm-mode").value,
       };
-      const result = await api("/ask", {
+      const result = await api("/api/qwen/ask", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload),
       });
       document.getElementById("llm-answer").textContent = result.answer || "No answer returned.";
+      document.getElementById("status").textContent =
+        result.source_status === "qwen_live"
+          ? "Qwen runtime answer ready"
+          : "Qwen unavailable; deterministic fallback shown";
       await refresh();
     }
 

@@ -27,6 +27,10 @@ VALIDATION_ARTIFACTS = Path(
 MOBILE_DEMO_SCENARIOS = Path(
     os.environ.get("MOBILE_DEMO_SCENARIOS", ARTIFACT_ROOT / "mobile_demo_scenarios.json")
 )
+HF_QWEN_MODEL = os.environ.get("HF_QWEN_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
+QWEN_DEVICE = os.environ.get("QWEN_DEVICE", "auto")
+QWEN_MAX_NEW_TOKENS = int(os.environ.get("QWEN_MAX_NEW_TOKENS", "96"))
+BASEMODEL_MAX_NEW_TOKENS = int(os.environ.get("BASEMODEL_MAX_NEW_TOKENS", "180"))
 
 
 @dataclass
@@ -136,6 +140,400 @@ def load_text(path: Path, fallback=""):
         return fallback
 
 
+class QwenRuntimeAdapter:
+    def __init__(self, model_id=HF_QWEN_MODEL, device=QWEN_DEVICE, max_new_tokens=QWEN_MAX_NEW_TOKENS):
+        self.model_id = model_id
+        self.device_setting = device
+        self.max_new_tokens = max_new_tokens
+        self.torch = None
+        self.tokenizer = None
+        self.model = None
+        self.device = None
+        self.last_error = None
+        self.last_status = None
+
+    def _dependency_status(self):
+        status = {"torch": False, "transformers": False}
+        for name in status:
+            try:
+                __import__(name)
+                status[name] = True
+            except Exception:
+                status[name] = False
+        return status
+
+    def _sync(self):
+        if not self.torch or not self.device:
+            return
+        try:
+            if self.device == "cuda" and self.torch.cuda.is_available():
+                self.torch.cuda.synchronize()
+            elif self.device == "mps" and hasattr(self.torch, "mps"):
+                self.torch.mps.synchronize()
+        except Exception:
+            pass
+
+    def _select_device(self, torch):
+        if self.device_setting != "auto":
+            return self.device_setting
+        if torch.cuda.is_available():
+            return "cuda"
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return "mps"
+        return "cpu"
+
+    def status(self, load_model=False):
+        deps = self._dependency_status()
+        if not all(deps.values()):
+            missing = [name for name, ok in deps.items() if not ok]
+            self.last_status = {
+                "status": "unavailable",
+                "ready": False,
+                "model_id": self.model_id,
+                "device": self.device or self.device_setting,
+                "max_new_tokens": self.max_new_tokens,
+                "dependencies": deps,
+                "missing_dependencies": missing,
+                "model_loaded": False,
+                "compiler_ready": False,
+                "last_error": f"Missing optional dependencies: {', '.join(missing)}",
+            }
+            return self.last_status
+        if load_model and self.model is None:
+            self._load()
+        ready = self.model is not None and self.tokenizer is not None
+        self.last_status = {
+            "status": "ready" if ready else "dependencies_ready",
+            "ready": ready,
+            "model_id": self.model_id,
+            "device": self.device or self.device_setting,
+            "max_new_tokens": self.max_new_tokens,
+            "dependencies": deps,
+            "missing_dependencies": [],
+            "model_loaded": ready,
+            "compiler_ready": ready,
+            "last_error": self.last_error,
+        }
+        return self.last_status
+
+    def _load(self):
+        try:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+
+            self.torch = torch
+            self.device = self._select_device(torch)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
+            try:
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_id,
+                    torch_dtype="auto",
+                    low_cpu_mem_usage=True,
+                )
+            except TypeError:
+                self.model = AutoModelForCausalLM.from_pretrained(self.model_id)
+            self.model.to(self.device)
+            self.model.eval()
+            self.last_error = None
+            return True
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            self.model = None
+            self.tokenizer = None
+            return False
+
+    def _chat_prompt(self, prompt_contract, policy):
+        system = "\n".join(prompt_contract.get("system_rules", []))
+        if policy.get("prompt_lowering", True):
+            user_payload = {
+                "visual_facts": prompt_contract.get("visual_facts", []),
+                "nutrition_estimate": prompt_contract.get("nutrition_estimate", {}),
+                "recipe_context": prompt_contract.get("recipe_context", {}),
+                "question": prompt_contract.get("question", ""),
+            }
+        else:
+            user_payload = {
+                "serving_path": "BASEMODEL full prompt",
+                "instruction": "Answer directly from the complete prompt contract. Do not assume compiler/runtime prompt lowering.",
+                "prompt_contract": prompt_contract,
+            }
+        user = json.dumps(user_payload, ensure_ascii=True, indent=2)
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+        try:
+            return self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        except Exception:
+            return f"System:\n{system}\n\nUser:\n{user}\n\nAssistant:"
+
+    def _policy_summary(self, policy):
+        return {
+            "policy_name": policy.get("policy_name", "optimized"),
+            "max_new_tokens": int(policy.get("max_new_tokens", self.max_new_tokens)),
+            "prompt_lowering": bool(policy.get("prompt_lowering", True)),
+            "chunked_prefill": bool(policy.get("chunked_prefill", True)),
+            "pressure_aware_policy": bool(policy.get("pressure_aware_policy", True)),
+            "prompt_mode": policy.get("prompt_mode", "compact_lowered_prompt"),
+        }
+
+    def _live_metrics(self, result):
+        policy = result.get("policy", {})
+        return {
+            "status": result.get("status"),
+            "source_status": result.get("source_status"),
+            "model_id": result.get("model_id", self.model_id),
+            "device": result.get("device", self.device or self.device_setting),
+            "prompt_tokens": result.get("prompt_tokens"),
+            "generated_tokens": result.get("generated_tokens"),
+            "prefill_ms": result.get("prefill_ms"),
+            "ttft_ms": result.get("ttft_ms"),
+            "tpot_ms": result.get("tpot_ms"),
+            "total_latency_ms": result.get("total_latency_ms"),
+            "tokens_per_second": result.get("tokens_per_second"),
+            "max_new_tokens": result.get("max_new_tokens"),
+            "prompt_lowering": policy.get("prompt_lowering"),
+            "chunked_prefill": policy.get("chunked_prefill"),
+            "pressure_aware_policy": policy.get("pressure_aware_policy"),
+            "cache_type": result.get("cache_type"),
+            "stop_reason": result.get("stop_reason"),
+        }
+
+    def _compiler_plan(self, policy):
+        if policy.get("compiler_plan_source") == "disabled_for_basemodel":
+            return {
+                "artifact_source": "disabled_for_basemodel",
+                "reason": "BASEMODEL is direct Qwen serving: full prompt, no prompt lowering, no chunked prefill, no pressure-aware policy.",
+                "serving_policy": self._policy_summary(policy),
+            }
+        config = getattr(self.model, "config", None)
+        layers = int(getattr(config, "num_hidden_layers", 0) or 0)
+        hidden = int(getattr(config, "hidden_size", 0) or 0)
+        heads = int(getattr(config, "num_attention_heads", 0) or 0)
+        kv_heads = int(getattr(config, "num_key_value_heads", heads) or heads or 0)
+        intermediate = int(getattr(config, "intermediate_size", 0) or 0)
+        vocab = int(getattr(config, "vocab_size", 0) or 0)
+        head_dim = int(hidden / heads) if hidden and heads else 0
+        dtype = "unknown"
+        dtype_bytes = 2
+        try:
+            dtype = str(next(self.model.parameters()).dtype)
+            dtype_bytes = 2 if "16" in dtype or "bfloat" in dtype else 4
+        except Exception:
+            pass
+        bytes_per_token = layers * 2 * kv_heads * head_dim * dtype_bytes
+        block_size = 16
+        bytes_per_block = bytes_per_token * block_size
+        model_config = {
+            "name": self.model_id,
+            "num_layers": layers,
+            "hidden_size": hidden,
+            "num_heads": heads,
+            "num_kv_heads": kv_heads,
+            "head_dim": head_dim,
+            "intermediate_size": intermediate,
+            "vocab_size": vocab,
+            "dtype": dtype,
+            "operators": ["qwen_rmsnorm", "qkv_projection", "grouped_query_attention", "mlp"],
+        }
+        return {
+            "artifact_source": "qwen_live_huggingface_config",
+            "schema_compatibility": "ml-graph-compiler-runtime generate_llm_artifacts.py serving schema",
+            "model": model_config,
+            "graph_ir": {
+                "artifact_type": "qwen_graph_ir",
+                "adapter": "PyTorch module config + FX-style serving graph adapter",
+                "nodes": [
+                    "token_embedding",
+                    "prefill.transformer_block[*]",
+                    "decode.transformer_block[*].past_key_values",
+                    "lm_head",
+                ],
+            },
+            "serving_execution_plan": {
+                "artifact_type": "qwen_prefill_decode_execution_plan",
+                "phases": [
+                    {"name": "prefill", "inputs": ["input_ids", "attention_mask"], "use_cache": True},
+                    {"name": "decode", "step_tokens": 1, "cache": "past_key_values", "loop": "token_by_token"},
+                ],
+            },
+            "kv_cache_plan": {
+                "cache_type": "PyTorch past_key_values",
+                "block_size_tokens": block_size,
+                "bytes_per_token": bytes_per_token,
+                "bytes_per_block": bytes_per_block,
+                "num_layers": layers,
+                "num_kv_heads": kv_heads,
+                "head_dim": head_dim,
+                "dtype_bytes": dtype_bytes,
+            },
+            "memory_plan": {
+                "max_new_tokens": self.max_new_tokens,
+                "estimated_kv_mb_per_1k_tokens": round(bytes_per_token * 1024 / (1024 * 1024), 3),
+                "reuse_boundary": "past_key_values are reused between prefill and each decode step",
+            },
+            "scheduling_plan": {
+                "policy": "single_request_greedy_decode",
+                "prefill_batch": 1,
+                "decode_step_tokens": 1,
+                "future_extension": "continuous batching and custom kernel lowering",
+            },
+            "serving_policy": self._policy_summary(policy),
+        }
+
+    def ask(self, prompt_contract, policy=None):
+        policy = policy or {}
+        policy = {
+            "policy_name": policy.get("policy_name", "Optimized Runtime"),
+            "max_new_tokens": int(policy.get("max_new_tokens", self.max_new_tokens)),
+            "prompt_lowering": bool(policy.get("prompt_lowering", True)),
+            "chunked_prefill": bool(policy.get("chunked_prefill", True)),
+            "pressure_aware_policy": bool(policy.get("pressure_aware_policy", True)),
+            "prompt_mode": policy.get("prompt_mode", "compact_lowered_prompt"),
+            "compiler_plan_source": policy.get("compiler_plan_source", "qwen_live_huggingface_config"),
+        }
+        status = self.status(load_model=True)
+        if not status.get("ready"):
+            result = {
+                "status": "unavailable",
+                "source_status": "qwen_unavailable",
+                "status_detail": status,
+                "answer": "",
+                "policy": self._policy_summary(policy),
+                "compiler_plan": (
+                    {
+                        "artifact_source": "disabled_for_basemodel",
+                        "reason": "BASEMODEL compiler/runtime policy is disabled."
+                    }
+                    if policy.get("compiler_plan_source") == "disabled_for_basemodel"
+                    else None
+                ),
+                "runtime_trace": [],
+                "decode_steps": [],
+                "max_new_tokens": policy["max_new_tokens"],
+            }
+            result["live_qwen_metrics"] = self._live_metrics(result)
+            return result
+
+        max_tokens = int(policy.get("max_new_tokens", self.max_new_tokens))
+        torch = self.torch
+        prompt_text = self._chat_prompt(prompt_contract, policy)
+        encoded = self.tokenizer(prompt_text, return_tensors="pt")
+        encoded = {key: value.to(self.device) for key, value in encoded.items()}
+        input_ids = encoded["input_ids"]
+        attention_mask = encoded.get("attention_mask")
+        prompt_tokens = int(input_ids.shape[-1])
+        compiler_plan = self._compiler_plan(policy)
+        decode_steps = []
+        generated_ids = []
+        started = time.perf_counter()
+        try:
+            with torch.inference_mode():
+                prefill_start = time.perf_counter()
+                outputs = self.model(**encoded, use_cache=True)
+                self._sync()
+                prefill_ms = (time.perf_counter() - prefill_start) * 1000
+                past = outputs.past_key_values
+                logits = outputs.logits[:, -1, :]
+                next_token = torch.argmax(logits, dim=-1, keepdim=True)
+                eos_ids = set()
+                if self.tokenizer.eos_token_id is not None:
+                    eos_ids.add(int(self.tokenizer.eos_token_id))
+                first_decode_ms = None
+                stop_reason = "max_new_tokens"
+                for index in range(max_tokens):
+                    step_start = time.perf_counter()
+                    token_id = int(next_token.item())
+                    generated_ids.append(token_id)
+                    if attention_mask is not None:
+                        attention_mask = torch.cat(
+                            [attention_mask, torch.ones((attention_mask.shape[0], 1), device=self.device, dtype=attention_mask.dtype)],
+                            dim=-1,
+                        )
+                    try:
+                        outputs = self.model(input_ids=next_token, past_key_values=past, use_cache=True)
+                    except TypeError:
+                        outputs = self.model(
+                            input_ids=next_token,
+                            attention_mask=attention_mask,
+                            past_key_values=past,
+                            use_cache=True,
+                        )
+                    self._sync()
+                    latency_ms = (time.perf_counter() - step_start) * 1000
+                    if first_decode_ms is None:
+                        first_decode_ms = latency_ms
+                    fragment = self.tokenizer.decode([token_id], skip_special_tokens=True)
+                    cumulative = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+                    decode_steps.append(
+                        {
+                            "step": index + 1,
+                            "token_id": token_id,
+                            "text": fragment,
+                            "latency_ms": round(latency_ms, 3),
+                            "cumulative_output": cumulative,
+                        }
+                    )
+                    if token_id in eos_ids:
+                        stop_reason = "eos_token"
+                        break
+                    past = outputs.past_key_values
+                    logits = outputs.logits[:, -1, :]
+                    next_token = torch.argmax(logits, dim=-1, keepdim=True)
+            total_ms = (time.perf_counter() - started) * 1000
+            answer = self.tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+            decode_latencies = [step["latency_ms"] for step in decode_steps]
+            tpot_ms = round(sum(decode_latencies) / len(decode_latencies), 3) if decode_latencies else 0
+            generated_tokens = len(generated_ids)
+            tokens_per_second = round((generated_tokens / (total_ms / 1000)), 3) if total_ms else 0
+            result = {
+                "status": "completed",
+                "source_status": "qwen_live",
+                "model_id": self.model_id,
+                "device": self.device,
+                "policy": self._policy_summary(policy),
+                "answer": answer,
+                "prompt_tokens": prompt_tokens,
+                "generated_tokens": generated_tokens,
+                "max_new_tokens": max_tokens,
+                "prefill_ms": round(prefill_ms, 3),
+                "ttft_ms": round(prefill_ms + (first_decode_ms or 0), 3),
+                "tpot_ms": tpot_ms,
+                "total_latency_ms": round(total_ms, 3),
+                "tokens_per_second": tokens_per_second,
+                "cache_type": "PyTorch past_key_values",
+                "stop_reason": stop_reason,
+                "compiler_plan": compiler_plan,
+                "runtime_trace": {
+                    "prefill": {"latency_ms": round(prefill_ms, 3), "use_cache": True},
+                    "decode_loop": decode_steps,
+                },
+                "decode_steps": decode_steps,
+            }
+            result["live_qwen_metrics"] = self._live_metrics(result)
+            return result
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            result = {
+                "status": "error",
+                "source_status": "qwen_error",
+                "status_detail": self.status(load_model=False),
+                "answer": "",
+                "error": self.last_error,
+                "policy": self._policy_summary(policy),
+                "max_new_tokens": max_tokens,
+                "compiler_plan": compiler_plan,
+                "runtime_trace": [],
+                "decode_steps": [],
+            }
+            result["live_qwen_metrics"] = self._live_metrics(result)
+            return result
+
+
 class MiniServingRuntime:
     def __init__(self):
         self.compiler = {
@@ -207,6 +605,7 @@ class MiniServingRuntime:
                 "scenarios": [],
             },
         )
+        self.qwen = QwenRuntimeAdapter()
         self.reset()
 
     def reset(self):
@@ -240,6 +639,7 @@ class MiniServingRuntime:
         self.prefill_latency_saved_ms = 0.0
         self.ask_history = []
         self.latest_llm_answer = None
+        self.latest_qwen_run = None
 
     def _now_ms(self):
         return round((time.time() - self.started_at) * 1000, 3)
@@ -576,6 +976,86 @@ class MiniServingRuntime:
 
         return f"{lowered}: {names}. {advice} {runtime_note}"
 
+    def qwen_status(self):
+        return self.qwen.status(load_model=False)
+
+    def _qwen_serving_policies(self, optimized_output_tokens):
+        return {
+            "base_model": {
+                "policy_name": "BASEMODEL",
+                "max_new_tokens": BASEMODEL_MAX_NEW_TOKENS,
+                "prompt_lowering": False,
+                "chunked_prefill": False,
+                "pressure_aware_policy": False,
+                "prompt_mode": "full_prompt",
+                "compiler_plan_source": "disabled_for_basemodel",
+            },
+            "optimized": {
+                "policy_name": "Optimized Compiler Runtime",
+                "max_new_tokens": min(int(optimized_output_tokens), self.qwen.max_new_tokens),
+                "prompt_lowering": True,
+                "chunked_prefill": True,
+                "pressure_aware_policy": True,
+                "prompt_mode": "compact_lowered_prompt",
+                "compiler_plan_source": "qwen_live_huggingface_config",
+            },
+        }
+
+    def _qwen_run_package(self, result, fallback_answer=None):
+        return {
+            "status": result.get("status"),
+            "source_status": result.get("source_status"),
+            "answer": result.get("answer") or fallback_answer or "",
+            "policy": result.get("policy", {}),
+            "live_qwen_metrics": result.get("live_qwen_metrics", {}),
+            "compiler_plan": result.get("compiler_plan"),
+            "runtime_trace": result.get("runtime_trace") or [],
+            "decode_steps": result.get("decode_steps") or [],
+            "error": result.get("error") or (result.get("status_detail") or {}).get("last_error"),
+        }
+
+    def _qwen_improvement(self, base_result, optimized_result):
+        base = base_result.get("live_qwen_metrics", {})
+        optimized = optimized_result.get("live_qwen_metrics", {})
+
+        def gain(lower_is_better_key=None, higher_is_better_key=None):
+            if lower_is_better_key:
+                before = base.get(lower_is_better_key)
+                after = optimized.get(lower_is_better_key)
+                if not before or after is None:
+                    return None
+                return round(((before - after) / before) * 100, 2)
+            before = base.get(higher_is_better_key)
+            after = optimized.get(higher_is_better_key)
+            if not before or after is None:
+                return None
+            return round(((after - before) / before) * 100, 2)
+
+        def delta(key):
+            before = base.get(key)
+            after = optimized.get(key)
+            if before is None or after is None:
+                return None
+            return before - after
+
+        return {
+            "total_latency_gain_pct": gain(lower_is_better_key="total_latency_ms"),
+            "tpot_gain_pct": gain(lower_is_better_key="tpot_ms"),
+            "tokens_per_second_gain_pct": gain(higher_is_better_key="tokens_per_second"),
+            "prompt_token_reduction": delta("prompt_tokens"),
+            "generated_token_reduction": delta("generated_tokens"),
+            "policy_delta": {
+                "prompt_lowering": "disabled -> enabled",
+                "chunked_prefill": "disabled -> enabled",
+                "pressure_aware_policy": "disabled -> enabled",
+                "max_new_tokens": f"{BASEMODEL_MAX_NEW_TOKENS} -> {optimized.get('max_new_tokens') or self.qwen.max_new_tokens}",
+            },
+            "evidence_boundary": (
+                "Live metrics come from HuggingFace Qwen when available. KV, memory, scheduler, "
+                "chunked-prefill, and pressure-aware policy evidence remain artifact-backed; no live Qwen KV block telemetry is claimed."
+            ),
+        }
+
     def ask(self, payload):
         scenario_id = payload.get("scenario_id") or "breakfast_bowl"
         scenario = self._scenario_by_id(scenario_id)
@@ -610,7 +1090,18 @@ class MiniServingRuntime:
                 "prompt": question,
             }
         )
-        answer = self._deterministic_answer(prompt_contract, scenario)
+        policies = self._qwen_serving_policies(output_tokens)
+        base_prompt_contract = {**prompt_contract, "llm_mode": "base"}
+        base_qwen_result = self.qwen.ask(base_prompt_contract, policies["base_model"])
+        optimized_qwen_result = self.qwen.ask(prompt_contract, policies["optimized"])
+        qwen_live = optimized_qwen_result.get("status") == "completed"
+        fallback_answer = self._deterministic_answer(prompt_contract, scenario)
+        base_fallback_answer = self._deterministic_answer(base_prompt_contract, scenario)
+        answer = optimized_qwen_result.get("answer") if qwen_live else fallback_answer
+        source_status = "qwen_live" if qwen_live else f"{optimized_qwen_result.get('source_status', 'qwen_unavailable')}_deterministic_fallback"
+        base_model = self._qwen_run_package(base_qwen_result, base_fallback_answer)
+        optimized = self._qwen_run_package(optimized_qwen_result, fallback_answer)
+        improvement = self._qwen_improvement(base_qwen_result, optimized_qwen_result)
         validation = {
             "slo_passed": bool(self.validation["llm_validation_report"].get("passed", False)),
             "correctness_passed": bool(self.validation["llm_validation_report"].get("correctness_passed", False)),
@@ -636,21 +1127,42 @@ class MiniServingRuntime:
         response = {
             **runtime_result,
             "answer": answer,
+            "fallback_answer": fallback_answer if not qwen_live else None,
+            "source_status": source_status,
             "mode": llm_mode,
             "scenario_id": scenario_id,
             "ingredients": ingredients,
             "nutrition": prompt_contract.get("nutrition_estimate", {}),
             "question": question,
             "prompt_contract": prompt_contract,
-            "prompt_tokens": prompt_tokens,
-            "generated_tokens": output_tokens,
-            "tokens_per_second": self.runtime_artifacts["runtime_profile"].get(
+            "prompt_tokens": optimized_qwen_result.get("prompt_tokens", prompt_tokens),
+            "generated_tokens": optimized_qwen_result.get("generated_tokens", output_tokens),
+            "tokens_per_second": optimized_qwen_result.get("tokens_per_second") or self.runtime_artifacts["runtime_profile"].get(
                 "tokens_per_second",
                 self.metrics().get("tokens_per_second", 0),
             ),
+            "ttft_ms": optimized_qwen_result.get("ttft_ms", runtime_result.get("ttft_ms")),
+            "tpot_ms": optimized_qwen_result.get("tpot_ms", runtime_result.get("tpot_ms")),
+            "e2e_latency_ms": optimized_qwen_result.get("total_latency_ms", runtime_result.get("e2e_latency_ms")),
+            "prefill_ms": optimized_qwen_result.get("prefill_ms"),
+            "cache_type": optimized_qwen_result.get("cache_type", "deterministic_prefix_cache_simulator"),
             "validation": validation,
             "memory": memory,
+            "qwen": optimized_qwen_result,
+            "base_model": base_model,
+            "optimized": optimized,
+            "improvement": improvement,
+            "compiler_plan": optimized_qwen_result.get("compiler_plan") or {
+                "artifact_source": "committed_fallback_artifacts",
+                "execution_plan": self.compiler.get("execution_plan", {}),
+                "kv_cache_plan": self.compiler.get("kv_cache_plan", {}),
+                "memory_plan": self.compiler.get("memory_plan", {}),
+                "scheduling_plan": self.compiler.get("scheduling_plan", {}),
+            },
+            "runtime_trace": optimized_qwen_result.get("runtime_trace") or [],
+            "decode_steps": optimized_qwen_result.get("decode_steps", []),
             "evidence": {
+                "qwen_live_path": "HuggingFace Qwen module -> PyTorch prefill -> past_key_values decode loop",
                 "runtime_profile": "artifacts/runtime/runtime_profile.json",
                 "prefill_decode": "artifacts/runtime/prefill_decode_benchmark.json",
                 "validation_report": "artifacts/validation/llm_validation_report.json",
@@ -658,14 +1170,37 @@ class MiniServingRuntime:
             },
         }
         self.latest_llm_answer = response
+        self.latest_qwen_run = {
+            "source_status": source_status,
+            "qwen_status": optimized_qwen_result.get("status"),
+            "model_id": optimized_qwen_result.get("model_id", self.qwen.model_id),
+            "device": optimized_qwen_result.get("device", self.qwen.device or self.qwen.device_setting),
+            "answer": answer,
+            "prompt_tokens": response.get("prompt_tokens"),
+            "generated_tokens": response.get("generated_tokens"),
+            "prefill_ms": response.get("prefill_ms"),
+            "ttft_ms": response.get("ttft_ms"),
+            "tpot_ms": response.get("tpot_ms"),
+            "total_latency_ms": response.get("e2e_latency_ms"),
+            "tokens_per_second": response.get("tokens_per_second"),
+            "cache_type": response.get("cache_type"),
+            "compiler_plan": response.get("compiler_plan"),
+            "runtime_trace": response.get("runtime_trace"),
+            "decode_steps": response.get("decode_steps", []),
+            "base_model": base_model,
+            "optimized": optimized,
+            "improvement": improvement,
+            "error": optimized_qwen_result.get("error") or (optimized_qwen_result.get("status_detail") or {}).get("last_error"),
+        }
         self.ask_history.append(response)
         self.ask_history = self.ask_history[-20:]
         self._event(
-            "mobile_llm_answer_ready",
+            "qwen_runtime_answer_ready" if qwen_live else "qwen_runtime_fallback_ready",
             request_id,
             scenario_id=scenario_id,
             mode=llm_mode,
             prefix_cache=response.get("prefix_cache"),
+            source_status=source_status,
         )
         return response
 
@@ -934,6 +1469,8 @@ class MiniServingRuntime:
                 "mobile_demo": self.mobile_demo,
                 "ask_history": self.ask_history[-20:],
                 "latest_llm_answer": self.latest_llm_answer,
+                "qwen_status": self.qwen_status(),
+                "latest_qwen_run": self.latest_qwen_run,
                 "memory_summary": self.memory_summary(),
                 "compiler_runtime": self.compiler_runtime_summary(),
                 "rmsnorm_kernel_selection": self.rmsnorm_kernel_selection_summary(),
@@ -985,6 +1522,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/metrics":
             self._send_json(RUNTIME.metrics())
             return
+        if path == "/api/qwen/status":
+            self._send_json(RUNTIME.qwen_status())
+            return
         if path == "/":
             path = "/index.html"
 
@@ -1018,6 +1558,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
         if path == "/ask":
+            self._send_json(RUNTIME.ask(self._read_json()))
+            return
+        if path == "/api/qwen/ask":
             self._send_json(RUNTIME.ask(self._read_json()))
             return
         if path == "/generate":
