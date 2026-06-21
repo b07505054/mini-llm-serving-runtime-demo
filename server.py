@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
 import hashlib
+import errno
 import json
 import math
 import os
@@ -243,30 +244,11 @@ class QwenRuntimeAdapter:
 
     def _chat_prompt(self, prompt_contract, policy):
         system = "\n".join(prompt_contract.get("system_rules", []))
+        question = prompt_contract.get("question", "")
         if policy.get("prompt_lowering", True):
-            metadata = prompt_contract.get("input_metadata", {})
-            task = prompt_contract.get("task_context", {})
-            context_lines = "\n".join(
-                f"- {item}" for item in prompt_contract.get("context_items", [])
-            )
-            user = (
-                "Answer the user request directly. Do not repeat the prompt.\n\n"
-                f"Task: {task.get('title', 'serving task')}\n"
-                f"Task detail: {task.get('subtitle', 'Use the provided context.')}\n"
-                f"Audience: {metadata.get('target_audience', 'reviewer')}\n"
-                f"Priority: {metadata.get('priority', 'clarity')}\n"
-                f"Style: {metadata.get('expected_style', 'concise')}\n\n"
-                f"Context:\n{context_lines}\n\n"
-                f"User request: {prompt_contract.get('question', '')}\n\n"
-                "Answer:"
-            )
+            user = question
         else:
-            user = (
-                "BASEMODEL full prompt path. Answer directly from the complete prompt contract. "
-                "Do not assume compiler/runtime prompt lowering.\n\n"
-                f"{json.dumps(prompt_contract, ensure_ascii=True, indent=2)}\n\n"
-                "Answer:"
-            )
+            user = question
         messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -566,6 +548,7 @@ class MiniServingRuntime:
             "runtime_profile": load_json(RUNTIME_ARTIFACTS / "runtime_profile.json", {}),
             "prefill_decode": load_json(RUNTIME_ARTIFACTS / "prefill_decode_benchmark.json", {}),
             "scheduler_trace": load_json(RUNTIME_ARTIFACTS / "scheduler_trace.json", {}),
+            "scheduler_decision_report": load_json(RUNTIME_ARTIFACTS / "scheduler_decision_report.json", {}),
             "kv_cache_trace": load_json(RUNTIME_ARTIFACTS / "kv_cache_trace.json", {}),
             "plan_benchmark_results": load_json(RUNTIME_ARTIFACTS / "plan_benchmark_results.json", {}),
             "real_llama_profile": load_json(RUNTIME_ARTIFACTS / "real_llama_profile.json", {}),
@@ -879,6 +862,237 @@ class MiniServingRuntime:
         )
         return result
 
+    def run_batch(self, payload=None):
+        payload = payload or {}
+        request_count = int(payload.get("request_count", 32))
+        workload = payload.get("workload")
+        if not workload:
+            seed = [
+                (256, 64), (512, 128), (1024, 64), (2048, 128),
+                (128, 32), (4096, 64), (512, 256), (1024, 128),
+            ]
+            workload = [
+                {
+                    "prompt_tokens": prompt_tokens,
+                    "max_output_tokens": max_output_tokens,
+                    "prefix": f"batch-shared-prefix-{index % 4}",
+                    "prefix_tokens": max(64, min(prompt_tokens, prompt_tokens - 32)),
+                }
+                for index, (prompt_tokens, max_output_tokens) in enumerate(
+                    seed * math.ceil(request_count / len(seed))
+                )
+            ][:request_count]
+
+        results = []
+        for index, item in enumerate(workload, start=1):
+            results.append(
+                self.generate(
+                    {
+                        **item,
+                        "request_id": item.get("request_id") or f"batch-{index:02d}",
+                    }
+                )
+            )
+
+        completed = [row for row in results if row.get("status") == "completed"]
+        live_metrics = self.metrics()
+        scheduler_report = self.runtime_artifacts.get("scheduler_decision_report", {})
+        serving_report = self.runtime_artifacts.get("serving_framework_report", {})
+        policies = scheduler_report.get("policies", [])
+
+        def find_policy(name):
+            for policy in policies:
+                if policy.get("policy") == name:
+                    return policy
+            return {}
+
+        baseline = find_policy("fcfs_fixed_batch")
+        optimized = find_policy(scheduler_report.get("selected_policy")) or find_policy("cost_aware_memory_pressure_page_prefetch")
+        if not baseline:
+            baseline = next(
+                (
+                    row for row in serving_report.get("comparisons", [])
+                    if row.get("policy") == "fcfs_fixed_batch"
+                ),
+                {},
+            )
+        if not optimized:
+            optimized = next(
+                (
+                    row for row in serving_report.get("comparisons", [])
+                    if row.get("policy") == scheduler_report.get("selected_policy")
+                ),
+                serving_report.get("metrics", {}),
+            )
+
+        baseline_throughput = baseline.get("tokens_per_second") or baseline.get("throughput_tokens_per_s")
+        optimized_throughput = optimized.get("tokens_per_second") or optimized.get("throughput_tokens_per_s")
+        baseline_p95 = baseline.get("p95_latency_ms") or baseline.get("e2e_p95_ms")
+        optimized_p95 = optimized.get("p95_latency_ms") or optimized.get("e2e_p95_ms")
+
+        throughput_gain_pct = None
+        if baseline_throughput:
+            throughput_gain_pct = round(((optimized_throughput - baseline_throughput) / baseline_throughput) * 100, 2)
+        p95_gain_pct = None
+        if baseline_p95:
+            p95_gain_pct = round(((baseline_p95 - optimized_p95) / baseline_p95) * 100, 2)
+
+        return {
+            "status": "completed",
+            "batch_type": "artifact_backed_32_request_serving_workload",
+            "request_count": len(results),
+            "completed_requests": len(completed),
+            "live_synthetic_metrics": live_metrics,
+            "artifact_comparison": {
+                "baseline": {
+                    "policy": baseline.get("policy") or "fcfs_fixed_batch",
+                    "throughput_tokens_per_s": baseline_throughput,
+                    "e2e_p95_ms": baseline_p95,
+                    "avg_decode_batch_size": baseline.get("avg_decode_batch_size"),
+                    "decode_batch_efficiency": baseline.get("decode_batch_efficiency"),
+                },
+                "optimized": {
+                    "policy": optimized.get("policy") or scheduler_report.get("selected_policy"),
+                    "throughput_tokens_per_s": optimized_throughput,
+                    "e2e_p95_ms": optimized_p95,
+                    "avg_decode_batch_size": optimized.get("avg_decode_batch_size"),
+                    "decode_batch_efficiency": optimized.get("decode_batch_efficiency"),
+                },
+                "improvement": {
+                    "throughput_gain_pct": throughput_gain_pct,
+                    "p95_latency_gain_pct": p95_gain_pct,
+                    "tokens_per_second_delta": round((optimized_throughput or 0) - (baseline_throughput or 0), 3),
+                    "p95_latency_ms_delta": round((optimized_p95 or 0) - (baseline_p95 or 0), 3),
+                },
+                "selection_reason": scheduler_report.get("selection_reason"),
+                "source": "artifacts/runtime/scheduler_decision_report.json",
+            },
+            "results": results,
+        }
+
+    def resume_evidence(self):
+        scheduler = self.runtime_artifacts.get("scheduler_decision_report", {})
+        prefetch = self.runtime_artifacts.get("page_prefetch_report", {})
+        rmsnorm = self.runtime_artifacts.get("gpu_pgo_like_rmsnorm_report", {})
+        distributed = self.runtime_artifacts.get("distributed_serving_report", {})
+        fault = self.runtime_artifacts.get("fault_tolerance_report", {})
+        worker_health = self.runtime_artifacts.get("worker_health_report", {})
+        provenance = self.compiler.get("artifact_provenance", {})
+        serving_contract = self.compiler.get("serving_framework_contract", {})
+        slo = self.validation.get("slo_report", {})
+
+        def policy(name):
+            for row in scheduler.get("policies", []):
+                if row.get("policy") == name:
+                    return row
+            return {}
+
+        baseline = policy("fcfs_fixed_batch")
+        selected = policy(scheduler.get("selected_policy")) or policy("cost_aware_memory_pressure_page_prefetch")
+        prefetch_metric = prefetch.get("metric", {})
+        rms_decision = rmsnorm.get("representative_decision", {})
+        rms_candidates = rms_decision.get("candidate_kernels", [])
+        selected_kernel = next(
+            (row for row in rms_candidates if row.get("kernel") == rms_decision.get("selected_kernel")),
+            {},
+        )
+        fallback_kernel = next(
+            (row for row in rms_candidates if row.get("kernel") == rms_decision.get("baseline_kernel")),
+            {},
+        )
+        distributed_policies = distributed.get("policy_summaries", {})
+        selected_distributed = distributed_policies.get(distributed.get("selected_policy"), {})
+        fault_metrics = fault.get("metrics", {})
+        framework_targets = serving_contract.get("framework_targets", {})
+
+        return {
+            "artifact_type": "resume_evidence_summary",
+            "truth_boundary": (
+                "Evidence rows summarize committed runtime, compiler, and validation artifacts. "
+                "Rows marked projection are not claimed as full end-to-end serving reruns."
+            ),
+            "groups": [
+                {
+                    "id": "scheduling",
+                    "label": "Scheduling",
+                    "status": "artifact-backed",
+                    "claim": "Cost-aware continuous batching improves 32-request serving throughput and p95 latency.",
+                    "metrics": [
+                        {"label": "Throughput", "value": f"{baseline.get('tokens_per_second')} -> {selected.get('tokens_per_second')} tok/s", "tone": "pass"},
+                        {"label": "E2E P95", "value": f"{baseline.get('p95_latency_ms')} -> {selected.get('p95_latency_ms')} ms", "tone": "pass"},
+                        {"label": "Decode batch", "value": f"{baseline.get('avg_decode_batch_size')} -> {selected.get('avg_decode_batch_size')}", "tone": "pass"},
+                        {"label": "Selected policy", "value": scheduler.get("selected_policy"), "tone": "blue"},
+                    ],
+                    "sources": ["scheduler_decision_report.json"],
+                },
+                {
+                    "id": "prefetch",
+                    "label": "KV Prefetch",
+                    "status": "validated",
+                    "claim": "vLLM-style KV-page prefetch improves decode TPOT without OOM regression.",
+                    "metrics": [
+                        {"label": "Hit rate", "value": f"{round(prefetch_metric.get('prefetch_hit_rate', 0) * 100, 2)}%", "tone": "pass"},
+                        {"label": "TPOT P95", "value": f"{prefetch_metric.get('optimized_tpot_p95_ms')} -> {prefetch_metric.get('prefetch_tpot_p95_ms')} ms", "tone": "pass"},
+                        {"label": "OOM events", "value": prefetch_metric.get("oom_events"), "tone": "pass"},
+                        {"label": "Peak KV", "value": f"{prefetch_metric.get('optimized_peak_kv_cache_mb')} -> {prefetch_metric.get('prefetch_peak_kv_cache_mb')} MB", "tone": "blue"},
+                    ],
+                    "sources": ["page_prefetch_report.json"],
+                },
+                {
+                    "id": "kernel",
+                    "label": "CUDA Kernel",
+                    "status": "projection",
+                    "claim": "Custom CUDA RMSNorm is selected over PyTorch fallback when kernel evidence is faster and correct.",
+                    "metrics": [
+                        {"label": "Kernel", "value": f"{rms_decision.get('baseline_kernel')} -> {rms_decision.get('selected_kernel')}", "tone": "pass"},
+                        {"label": "Kernel P95", "value": f"{rms_decision.get('baseline_p95_ms')} -> {rms_decision.get('selected_p95_ms')} ms", "tone": "pass"},
+                        {"label": "Speedup", "value": f"{selected_kernel.get('speedup_vs_fallback')}x", "tone": "pass"},
+                        {"label": "Correct", "value": str(bool(selected_kernel.get('correct') and fallback_kernel.get('correct'))).lower(), "tone": "pass"},
+                    ],
+                    "sources": ["gpu_pgo_like_rmsnorm_report.json"],
+                },
+                {
+                    "id": "distributed",
+                    "label": "Distributed",
+                    "status": "artifact-backed",
+                    "claim": "Distributed serving policies cover routing, worker timeout, retry, quarantine, and failover.",
+                    "metrics": [
+                        {"label": "Selected route", "value": distributed.get("selected_policy"), "tone": "blue"},
+                        {"label": "Throughput", "value": f"{selected_distributed.get('throughput_tokens_per_s')} tok/s", "tone": "pass"},
+                        {"label": "Retry / quarantine / failover", "value": f"{fault_metrics.get('retry_count')} / {fault_metrics.get('quarantine_count')} / {fault_metrics.get('failover_count')}", "tone": "pass"},
+                        {"label": "Worker events", "value": len(worker_health.get("events", [])), "tone": "blue"},
+                    ],
+                    "sources": ["distributed_serving_report.json", "fault_tolerance_report.json", "worker_health_report.json"],
+                },
+                {
+                    "id": "compiler",
+                    "label": "Compiler",
+                    "status": "contract evidence",
+                    "claim": "Compiler artifacts expose MLIR/HIR lowering, execution plans, KV plans, memory plans, and serving contracts.",
+                    "metrics": [
+                        {"label": "Compiler", "value": (provenance.get("compiler") or {}).get("name"), "tone": "blue"},
+                        {"label": "Pass pipeline", "value": len(provenance.get("pass_pipeline", [])), "tone": "pass"},
+                        {"label": "Artifacts hashed", "value": len(provenance.get("outputs", [])), "tone": "pass"},
+                        {"label": "Framework targets", "value": ", ".join(framework_targets.keys()), "tone": "blue"},
+                    ],
+                    "sources": ["artifact_provenance.json", "serving_framework_contract.json"],
+                },
+                {
+                    "id": "validation",
+                    "label": "Validation",
+                    "status": "validated",
+                    "claim": "Validation artifacts report TTFT, TPOT, e2e p95, queue wait, throughput, rejection, and OOM evidence.",
+                    "metrics": [
+                        {"label": "TTFT / TPOT", "value": f"{slo.get('ttft_p95_ms')} / {slo.get('tpot_p95_ms')} ms", "tone": "pass"},
+                        {"label": "E2E P95", "value": f"{slo.get('e2e_p95_ms')} ms", "tone": "pass"},
+                        {"label": "Throughput", "value": f"{slo.get('tokens_per_second')} tok/s", "tone": "pass"},
+                        {"label": "Reject / OOM", "value": f"{slo.get('admission_rejection_rate')} / {slo.get('oom_events')}", "tone": "pass"},
+                    ],
+                    "sources": ["slo_report.json"],
+                },
+            ],
+        }
+
     def _scenario_by_id(self, scenario_id):
         for scenario in self.mobile_demo.get("scenarios", []):
             if scenario.get("id") == scenario_id:
@@ -887,9 +1101,7 @@ class MiniServingRuntime:
         return scenarios[0] if scenarios else {}
 
     def _normalize_context_items(self, payload, scenario):
-        context_items = payload.get("context_items")
-        if not context_items:
-            context_items = scenario.get("context_items", [])
+        context_items = payload.get("context_items") or []
         normalized = []
         for item in context_items:
             if isinstance(item, dict):
@@ -903,29 +1115,23 @@ class MiniServingRuntime:
         return normalized
 
     def _prompt_contract(self, payload, scenario, context_items, question, llm_mode):
-        input_metadata = payload.get("input_metadata") or scenario.get("input_metadata", {})
-        task_context = payload.get("task_context") or scenario.get("task_context", {})
-        context_texts = [item["text"] for item in context_items]
         return {
-            "source": "html_llm_serving_workbench",
-            "truth_boundary": "Generic demo input. Live camera / CV detection slot is present but not connected.",
+            "source": "raw_user_prompt",
+            "truth_boundary": "Only the user-provided prompt is sent to the live LLM path.",
             "llm_mode": llm_mode,
             "system_rules": [
-                "Use only the provided context.",
-                "Mark assumptions clearly.",
+                "Answer the user prompt directly.",
                 "Answer concisely.",
                 "Avoid unsupported claims.",
-                "Do not echo JSON or the prompt contract.",
+                "Do not echo the prompt unless asked.",
             ],
-            "context_items": context_texts,
-            "input_metadata": input_metadata,
-            "task_context": task_context,
+            "context_items": [],
+            "input_metadata": {},
+            "task_context": {},
             "question": question,
         }
 
     def _estimate_prompt_tokens(self, prompt_contract):
-        context_items = prompt_contract.get("context_items", [])
-        context_words = sum(len(str(item).split()) for item in context_items)
         question_words = len(prompt_contract.get("question", "").split())
         mode = prompt_contract.get("llm_mode", "combined")
         mode_adjustment = {
@@ -934,7 +1140,7 @@ class MiniServingRuntime:
             "compiler": 80,
             "combined": 72,
         }.get(mode, 96)
-        return max(128, min(2048, mode_adjustment + context_words * 5 + question_words * 7))
+        return max(32, min(2048, mode_adjustment + question_words * 7))
 
     def _estimate_output_tokens(self, question, llm_mode):
         base = 112 if len(question.split()) > 8 else 88
@@ -945,35 +1151,29 @@ class MiniServingRuntime:
         return max(48, min(160, base))
 
     def _deterministic_answer(self, prompt_contract, scenario):
-        context_items = prompt_contract.get("context_items", [])
-        input_metadata = prompt_contract.get("input_metadata", {})
         question = prompt_contract.get("question", "")
         mode = prompt_contract.get("llm_mode", "combined")
-        task_context = prompt_contract.get("task_context", {})
-        title = task_context.get("title") or scenario.get("answer_seed", "serving task")
-        context_summary = "; ".join(context_items[:3]) or "the provided context"
-        audience = input_metadata.get("target_audience", "the reviewer")
-        priority = input_metadata.get("priority", "clarity")
+        prompt_preview = question.strip() or "the user prompt"
+        if len(prompt_preview) > 180:
+            prompt_preview = f"{prompt_preview[:177]}..."
 
-        lowered = "I would keep the full context as"
+        lowered = "I would answer the raw prompt directly"
         if mode in {"compiler", "combined"}:
-            lowered = "After prompt lowering, the key context is"
-        runtime_note = "The runtime path reuses the shared context when this scenario repeats."
+            lowered = "After prompt lowering, the runtime still answers only the raw prompt"
+        runtime_note = "The runtime path reuses the prompt prefix when this prompt repeats."
         if mode == "base":
             runtime_note = "This is the baseline deterministic answer path."
         if mode == "runtime":
-            runtime_note = "The runtime policy keeps the serving context warm for lower TTFT."
+            runtime_note = "The runtime policy keeps the serving prompt warm for lower TTFT."
 
         lower_question = question.lower()
         if "summarize" in lower_question or "summary" in lower_question:
             advice = (
-                f"Summary for {audience}: {context_summary}. Highest-risk follow-ups are latency regression, "
-                "memory pressure, and missing validation evidence."
+                f"Summary based only on your prompt: {prompt_preview}"
             )
         elif "rewrite" in lower_question or "runbook" in lower_question:
             advice = (
-                f"Rewrite for {audience}: check readiness, inspect TTFT and cache signals when the SLO slips, "
-                "attach validation evidence, and keep rollback steps brief."
+                f"Rewrite based only on your prompt: {prompt_preview}"
             )
         elif "explain" in lower_question or "latency" in lower_question:
             advice = (
@@ -982,10 +1182,10 @@ class MiniServingRuntime:
             )
         else:
             advice = (
-                f"For {title}, prioritize {priority}. Use the provided context, state assumptions, and keep the response concise."
+                f"Answer based only on your prompt: {prompt_preview}"
             )
 
-        return f"{lowered}: {context_summary}. {advice} {runtime_note}"
+        return f"{lowered}. {advice} {runtime_note}"
 
     def qwen_status(self):
         return self.qwen.status(load_model=False)
@@ -1074,7 +1274,7 @@ class MiniServingRuntime:
         question = (
             payload.get("question")
             or scenario.get("default_question")
-            or "Answer from the provided context."
+            or "Answer this prompt."
         ).strip()
         context_items = self._normalize_context_items(payload, scenario)
         prompt_contract = self._prompt_contract(
@@ -1088,10 +1288,9 @@ class MiniServingRuntime:
         output_tokens = int(payload.get("max_output_tokens") or self._estimate_output_tokens(question, llm_mode))
         prefix = "|".join(
             [
-                "mobile-demo",
-                scenario_id,
+                "raw-prompt",
                 llm_mode,
-                ",".join(item["text"].lower()[:80] for item in context_items),
+                hashlib.sha256(question.encode("utf-8")).hexdigest()[:16],
             ]
         )
         request_id = payload.get("request_id") or f"ask_{uuid.uuid4().hex[:8]}"
@@ -1146,9 +1345,9 @@ class MiniServingRuntime:
             "source_status": source_status,
             "mode": llm_mode,
             "scenario_id": scenario_id,
-            "context_items": context_items,
-            "input_metadata": prompt_contract.get("input_metadata", {}),
-            "task_context": prompt_contract.get("task_context", {}),
+            "context_items": [],
+            "input_metadata": {},
+            "task_context": {},
             "question": question,
             "prompt_contract": prompt_contract,
             "prompt_tokens": optimized_qwen_result.get("prompt_tokens", prompt_tokens),
@@ -1488,6 +1687,7 @@ class MiniServingRuntime:
                 "qwen_status": self.qwen_status(),
                 "latest_qwen_run": self.latest_qwen_run,
                 "memory_summary": self.memory_summary(),
+                "resume_evidence": self.resume_evidence(),
                 "compiler_runtime": self.compiler_runtime_summary(),
                 "rmsnorm_kernel_selection": self.rmsnorm_kernel_selection_summary(),
                 "requests": self.requests[-20:],
@@ -1538,6 +1738,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/metrics":
             self._send_json(RUNTIME.metrics())
             return
+        if path == "/api/evidence":
+            self._send_json(RUNTIME.resume_evidence())
+            return
         if path == "/api/qwen/status":
             self._send_json(RUNTIME.qwen_status())
             return
@@ -1579,6 +1782,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/qwen/ask":
             self._send_json(RUNTIME.ask(self._read_json()))
             return
+        if path == "/api/batch":
+            self._send_json(RUNTIME.run_batch(self._read_json()))
+            return
         if path == "/generate":
             self._send_json(RUNTIME.generate(self._read_json()))
             return
@@ -1594,8 +1800,19 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     host = "127.0.0.1"
-    port = 8765
-    server = ThreadingHTTPServer((host, port), Handler)
+    requested_port = int(os.environ.get("PORT", "8765"))
+    server = None
+    port = requested_port
+    for candidate in range(requested_port, requested_port + 10):
+        try:
+            server = ThreadingHTTPServer((host, candidate), Handler)
+            port = candidate
+            break
+        except OSError as exc:
+            if exc.errno not in {errno.EADDRINUSE, 48, 98}:
+                raise
+    if server is None:
+        raise OSError(f"No free port found from {requested_port} to {requested_port + 9}")
     print(f"MLIR Compiler-to-Runtime Workbench: http://{host}:{port}")
     print("Run Workload -> MLIR pattern match -> HIR lowering -> runtime plan -> metrics")
     server.serve_forever()

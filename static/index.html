@@ -163,11 +163,131 @@
       font-size: 12px;
     }
     .small { color: var(--muted); font-size: 12px; }
+    .resume-evidence-panel {
+      margin-bottom: 14px;
+    }
+    .evidence-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .evidence-header h2 { margin-bottom: 4px; }
+    .evidence-anchors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: flex-end;
+    }
+    .evidence-anchors a {
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .evidence-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .evidence-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .evidence-label {
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .evidence-status {
+      color: var(--green);
+      border: 1px solid rgba(126, 231, 135, 0.35);
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .evidence-claim {
+      color: #d8dee9;
+      font-size: 13px;
+      min-height: 56px;
+      margin-bottom: 8px;
+    }
+    .evidence-sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 9px;
+    }
+    .evidence-source {
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 999px;
+      padding: 3px 7px;
+      font-size: 11px;
+      background: #171a1e;
+    }
     .hero-grid {
       display: grid;
-      grid-template-columns: minmax(240px, 0.9fr) minmax(300px, 1.1fr) minmax(280px, 1fr) minmax(240px, 0.9fr);
+      grid-template-columns: minmax(430px, 1.05fr) minmax(520px, 1.15fr) minmax(300px, 0.8fr);
       gap: 14px;
       margin-bottom: 14px;
+    }
+    .system-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .system-tabs button {
+      min-width: 88px;
+      background: var(--panel-2);
+    }
+    .system-tabs button.active {
+      background: #1f6feb;
+      border-color: #388bfd;
+      color: #f2f8ff;
+    }
+    .system-tab-panel[hidden] { display: none; }
+    .system-panel-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+    .system-panel-grid h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .cv-placeholder {
+      min-height: 410px;
+      display: grid;
+      grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1.2fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+    .cv-copy {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+      padding: 14px;
     }
     .phone-frame {
       min-height: 410px;
@@ -222,6 +342,16 @@
       font-size: 12px;
     }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .action-status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
     .answer-box {
       min-height: 148px;
       background: #0c0e11;
@@ -229,6 +359,75 @@
       border-radius: 7px;
       padding: 12px;
       white-space: pre-wrap;
+      overflow: hidden;
+    }
+    .batch-summary {
+      display: grid;
+      gap: 12px;
+      white-space: normal;
+    }
+    .batch-policies {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .batch-policy-card {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+      padding: 12px;
+      min-width: 0;
+    }
+    .batch-policy-card.optimized {
+      border-color: rgba(126, 231, 135, 0.45);
+      background: rgba(126, 231, 135, 0.06);
+    }
+    .batch-policy-name {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      overflow-wrap: anywhere;
+    }
+    .batch-metric {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(88px, auto);
+      gap: 8px;
+      align-items: end;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .batch-metric:last-child { border-bottom: 0; }
+    .batch-metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .batch-metric strong {
+      text-align: right;
+      font-size: 15px;
+      overflow-wrap: anywhere;
+    }
+    .batch-deltas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .batch-delta {
+      border: 1px solid rgba(126, 231, 135, 0.35);
+      border-radius: 7px;
+      padding: 10px;
+      background: rgba(126, 231, 135, 0.05);
+    }
+    .batch-delta span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .batch-delta strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--green);
+      font-size: 18px;
     }
     .evidence-note {
       color: var(--muted);
@@ -254,8 +453,21 @@
       header { padding: 20px 14px 12px; }
       main { padding: 16px 14px 28px; }
       .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
-      .flow, .compare, .hero-grid, .memory-grid { grid-template-columns: 1fr; }
+      .flow, .compare, .hero-grid, .memory-grid, .system-panel-grid, .cv-placeholder, .evidence-grid { grid-template-columns: 1fr; }
+      .batch-policies, .batch-deltas { grid-template-columns: 1fr; }
+      .evidence-header { display: block; }
+      .evidence-anchors { justify-content: flex-start; margin-top: 10px; }
       table { display: block; overflow-x: auto; }
+    }
+    @media (min-width: 981px) and (max-width: 1220px) {
+      .hero-grid {
+        grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr);
+      }
+      .hero-grid > .panel:last-child {
+        grid-column: 1 / -1;
+      }
+      .batch-policies { grid-template-columns: 1fr; }
+      .evidence-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -278,50 +490,84 @@
       <span class="small" id="status">Loading compiler artifacts...</span>
     </div>
 
+    <section class="panel resume-evidence-panel">
+      <div class="evidence-header">
+        <div>
+          <h2>Resume Evidence</h2>
+          <div class="small">Claim-to-artifact proof for scheduling, KV prefetch, CUDA kernels, distributed serving, compiler artifacts, and validation reports.</div>
+        </div>
+        <div class="evidence-anchors" id="resume-evidence-anchors"></div>
+      </div>
+      <div class="evidence-grid" id="resume-evidence-grid"></div>
+      <div class="evidence-note" id="resume-evidence-note"></div>
+    </section>
+
     <section class="hero-grid">
       <div class="panel">
-        <h2>Input Context</h2>
-        <div class="phone-frame">
-          <div class="small" id="input-source-label">Live camera / CV detection slot</div>
-          <div class="camera-window"></div>
-          <div class="small">Not connected in this demo</div>
-          <div class="chip-row" id="context-chips"></div>
-          <div id="metadata-metrics"></div>
+        <h2>System Workbench</h2>
+        <div class="system-tabs" role="tablist" aria-label="System mode">
+          <button class="active" type="button" role="tab" aria-selected="true" data-system-tab="llm">LLM</button>
+          <button type="button" role="tab" aria-selected="false" data-system-tab="cv">CV</button>
+        </div>
+
+        <div class="system-tab-panel" id="system-tab-llm">
+          <div class="system-panel-grid">
+            <div>
+              <h3>LLM Prompt Runtime</h3>
+              <div class="hero-actions" id="scenario-buttons"></div>
+              <label>LLM mode
+                <select id="llm-mode">
+                  <option value="combined">Combined</option>
+                  <option value="runtime">Runtime</option>
+                  <option value="compiler">Compiler</option>
+                  <option value="base">Base</option>
+                </select>
+              </label>
+              <div style="height:10px"></div>
+              <textarea id="mobile-question">Summarize the incident and list the highest-risk follow-up items.</textarea>
+              <div class="hero-actions">
+                <button class="primary" id="ask-llm">Ask LLM</button>
+                <button id="repeat-ask">Ask Same Prompt</button>
+              </div>
+              <div class="action-status" id="llm-action-status">Ready.</div>
+              <div class="evidence-note">
+                Ask LLM sends only the prompt in this text box. Template buttons only replace the prompt text.
+                No hidden prompt context is attached.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="system-tab-panel" id="system-tab-cv" hidden>
+          <h3>CV Detection Slot</h3>
+          <div class="cv-placeholder">
+            <div class="phone-frame">
+              <div class="small" id="input-source-label">Live camera / CV detection slot</div>
+              <div class="camera-window"></div>
+              <div class="small">Not connected in this demo</div>
+            </div>
+            <div class="cv-copy">
+              <div class="metric"><span>Status</span><strong class="warn">not connected</strong></div>
+              <div class="metric"><span>Input source</span><strong>future live camera / CV</strong></div>
+              <div class="metric"><span>Backend</span><strong>not wired</strong></div>
+              <div class="metric"><span>Current demo</span><strong class="blue">LLM runtime only</strong></div>
+              <div class="evidence-note">
+                This slot reserves space for future CV detection. It does not request camera access,
+                run a CV model, upload media, or call a backend route.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="panel">
-        <h2>Ask LLM</h2>
-        <div class="hero-actions" id="scenario-buttons"></div>
-        <label>LLM mode
-          <select id="llm-mode">
-            <option value="combined">Combined</option>
-            <option value="runtime">Runtime</option>
-            <option value="compiler">Compiler</option>
-            <option value="base">Base</option>
-          </select>
-        </label>
-        <div style="height:10px"></div>
-        <textarea id="mobile-question">Summarize the incident and list the highest-risk follow-up items.</textarea>
-        <div class="hero-actions">
-          <button class="primary" id="ask-llm">Ask LLM</button>
-          <button id="repeat-ask">Ask Same Context</button>
-          <button id="batch-demo">Batch Burst</button>
-        </div>
-        <div class="evidence-note">
-          Ask LLM runs the Qwen compiler-runtime path when optional torch/transformers/model files are available.
-          Otherwise it falls back explicitly to the deterministic offline answer.
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>LLM Answer + Serving Effect</h2>
+        <h2 id="answer-panel-title">LLM Answer + Serving Effect</h2>
         <div class="answer-box" id="llm-answer">Choose a scenario and ask the LLM.</div>
         <div id="llm-answer-metrics"></div>
       </div>
 
       <div class="panel">
-        <h2>Memory Effect</h2>
+        <h2 id="memory-panel-title">Memory Effect</h2>
         <div id="memory-effect-metrics"></div>
         <div class="evidence-note">
           Live values come from the deterministic prefix-cache state; peak and budget values come from committed artifacts.
@@ -617,6 +863,10 @@
     let snapshot = null;
     let selectedStage = "source";
     let currentScenarioId = "long_context_summary";
+    let activeSystemTab = "llm";
+    let latestBatchSummaryRows = null;
+    let latestServingBatchSummary = null;
+    let llmControlsBusy = false;
 
     const fmt = (value, suffix = "") => {
       if (value === undefined || value === null) return "n/a";
@@ -636,6 +886,26 @@
       const scenarios = scenarioList(data);
       return scenarios.find(scenario => scenario.id === currentScenarioId) || scenarios[0] || {};
     };
+
+    function setLlmControlsBusy(isBusy, message = "") {
+      llmControlsBusy = isBusy;
+      ["ask-llm", "repeat-ask", "batch-demo"].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = isBusy;
+      });
+      const status = document.getElementById("llm-action-status");
+      if (status && message) status.textContent = message;
+    }
+
+    function renderSystemTabs() {
+      document.querySelectorAll("[data-system-tab]").forEach(button => {
+        const active = button.dataset.systemTab === activeSystemTab;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      document.getElementById("system-tab-llm").hidden = activeSystemTab !== "llm";
+      document.getElementById("system-tab-cv").hidden = activeSystemTab !== "cv";
+    }
 
     const stageLabel = {
       source: "MLIR Source",
@@ -679,9 +949,14 @@
       const memoryValidation = data.validation.memory_validation_report || {};
       const memorySummary = data.live.memory_summary || {};
       renderStage(data);
-      renderMobileDemo(data);
+      renderSystemTabs();
+      renderResumeEvidence(data);
       renderMemoryEvidence(data);
       renderQwenPath(data);
+      renderMobileDemo(data);
+      if (latestServingBatchSummary) {
+        renderServingBatchSummary(latestServingBatchSummary);
+      }
 
       document.getElementById("workload-metrics").innerHTML = [
         metric("Workload", cr.workload || "TinyGPT MLIR block", "blue"),
@@ -905,6 +1180,32 @@
       });
     }
 
+    function renderResumeEvidence(data) {
+      const evidence = ((data || {}).live || {}).resume_evidence || {};
+      const groups = evidence.groups || [];
+      document.getElementById("resume-evidence-anchors").innerHTML = groups.map(group => `
+        <a href="#evidence-${group.id}">${group.label}</a>
+      `).join("");
+      document.getElementById("resume-evidence-grid").innerHTML = groups.map(group => `
+        <article class="evidence-card" id="evidence-${group.id}">
+          <div class="evidence-card-top">
+            <div class="evidence-label">${group.label}</div>
+            <div class="evidence-status">${group.status}</div>
+          </div>
+          <div class="evidence-claim">${group.claim}</div>
+          <div>
+            ${(group.metrics || []).map(row =>
+              metric(row.label, fmt(row.value), row.tone || "")
+            ).join("")}
+          </div>
+          <div class="evidence-sources">
+            ${(group.sources || []).map(source => `<span class="evidence-source">${source}</span>`).join("")}
+          </div>
+        </article>
+      `).join("");
+      document.getElementById("resume-evidence-note").textContent = evidence.truth_boundary || "";
+    }
+
     function renderMemoryEvidence(data) {
       const memory = data.live.memory_summary || {};
       const compiler = memory.compiler_memory_plan || {};
@@ -1062,36 +1363,56 @@
       const scenario = selectedScenario(data);
       const latest = data.live.latest_llm_answer || {};
       const qwen = data.live.latest_qwen_run || {};
-      const metadata = scenario.input_metadata || {};
-      const contextItems = scenario.context_items || [];
-      const taskContext = scenario.task_context || {};
       document.getElementById("input-source-label").textContent = scenario.input_source_label || "Live camera / CV detection slot";
-      document.getElementById("context-chips").innerHTML = contextItems.map(item => {
-        const text = typeof item === "string" ? item : item.text;
-        const confidence = typeof item === "string" ? "" : ` ${Math.round((item.confidence || 0) * 100)}%`;
-        return `<span class="chip">${text}${confidence}</span>`;
-      }).join("");
-      document.getElementById("metadata-metrics").innerHTML = [
-        metric("Task", taskContext.title || "n/a", "blue"),
-        metric("Shape", metadata.prompt_shape || "n/a"),
-        metric("Audience", metadata.target_audience || "n/a"),
-        metric("Priority", metadata.priority || "n/a", "pass"),
-        metric("Style", metadata.expected_style || "n/a"),
-      ].join("");
+
+      if (activeSystemTab === "cv") {
+        document.getElementById("answer-panel-title").textContent = "CV Output + Serving Effect";
+        document.getElementById("memory-panel-title").textContent = "CV Memory Effect";
+        document.getElementById("llm-answer").textContent = "CV detection is not connected in this demo.";
+        document.getElementById("llm-answer-metrics").innerHTML = [
+          metric("System", "CV"),
+          metric("Source", "not connected", "warn"),
+          metric("Camera", "not requested"),
+          metric("Model", "not loaded"),
+        ].join("");
+        document.getElementById("memory-effect-metrics").innerHTML = [
+          metric("System", "CV"),
+          metric("Memory source", "not connected", "warn"),
+          metric("Live input", "not active"),
+          metric("Runtime evidence", "LLM artifacts only"),
+        ].join("");
+        return;
+      }
+
+      const actionStatus = document.getElementById("llm-action-status");
+      if (actionStatus && !actionStatus.textContent.trim()) actionStatus.textContent = "Ready.";
+      document.getElementById("answer-panel-title").textContent = "LLM Answer + Serving Effect";
+      document.getElementById("memory-panel-title").textContent = "Memory Effect";
 
       const scenarios = scenarioList(data);
       document.getElementById("scenario-buttons").innerHTML = scenarios.map(item => `
         <button class="${item.id === currentScenarioId ? "primary" : ""}" data-scenario="${item.id}">${item.label}</button>
-      `).join("");
+      `).join("") + `<button id="batch-demo" type="button">Batch Burst</button>`;
       document.querySelectorAll("[data-scenario]").forEach(button => {
         button.addEventListener("click", () => {
           currentScenarioId = button.dataset.scenario;
           const next = selectedScenario(snapshot);
-          document.getElementById("mobile-question").value = next.default_question || "Answer from the provided context.";
+          document.getElementById("mobile-question").value = next.default_question || "Answer this prompt.";
           document.getElementById("llm-mode").value = next.default_mode || "combined";
+          latestBatchSummaryRows = null;
+          latestServingBatchSummary = null;
+          setLlmControlsBusy(false, `${next.label || "Prompt template"} loaded.`);
           renderMobileDemo(snapshot);
         });
       });
+      const batchButton = document.getElementById("batch-demo");
+      if (batchButton) batchButton.addEventListener("click", runBatchBurst);
+      if (llmControlsBusy) setLlmControlsBusy(true);
+
+      if (latestBatchSummaryRows) {
+        renderBatchSummary(latestBatchSummaryRows);
+        return;
+      }
 
       if (!latest.answer) {
         document.getElementById("llm-answer").textContent = "Choose a scenario and ask the LLM.";
@@ -1189,32 +1510,204 @@
       await refresh();
     }
 
-    async function askCurrentScenario() {
-      document.getElementById("status").textContent = "Running Qwen compiler-runtime path...";
-      const scenario = selectedScenario(snapshot);
-      const contextItems = (scenario.context_items || []).map(item => {
-        if (typeof item === "string") return item;
-        return {text: item.text, confidence: item.confidence};
+    async function runServingBatch() {
+      document.getElementById("status").textContent = "Running 32-request serving batch...";
+      const result = await api("/api/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_count: 32 }),
       });
+      latestServingBatchSummary = result;
+      await refresh();
+      renderServingBatchSummary(result);
+      const comparison = result.artifact_comparison || {};
+      const improvement = comparison.improvement || {};
+      document.getElementById("status").textContent =
+        `Batch ready: throughput +${fmt(improvement.throughput_gain_pct, "%")}, p95 +${fmt(improvement.p95_latency_gain_pct, "%")}`;
+    }
+
+    function renderServingBatchSummary(result) {
+      const comparison = result.artifact_comparison || {};
+      const baseline = comparison.baseline || {};
+      const optimized = comparison.optimized || {};
+      const improvement = comparison.improvement || {};
+      document.getElementById("answer-panel-title").textContent = "32-Request Serving Batch";
+      document.getElementById("llm-answer").innerHTML = `
+        <div class="batch-summary">
+          <div class="batch-policies">
+            <div class="batch-policy-card">
+              <div class="batch-policy-name">${baseline.policy || "baseline"}</div>
+              <div class="batch-metric"><span>Throughput</span><strong>${fmt(baseline.throughput_tokens_per_s, " tok/s")}</strong></div>
+              <div class="batch-metric"><span>E2E P95</span><strong>${fmt(baseline.e2e_p95_ms, " ms")}</strong></div>
+              <div class="batch-metric"><span>Decode batch</span><strong>${fmt(baseline.avg_decode_batch_size)}</strong></div>
+              <div class="batch-metric"><span>Efficiency</span><strong>${fmt((baseline.decode_batch_efficiency || 0) * 100, "%")}</strong></div>
+            </div>
+            <div class="batch-policy-card optimized">
+              <div class="batch-policy-name pass">${optimized.policy || "optimized"}</div>
+              <div class="batch-metric"><span>Throughput</span><strong class="pass">${fmt(optimized.throughput_tokens_per_s, " tok/s")}</strong></div>
+              <div class="batch-metric"><span>E2E P95</span><strong class="pass">${fmt(optimized.e2e_p95_ms, " ms")}</strong></div>
+              <div class="batch-metric"><span>Decode batch</span><strong class="pass">${fmt(optimized.avg_decode_batch_size)}</strong></div>
+              <div class="batch-metric"><span>Efficiency</span><strong class="pass">${fmt((optimized.decode_batch_efficiency || 0) * 100, "%")}</strong></div>
+            </div>
+          </div>
+          <div class="batch-deltas">
+            <div class="batch-delta"><span>Throughput gain</span><strong>${fmt(improvement.throughput_gain_pct, "%")}</strong></div>
+            <div class="batch-delta"><span>P95 latency gain</span><strong>${fmt(improvement.p95_latency_gain_pct, "%")}</strong></div>
+          </div>
+          <div class="evidence-note">Full resume evidence is summarized above.</div>
+        </div>
+      `;
+      document.getElementById("llm-answer-metrics").innerHTML = [
+        metric("Requests", fmt(result.request_count)),
+        metric("Completed", fmt(result.completed_requests), result.completed_requests === result.request_count ? "pass" : "warn"),
+        metric("Evidence", "scheduler_decision_report", "blue"),
+      ].join("");
+    }
+
+    async function runPromptAsk(scenario, question, llmMode) {
       const payload = {
         scenario_id: scenario.id || currentScenarioId,
-        context_items: contextItems,
-        input_metadata: scenario.input_metadata || {},
-        task_context: scenario.task_context || {},
-        question: document.getElementById("mobile-question").value,
-        llm_mode: document.getElementById("llm-mode").value,
+        question,
+        llm_mode: llmMode,
       };
-      const result = await api("/api/qwen/ask", {
+      return api("/api/qwen/ask", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload),
       });
-      document.getElementById("llm-answer").textContent = result.answer || "No answer returned.";
-      document.getElementById("status").textContent =
-        result.source_status === "qwen_live"
-          ? "Qwen runtime answer ready"
-          : "Qwen unavailable; deterministic fallback shown";
-      await refresh();
+    }
+
+    function batchRowFromResult(scenario, result) {
+      const base = ((result.base_model || {}).live_qwen_metrics) || {};
+      const optimized = ((result.optimized || {}).live_qwen_metrics) || {};
+      const improvement = result.improvement || {};
+      return {
+        label: scenario.label || scenario.id || "Prompt",
+        baseTotal: base.total_latency_ms,
+        optimizedTotal: optimized.total_latency_ms,
+        baseTokens: base.prompt_tokens,
+        optimizedTokens: optimized.prompt_tokens,
+        baseGenerated: base.generated_tokens,
+        optimizedGenerated: optimized.generated_tokens,
+        gain: improvement.total_latency_gain_pct,
+        source: result.source_status || "n/a",
+      };
+    }
+
+    function renderBatchSummary(rows) {
+      const avg = key => {
+        const values = rows.map(row => row[key]).filter(value => typeof value === "number");
+        if (!values.length) return null;
+        return values.reduce((sum, value) => sum + value, 0) / values.length;
+      };
+      const average = {
+        label: "Average",
+        baseTotal: avg("baseTotal"),
+        optimizedTotal: avg("optimizedTotal"),
+        baseTokens: avg("baseTokens"),
+        optimizedTokens: avg("optimizedTokens"),
+        baseGenerated: avg("baseGenerated"),
+        optimizedGenerated: avg("optimizedGenerated"),
+        gain: avg("gain"),
+        source: "summary",
+      };
+      const allRows = rows.concat([average]);
+      document.getElementById("answer-panel-title").textContent = "Batch Burst Summary";
+      document.getElementById("llm-answer").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Prompt</th>
+              <th>BASEMODEL</th>
+              <th>Optimized</th>
+              <th>Prompt tokens</th>
+              <th>Output tokens</th>
+              <th>Gain</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allRows.map(row => `
+              <tr>
+                <td>${row.label}</td>
+                <td>${fmt(row.baseTotal, " ms")}</td>
+                <td>${fmt(row.optimizedTotal, " ms")}</td>
+                <td>${fmt(row.baseTokens)} -> ${fmt(row.optimizedTokens)}</td>
+                <td>${fmt(row.baseGenerated)} -> ${fmt(row.optimizedGenerated)}</td>
+                <td class="${row.gain > 0 ? "pass" : row.gain < 0 ? "warn" : ""}">${fmt(row.gain, "%")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+      document.getElementById("llm-answer-metrics").innerHTML = [
+        metric("Batch prompts", fmt(rows.length)),
+        metric("Average latency gain", fmt(average.gain, "%"), average.gain > 0 ? "pass" : "warn"),
+        metric("Average prompt token delta", `${fmt(average.baseTokens)} -> ${fmt(average.optimizedTokens)}`, "blue"),
+        metric("Source", rows.every(row => row.source === "qwen_live") ? "qwen_live" : "mixed/fallback", rows.every(row => row.source === "qwen_live") ? "pass" : "warn"),
+      ].join("");
+    }
+
+    async function askCurrentScenario() {
+      document.getElementById("status").textContent = "Running Qwen compiler-runtime path...";
+      const scenario = selectedScenario(snapshot);
+      latestBatchSummaryRows = null;
+      latestServingBatchSummary = null;
+      setLlmControlsBusy(true, "Running raw prompt through BASEMODEL and optimized runtime...");
+      try {
+        const result = await runPromptAsk(
+          scenario,
+          document.getElementById("mobile-question").value,
+          document.getElementById("llm-mode").value,
+        );
+        document.getElementById("llm-answer").textContent = result.answer || "No answer returned.";
+        document.getElementById("status").textContent =
+          result.source_status === "qwen_live"
+            ? "Qwen runtime answer ready"
+            : "Qwen unavailable; deterministic fallback shown";
+        setLlmControlsBusy(false, result.source_status === "qwen_live" ? "Qwen answer ready." : "Fallback answer shown.");
+        await refresh();
+      } catch (error) {
+        setLlmControlsBusy(false, `Ask failed: ${error.message}`);
+        throw error;
+      }
+    }
+
+    async function runBatchBurst() {
+      const scenarios = scenarioList(snapshot);
+      const originalScenarioId = currentScenarioId;
+      const originalQuestion = document.getElementById("mobile-question").value;
+      const originalMode = document.getElementById("llm-mode").value;
+      const rows = [];
+      latestBatchSummaryRows = null;
+      latestServingBatchSummary = null;
+      setLlmControlsBusy(true, "Running batch burst across all prompt templates...");
+      try {
+        for (const scenario of scenarios) {
+          currentScenarioId = scenario.id;
+          document.getElementById("mobile-question").value = scenario.default_question || "Answer this prompt.";
+          document.getElementById("llm-mode").value = scenario.default_mode || "combined";
+          setLlmControlsBusy(true, `Running ${scenario.label || scenario.id}...`);
+          const result = await runPromptAsk(
+            scenario,
+            document.getElementById("mobile-question").value,
+            document.getElementById("llm-mode").value,
+          );
+          rows.push(batchRowFromResult(scenario, result));
+        }
+        latestBatchSummaryRows = rows;
+        currentScenarioId = originalScenarioId;
+        document.getElementById("mobile-question").value = originalQuestion;
+        document.getElementById("llm-mode").value = originalMode;
+        await refresh();
+        renderBatchSummary(latestBatchSummaryRows);
+        setLlmControlsBusy(false, "Batch burst summary ready.");
+      } catch (error) {
+        currentScenarioId = originalScenarioId;
+        document.getElementById("mobile-question").value = originalQuestion;
+        document.getElementById("llm-mode").value = originalMode;
+        setLlmControlsBusy(false, `Batch failed: ${error.message}`);
+        throw error;
+      }
     }
 
     document.getElementById("run-one").addEventListener("click", async () => {
@@ -1222,35 +1715,33 @@
     });
 
     document.getElementById("run-burst").addEventListener("click", async () => {
-      const workload = [
-        [256, 64], [512, 128], [1024, 64], [2048, 128],
-        [128, 32], [4096, 64], [512, 256], [1024, 128]
-      ];
-      for (const [p, o] of workload) await generate(p, o);
+      try {
+        await runServingBatch();
+      } catch (error) {
+        document.getElementById("status").textContent = `Batch failed: ${error.message}`;
+        throw error;
+      }
     });
 
     document.getElementById("ask-llm").addEventListener("click", askCurrentScenario);
 
     document.getElementById("repeat-ask").addEventListener("click", async () => {
-      await askCurrentScenario();
-      await askCurrentScenario();
+      setLlmControlsBusy(true, "Running the same prompt twice to show reuse...");
+      try {
+        await askCurrentScenario();
+        setLlmControlsBusy(true, "Running repeated prompt...");
+        await askCurrentScenario();
+        setLlmControlsBusy(false, "Repeated prompt run complete.");
+      } catch (error) {
+        setLlmControlsBusy(false, `Repeat failed: ${error.message}`);
+        throw error;
+      }
     });
 
-    document.getElementById("batch-demo").addEventListener("click", async () => {
-      const scenarios = scenarioList(snapshot);
-      for (const scenario of scenarios) {
-        currentScenarioId = scenario.id;
-        document.getElementById("mobile-question").value = scenario.default_question || "Answer from the provided context.";
-        document.getElementById("llm-mode").value = scenario.default_mode || "combined";
-        await askCurrentScenario();
-      }
-      const first = scenarios[0];
-      if (first) {
-        currentScenarioId = first.id;
-        document.getElementById("mobile-question").value = first.default_question || "Answer from the provided context.";
-        document.getElementById("llm-mode").value = first.default_mode || "combined";
-        await askCurrentScenario();
-      }
+    document.getElementById("llm-mode").addEventListener("change", event => {
+      latestBatchSummaryRows = null;
+      latestServingBatchSummary = null;
+      setLlmControlsBusy(false, `${event.target.selectedOptions[0].textContent} policy selected.`);
     });
 
     document.getElementById("reset").addEventListener("click", async () => {
@@ -1265,9 +1756,17 @@
       });
     });
 
+    document.querySelectorAll("[data-system-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeSystemTab = button.dataset.systemTab;
+        renderSystemTabs();
+        if (snapshot) renderMobileDemo(snapshot);
+      });
+    });
+
     refresh().then(() => {
       const scenario = selectedScenario(snapshot);
-      document.getElementById("mobile-question").value = scenario.default_question || "Answer from the provided context.";
+      document.getElementById("mobile-question").value = scenario.default_question || "Answer this prompt.";
       document.getElementById("llm-mode").value = scenario.default_mode || "combined";
     });
     setInterval(refresh, 3000);

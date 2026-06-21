@@ -1,7 +1,7 @@
 # LLM Serving Runtime Workbench
 
 This repository is the interview demo surface for the LLM compiler/runtime
-stack. It presents a generic serving workbench: choose a prompt workload, ask a
+stack. It presents a generic serving workbench: choose a prompt template, ask a
 local Qwen model when available, compare a direct BASEMODEL path against an
 optimized compiler/runtime policy, and inspect the artifact-backed production
 evidence behind the optimization story.
@@ -18,9 +18,9 @@ The demo consumes committed snapshots from three independent projects:
 The main path is:
 
 ```text
-Prompt workload
+User prompt
   -> BASEMODEL: full prompt, max_new_tokens=180, direct Qwen decode
-  -> Optimized: compact prompt contract, compiler plan, runtime policy
+  -> Optimized: prompt-only compiler/runtime policy
   -> PyTorch prefill/decode with past_key_values
   -> optimized answer text plus BASEMODEL delta
   -> artifact-backed KV/scheduler/memory evidence
@@ -84,20 +84,17 @@ When Qwen dependencies or model files are unavailable, `/ask` and
 `/api/qwen/ask` return an explicit deterministic fallback status. The fallback
 is only an offline demo path, not fake live evidence.
 
-## Workloads
+## Prompt Templates
 
-The demo uses functional prompt workloads:
+The demo uses functional prompt templates:
 
 - `long_context_summary`: long-context summarization and follow-up extraction
 - `instruction_rewrite`: production instruction rewrite
 - `technical_explanation`: compiler/runtime optimization explanation
 
-Each workload has:
-
-- `context_items`: prompt facts or notes
-- `input_metadata`: prompt shape, audience, priority, and expected style
-- `task_context`: title and short task description
-- `default_question`: the prompt shown in the text box
+The template buttons only replace the textarea prompt and default mode. The live
+LLM request sends the textarea prompt only; no hidden prompt context, metadata,
+or task context is attached.
 
 ## API
 
@@ -145,10 +142,9 @@ curl -X POST http://127.0.0.1:8765/reset
 
 ## What The Dashboard Shows
 
-- Input Context: generic prompt workload, context chips, metadata, and a neutral
-  future live camera/CV slot
-- Ask LLM: sends the selected workload through BASEMODEL and optimized Qwen
-  paths
+- System Workbench: LLM/CV tabs, prompt templates, raw prompt textarea, and a
+  neutral future live camera/CV slot
+- Ask LLM: sends the textarea prompt through BASEMODEL and optimized Qwen paths
 - LLM Answer + Serving Effect: optimized answer, source status, TTFT, total
   latency, TPOT, tokens/sec, prefix-cache state, SLO, and correctness
 - Memory Effect: live deterministic prefix-cache state plus committed memory and
@@ -274,6 +270,20 @@ export RUNTIME_ARTIFACTS=/path/to/runtime/artifacts
 export VALIDATION_ARTIFACTS=/path/to/validation/artifacts
 python3 server.py
 ```
+
+## Handoff Documentation
+
+For Codex-to-Claude Code handoff, start with:
+
+- `CLAUDE.md`
+- `docs/architecture.md`
+- `docs/data_flow.md`
+- `docs/design_decisions.md`
+- `docs/technical_debt.md`
+- `docs/future_work.md`
+
+These files document the implemented dashboard/server behavior, artifact-backed
+evidence, deterministic simulation paths, assumptions, and realistic next steps.
 
 ## Verification
 
