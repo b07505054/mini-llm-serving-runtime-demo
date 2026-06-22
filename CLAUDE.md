@@ -194,7 +194,9 @@ Commit policy:
 
 * By default, do not run git commit.
 * If the user explicitly asks in the current conversation to commit, an AI agent may run git add and git commit.
+* Commits must use the machine's global Git identity (`git config --global user.name` and `git config --global user.email`).
 * Commits created by an AI agent must use the user's configured git author and committer identity.
+* Never set author or committer identity to Claude, Anthropic, or any AI/bot identity.
 * Commit messages must not mention AI authorship unless the user explicitly asks.
 * Before committing, show git status and the staged diff summary when practical.
 
@@ -202,6 +204,7 @@ Push policy:
 
 * By default, do not run git push.
 * Only run git push if the user explicitly asks in the current conversation.
+* Pushes must use the user's machine/account Git authentication, never a Claude/Anthropic/bot identity.
 * Never force-push unless the user explicitly asks for a force push and the reason is explained.
 
 History policy:
