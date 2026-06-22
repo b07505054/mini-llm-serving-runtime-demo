@@ -49,6 +49,13 @@ Do not invent benchmark numbers. If metrics are estimated, label them estimated.
 
 ## Common Commands
 
+Run the canonical validation command used by CI
+(`.github/workflows/check.yml`):
+
+```bash
+bash scripts/check.sh
+```
+
 Run the demo:
 
 ```bash
@@ -64,7 +71,7 @@ http://127.0.0.1:8765
 Check syntax:
 
 ```bash
-python3 -m py_compile server.py
+bash scripts/check.sh
 ```
 
 Example simulator request:
@@ -82,3 +89,127 @@ curl -X POST http://127.0.0.1:8765/api/qwen/ask \
   -H "Content-Type: application/json" \
   -d '{"scenario_id": "long_context_summary", "question": "Summarize this prompt.", "llm_mode": "combined"}'
 ```
+
+## Documentation Hierarchy
+
+Truth must flow in the following order:
+
+Code
+↓
+Artifacts
+↓
+README.md
+↓
+CLAUDE.md
+↓
+docs/
+
+Lower levels must never contradict higher levels.
+
+Documentation must describe reality rather than invent behavior.
+
+If uncertainty exists, trust code and generated artifacts.
+
+Never exaggerate capabilities.
+
+Never claim production behavior unless code and artifacts support it.
+
+## README Contract
+
+README.md exists to answer:
+
+1. What is it?
+2. Why is it interesting?
+3. How do I run it?
+4. What results does it produce?
+
+README should emphasize user-facing understanding.
+
+Avoid implementation details unless necessary.
+
+Avoid maintenance instructions.
+
+## CLAUDE.md Contract
+
+CLAUDE.md exists to answer:
+
+1. How do I maintain it?
+2. What commands are canonical?
+3. Which components are implemented?
+4. Which components are simulated?
+5. Which validation commands must pass?
+6. What files should not be changed casually?
+
+CLAUDE.md is intended for maintainers and future AI agents.
+
+## docs/ Contract
+
+docs/ exists to answer:
+
+1. Why is it designed this way?
+2. What tradeoffs were made?
+3. What is measured versus modeled?
+4. What assumptions exist?
+5. What limitations remain?
+6. What future work is possible?
+
+docs/ explains architecture and rationale rather than usage.
+
+## Documentation Principles
+
+Code > Artifacts > README > CLAUDE.md > docs/
+
+Never reverse this order.
+
+Never infer unsupported features.
+
+Never create claims unsupported by code or artifacts.
+
+Prefer conservative wording.
+
+Call synthetic benchmarks synthetic.
+
+Call simulated systems simulated.
+
+Distinguish measured behavior from modeled behavior.
+
+## Git Authorship Policy
+
+The user is the sole maintainer and owner of this repository.
+
+AI agents may modify files as requested.
+
+AI agents must not add AI authorship metadata.
+
+Never add:
+
+* Co-Authored-By entries
+* Co-authored-by trailers
+* Claude authorship metadata
+* AI signatures
+* Generated-by-AI footers
+* any metadata that makes an AI system appear as a repository contributor
+
+Commit policy:
+
+* By default, do not run git commit.
+* If the user explicitly asks in the current conversation to commit, an AI agent may run git add and git commit.
+* Commits created by an AI agent must use the user's configured git author and committer identity.
+* Commit messages must not mention AI authorship unless the user explicitly asks.
+* Before committing, show git status and the staged diff summary when practical.
+
+Push policy:
+
+* By default, do not run git push.
+* Only run git push if the user explicitly asks in the current conversation.
+* Never force-push unless the user explicitly asks for a force push and the reason is explained.
+
+History policy:
+
+* Do not create branches, rewrite history, rebase, reset, or amend commits unless the user explicitly asks in the current conversation.
+* Never rewrite public history without explicit user approval.
+
+Ownership rule:
+
+* The user remains the sole author/maintainer for portfolio presentation purposes.
+* No AI system should appear as a repository contributor.

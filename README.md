@@ -3,8 +3,8 @@
 This repository is the interview demo surface for the LLM compiler/runtime
 stack. It presents a generic serving workbench: choose a prompt template, ask a
 local Qwen model when available, compare a direct BASEMODEL path against an
-optimized compiler/runtime policy, and inspect the artifact-backed production
-evidence behind the optimization story.
+optimized compiler/runtime policy, and inspect the artifact-backed evidence
+behind the optimization story.
 
 The demo consumes committed snapshots from three independent projects:
 
@@ -271,11 +271,10 @@ export VALIDATION_ARTIFACTS=/path/to/validation/artifacts
 python3 server.py
 ```
 
-## Handoff Documentation
+## Documentation
 
-For Codex-to-Claude Code handoff, start with:
+For deeper project notes, start with:
 
-- `CLAUDE.md`
 - `docs/architecture.md`
 - `docs/data_flow.md`
 - `docs/design_decisions.md`
@@ -288,9 +287,10 @@ evidence, deterministic simulation paths, assumptions, and realistic next steps.
 ## Verification
 
 ```bash
-python3 -m py_compile server.py
+bash scripts/check.sh
 /Users/allen/Documents/Codex/project/heterogeneous-inference-runtime/.venv/bin/python server.py
 ```
 
-Expected result: old product-theme wording is absent, `py_compile` succeeds,
-and the dashboard renders with the three generic workloads.
+Expected result: `scripts/check.sh` compiles tracked Python files, and the
+dashboard renders with the three generic workloads. CI
+(`.github/workflows/check.yml`) runs the same check script.
