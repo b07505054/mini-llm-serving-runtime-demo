@@ -7,6 +7,8 @@ import math
 import os
 import time
 import uuid
+import urllib.error
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -32,6 +34,7 @@ HF_QWEN_MODEL = os.environ.get("HF_QWEN_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 QWEN_DEVICE = os.environ.get("QWEN_DEVICE", "auto")
 QWEN_MAX_NEW_TOKENS = int(os.environ.get("QWEN_MAX_NEW_TOKENS", "96"))
 BASEMODEL_MAX_NEW_TOKENS = int(os.environ.get("BASEMODEL_MAX_NEW_TOKENS", "180"))
+RUNTIME_SIMULATE_URL = os.environ.get("RUNTIME_SIMULATE_URL", "http://127.0.0.1:8901/simulate")
 
 
 @dataclass
@@ -525,6 +528,59 @@ class QwenRuntimeAdapter:
             return result
 
 
+class RuntimeSimulateAdapter:
+    """Thin HTTP client for heterogeneous-inference-runtime's optional local
+    POST /simulate service. Stdlib urllib only; no source code is imported
+    across repos. Degrades to unavailable on any connection failure."""
+
+    def __init__(self, url=None, timeout=2.0):
+        self.url = url or RUNTIME_SIMULATE_URL
+        self.timeout = timeout
+        self.last_error = None
+
+    def status(self):
+        host_port = urlparse(self.url).netloc
+        if not host_port:
+            self.last_error = "invalid_runtime_simulate_url"
+            return {"ready": False, "url": self.url, "last_error": self.last_error}
+        host, _, port = host_port.partition(":")
+        try:
+            import socket
+
+            with socket.create_connection((host, int(port or 80)), timeout=self.timeout):
+                pass
+            self.last_error = None
+            return {"ready": True, "url": self.url, "last_error": None}
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return {"ready": False, "url": self.url, "last_error": self.last_error}
+
+    def available(self):
+        return bool(self.status().get("ready"))
+
+    def simulate(self, payload):
+        body = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            self.url,
+            data=body,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                self.last_error = None
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            try:
+                return json.loads(exc.read().decode("utf-8"))
+            except Exception:
+                self.last_error = f"HTTPError: {exc.code}"
+                return None
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return None
+
+
 class MiniServingRuntime:
     def __init__(self):
         self.compiler = {
@@ -598,6 +654,7 @@ class MiniServingRuntime:
             },
         )
         self.qwen = QwenRuntimeAdapter()
+        self.runtime_simulate = RuntimeSimulateAdapter()
         self.reset()
 
     def reset(self):
@@ -860,6 +917,18 @@ class MiniServingRuntime:
             e2e_latency_ms=e2e_latency_ms,
             resident_prefix_blocks=self.prefix_cache.used_blocks(),
         )
+        return result
+
+    def live_runtime_simulate(self, payload):
+        payload = payload or {}
+        result = self.runtime_simulate.simulate(
+            {
+                "prompt_tokens": int(payload.get("prompt_tokens", 512)),
+                "max_output_tokens": int(payload.get("max_output_tokens", 64)),
+            }
+        )
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
         return result
 
     def run_batch(self, payload=None):
@@ -1465,7 +1534,8 @@ class MiniServingRuntime:
                 "full_capacity_mb": full_capacity_mb,
                 "peak_blocks_used": kv_analysis.get("peak_blocks_used"),
                 "block_utilization": kv_analysis.get("block_utilization"),
-                "fragmentation_ratio": kv_analysis.get("fragmentation_ratio"),
+                "free_capacity_ratio": kv_analysis.get("free_capacity_ratio"),
+                "peak_allocation_utilization": kv_analysis.get("peak_allocation_utilization"),
                 "peak_kv_cache_mb": kv_analysis.get("peak_kv_cache_mb"),
                 "avg_blocks_per_request": kv_analysis.get("avg_blocks_per_request"),
                 "max_blocks_per_request": kv_analysis.get("max_blocks_per_request"),
@@ -1787,6 +1857,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/generate":
             self._send_json(RUNTIME.generate(self._read_json()))
+            return
+        if path == "/api/runtime/simulate":
+            self._send_json(RUNTIME.live_runtime_simulate(self._read_json()))
             return
         if path == "/reset":
             RUNTIME.reset()
