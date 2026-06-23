@@ -1832,11 +1832,62 @@ class MiniServingRuntime:
             "mismatch_reason": mismatch_reason,
         }
 
+    def _prepare_deterministic_batch_decode_session(self, request_id, max_tokens):
+        max_tokens = max(0, int(max_tokens or 0))
+        return {
+            "request_id": request_id,
+            "generated": 0,
+            "max_tokens": max_tokens,
+            "decode_steps": [],
+            "finished": max_tokens == 0,
+            "stop_reason": "max_new_tokens",
+        }
+
+    def _decode_one_deterministic_batch_token(self, session):
+        if session["finished"]:
+            return {"decoded": False, "finished": True}
+        session["generated"] += 1
+        token_index = session["generated"]
+        text = f"det_tok_{token_index}"
+        prior_text = [step["text"] for step in session["decode_steps"]]
+        cumulative_output = " ".join(prior_text + [text])
+        session["decode_steps"].append(
+            {
+                "step": token_index,
+                "token_id": 900000 + token_index,
+                "text": text,
+                "latency_ms": 0.0,
+                "cumulative_output": cumulative_output,
+            }
+        )
+        if session["generated"] >= session["max_tokens"]:
+            session["finished"] = True
+            session["stop_reason"] = "max_new_tokens"
+        return {
+            "decoded": True,
+            "finished": session["finished"],
+            "generated_tokens": session["generated"],
+        }
+
+    def _finalize_deterministic_batch_decode_session(self, session, stop_reason=None):
+        stop_reason = stop_reason or session.get("stop_reason") or "max_new_tokens"
+        return {
+            "status": "completed",
+            "decode_source": "deterministic_fallback",
+            "source_status": "qwen_unavailable_deterministic_batch_decode",
+            "answer": " ".join(step["text"] for step in session["decode_steps"]),
+            "generated_tokens": int(session.get("generated") or 0),
+            "max_new_tokens": int(session.get("max_tokens") or 0),
+            "stop_reason": stop_reason,
+            "decode_steps": session.get("decode_steps") or [],
+        }
+
     def ask_batch(self, payload):
         truth_boundary = (
             "Runtime owns shared admission and token-boundary scheduling; HF/PyTorch still computes logits and tokens. "
             "This is not vLLM/SGLang/TensorRT-LLM, and the runtime does not execute Qwen kernels."
         )
+        allow_deterministic_batch_decode = payload.get("allow_deterministic_batch_decode") is True
         rows = payload.get("requests")
         if not isinstance(rows, list) or not rows:
             return {
@@ -1897,6 +1948,7 @@ class MiniServingRuntime:
         active_request_order = []
         scheduler_events = []
         status = "completed"
+        deterministic_fallback_used = False
 
         for index, row in enumerate(rows):
             row = row if isinstance(row, dict) else {}
@@ -1962,6 +2014,21 @@ class MiniServingRuntime:
             policy = {**policy, "request_id": request_id}
             qwen_session = self.qwen.prepare_decode_session(prompt_contract, policy)
             if isinstance(qwen_session, dict):
+                if qwen_session.get("status") == "unavailable" and allow_deterministic_batch_decode:
+                    deterministic_fallback_used = True
+                    request_result["status"] = "pending"
+                    request_result["source_status"] = "qwen_unavailable_deterministic_batch_decode"
+                    request_result["decode_source"] = "deterministic_fallback"
+                    request_result["qwen"] = qwen_session
+                    active.append(
+                        {
+                            "request_id": request_id,
+                            "decode_source": "deterministic_fallback",
+                            "session": self._prepare_deterministic_batch_decode_session(request_id, output_tokens),
+                            "result": request_result,
+                        }
+                    )
+                    continue
                 request_result["status"] = "qwen_unavailable" if qwen_session.get("status") == "unavailable" else "qwen_error"
                 request_result["source_status"] = qwen_session.get("source_status")
                 request_result["stop_reason"] = qwen_session.get("error") or qwen_session.get("source_status")
@@ -1971,6 +2038,7 @@ class MiniServingRuntime:
             active.append(
                 {
                     "request_id": request_id,
+                    "decode_source": "qwen_live",
                     "session": qwen_session,
                     "result": request_result,
                 }
@@ -1995,28 +2063,62 @@ class MiniServingRuntime:
                 runtime_steps += 1
                 item["result"]["runtime_steps"] += 1
                 active_request_order.append(item["request_id"])
-                self.qwen.decode_one_token(item["session"])
+                if item.get("decode_source") == "deterministic_fallback":
+                    self._decode_one_deterministic_batch_token(item["session"])
+                else:
+                    self.qwen.decode_one_token(item["session"])
                 progressed = True
-                if item["session"].finished:
-                    qwen_result = self.qwen.finalize_decode_session(item["session"])
+                finished = (
+                    item["session"]["finished"]
+                    if item.get("decode_source") == "deterministic_fallback"
+                    else item["session"].finished
+                )
+                if finished:
+                    qwen_result = (
+                        self._finalize_deterministic_batch_decode_session(item["session"])
+                        if item.get("decode_source") == "deterministic_fallback"
+                        else self.qwen.finalize_decode_session(item["session"])
+                    )
+                    request_status = (
+                        "deterministic_fallback"
+                        if item.get("decode_source") == "deterministic_fallback"
+                        else "completed"
+                    )
                     item["result"].update(
                         {
-                            "status": "completed",
+                            "status": request_status,
                             "answer": qwen_result.get("answer", ""),
                             "generated_tokens": int(qwen_result.get("generated_tokens") or 0),
                             "decode_steps": qwen_result.get("decode_steps", []),
                             "stop_reason": qwen_result.get("stop_reason"),
-                            "qwen": qwen_result,
                         }
                     )
+                    if item.get("decode_source") == "deterministic_fallback":
+                        item["result"].update(
+                            {
+                                "decode_source": "deterministic_fallback",
+                                "source_status": "qwen_unavailable_deterministic_batch_decode",
+                                "deterministic_fallback": qwen_result,
+                            }
+                        )
+                    else:
+                        item["result"]["qwen"] = qwen_result
                     active.remove(item)
             if not progressed and active:
                 break
 
         for item in list(active):
-            item["session"].stop_reason = "runtime_step_budget_exhausted"
-            item["session"].finished = True
-            qwen_result = self.qwen.finalize_decode_session(item["session"])
+            if item.get("decode_source") == "deterministic_fallback":
+                item["session"]["stop_reason"] = "runtime_step_budget_exhausted"
+                item["session"]["finished"] = True
+                qwen_result = self._finalize_deterministic_batch_decode_session(
+                    item["session"],
+                    stop_reason="runtime_step_budget_exhausted",
+                )
+            else:
+                item["session"].stop_reason = "runtime_step_budget_exhausted"
+                item["session"].finished = True
+                qwen_result = self.qwen.finalize_decode_session(item["session"])
             item["result"].update(
                 {
                     "status": "interrupted",
@@ -2024,17 +2126,43 @@ class MiniServingRuntime:
                     "generated_tokens": int(qwen_result.get("generated_tokens") or 0),
                     "decode_steps": qwen_result.get("decode_steps", []),
                     "stop_reason": "runtime_step_budget_exhausted",
-                    "qwen": qwen_result,
                 }
             )
+            if item.get("decode_source") == "deterministic_fallback":
+                item["result"].update(
+                    {
+                        "decode_source": "deterministic_fallback",
+                        "source_status": "qwen_unavailable_deterministic_batch_decode",
+                        "deterministic_fallback": qwen_result,
+                    }
+                )
+            else:
+                item["result"]["qwen"] = qwen_result
             status = "partial"
 
         shared_summary = self.runtime_simulate.session_summary(session_id)
         delete_result = self.runtime_simulate.delete_session(session_id)
         live_decoded = any((request.get("qwen") or {}).get("status") == "completed" for request in requests)
+        deterministic_decoded = any(request.get("status") == "deterministic_fallback" for request in requests)
+        if deterministic_fallback_used:
+            truth_boundary = (
+                "Runtime owns shared admission and token-boundary scheduling. Qwen/HF is unavailable, "
+                "so this response used explicitly requested deterministic fallback tokens for batch scheduling smoke tests. "
+                "These tokens are not Qwen/HF generation."
+            )
+        decode_source = None
+        source_status = None
+        if deterministic_decoded:
+            decode_source = "deterministic_fallback"
+            source_status = "qwen_unavailable_deterministic_batch_decode"
+        elif live_decoded:
+            decode_source = "qwen_live"
+            source_status = "qwen_live"
         return {
             "status": status,
-            "runtime_owned_batch_decode": bool(live_decoded),
+            "runtime_owned_batch_decode": bool(live_decoded or deterministic_decoded),
+            "decode_source": decode_source,
+            "source_status": source_status,
             "shared_session_id": session_id,
             "request_count": len(requests),
             "admitted_count": admitted_count,
