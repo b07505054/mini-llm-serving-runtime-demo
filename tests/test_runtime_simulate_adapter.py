@@ -76,6 +76,43 @@ class FakeQwen:
             )
         return self._result(policy, generated, stop_reason=stop_reason, decode_steps=decode_steps)
 
+    def prepare_decode_session(self, prompt_contract, policy=None):
+        policy = policy or {}
+        max_tokens = min(self.generated_tokens, int(policy.get("max_new_tokens", self.generated_tokens)))
+        self.stepwise_calls.append((prompt_contract, policy, "prepare_decode_session"))
+        return FakeQwenSession(policy, max_tokens)
+
+    def decode_one_token(self, session):
+        if session.finished:
+            return {"decoded": False, "finished": True}
+        session.generated += 1
+        token_index = session.generated
+        session.decode_steps.append(
+            {
+                "step": token_index,
+                "token_id": token_index + 100,
+                "text": f"tok{token_index}",
+                "latency_ms": 0.5,
+                "cumulative_output": " ".join(f"tok{i + 1}" for i in range(token_index)),
+            }
+        )
+        if session.generated >= session.max_tokens:
+            session.finished = True
+            session.stop_reason = "max_new_tokens"
+        return {
+            "decoded": True,
+            "finished": session.finished,
+            "generated_tokens": session.generated,
+        }
+
+    def finalize_decode_session(self, session):
+        return self._result(
+            session.policy,
+            session.generated,
+            stop_reason=session.stop_reason,
+            decode_steps=session.decode_steps,
+        )
+
     def _result(self, policy, generated_tokens, stop_reason="max_new_tokens", decode_steps=None):
         decode_steps = decode_steps or []
         answer = " ".join(f"tok{i + 1}" for i in range(generated_tokens)) or "fake answer"
@@ -110,6 +147,16 @@ class FakeQwen:
         }
 
 
+class FakeQwenSession:
+    def __init__(self, policy, max_tokens):
+        self.policy = policy
+        self.generated = 0
+        self.max_tokens = max_tokens
+        self.decode_steps = []
+        self.finished = max_tokens == 0
+        self.stop_reason = "max_new_tokens"
+
+
 class FakeRuntimeSession:
     def __init__(self, admission, create=None, summary=None, step_results=None):
         self.create_response = create or {"session_id": "sess-test", "result_type": "simulated"}
@@ -132,7 +179,9 @@ class FakeRuntimeSession:
         self.request_payloads = []
         self.step_payloads = []
         self.deleted_session_ids = []
+        self.summary_session_ids = []
         self.step_results = list(step_results or [])
+        self.admissions = list(admission) if isinstance(admission, list) else None
 
     def create_session(self, payload):
         self.created_payloads.append(payload)
@@ -140,6 +189,8 @@ class FakeRuntimeSession:
 
     def session_request(self, session_id, payload):
         self.request_payloads.append((session_id, payload))
+        if self.admissions is not None:
+            return self.admissions.pop(0)
         return self.admission
 
     def session_step(self, session_id, payload):
@@ -149,6 +200,7 @@ class FakeRuntimeSession:
         return {"result_type": "simulated", "events": []}
 
     def session_summary(self, session_id):
+        self.summary_session_ids.append(session_id)
         return self.summary
 
     def delete_session(self, session_id):
@@ -919,6 +971,194 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
                 "mismatch_reason": None,
             },
         )
+
+    def test_qwen_ask_batch_multiple_admitted_requests_share_one_session(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=2)
+        fake_session = FakeRuntimeSession(
+            admission=[
+                {"request_id": "a", "admitted": True, "reason": "fits_session_kv_budget"},
+                {"request_id": "b", "admitted": True, "reason": "fits_session_kv_budget"},
+            ]
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask_batch(
+            {
+                "requests": [
+                    {"request_id": "a", "question": "Explain KV cache.", "max_output_tokens": 2},
+                    {"request_id": "b", "question": "Explain batching.", "max_output_tokens": 2},
+                ],
+                "include_runtime_session": True,
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["shared_session_id"], "sess-test")
+        self.assertTrue(result["runtime_owned_batch_decode"])
+        self.assertEqual(result["request_count"], 2)
+        self.assertEqual(result["admitted_count"], 2)
+        self.assertEqual(result["rejected_count"], 0)
+        self.assertEqual(len(fake_session.created_payloads), 1)
+        self.assertEqual([row[0] for row in fake_session.request_payloads], ["sess-test", "sess-test"])
+        self.assertEqual(fake_session.deleted_session_ids, ["sess-test"])
+
+    def test_qwen_ask_batch_records_round_robin_order_and_decode_steps(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=2)
+        fake_session = FakeRuntimeSession(
+            admission=[
+                {"request_id": "a", "admitted": True},
+                {"request_id": "b", "admitted": True},
+            ]
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask_batch(
+            {
+                "requests": [
+                    {"request_id": "a", "question": "A", "max_output_tokens": 2},
+                    {"request_id": "b", "question": "B", "max_output_tokens": 2},
+                ],
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["active_request_order"], ["a", "b", "a", "b"])
+        self.assertEqual(result["runtime_steps"], 4)
+        self.assertEqual(len(result["scheduler_events"]), 4)
+        self.assertEqual([request["generated_tokens"] for request in result["requests"]], [2, 2])
+        self.assertEqual([request["runtime_steps"] for request in result["requests"]], [2, 2])
+        self.assertEqual(len(fake_session.step_payloads), 4)
+
+    def test_qwen_ask_batch_one_rejected_request_others_continue(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=2)
+        fake_session = FakeRuntimeSession(
+            admission=[
+                {"request_id": "a", "admitted": False, "reason": "insufficient_free_kv_pages"},
+                {"request_id": "b", "admitted": True, "reason": "fits_session_kv_budget"},
+            ]
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask_batch(
+            {
+                "requests": [
+                    {"request_id": "a", "question": "reject", "max_output_tokens": 2},
+                    {"request_id": "b", "question": "continue", "max_output_tokens": 2},
+                ],
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["admitted_count"], 1)
+        self.assertEqual(result["rejected_count"], 1)
+        self.assertEqual(result["requests"][0]["status"], "rejected")
+        self.assertEqual(result["requests"][0]["reject_reason"], "insufficient_free_kv_pages")
+        self.assertEqual(result["requests"][0]["generated_tokens"], 0)
+        self.assertEqual(result["requests"][1]["status"], "completed")
+        self.assertEqual(result["requests"][1]["generated_tokens"], 2)
+
+    def test_qwen_ask_batch_runtime_step_failure_interrupts_honestly(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=2)
+        fake_session = FakeRuntimeSession(
+            admission=[
+                {"request_id": "a", "admitted": True},
+                {"request_id": "b", "admitted": True},
+            ],
+            step_results=[
+                {"result_type": "simulated", "events": []},
+                {"error": "runtime_session_step_failed", "events": []},
+            ],
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask_batch(
+            {
+                "requests": [
+                    {"request_id": "a", "question": "A", "max_output_tokens": 2},
+                    {"request_id": "b", "question": "B", "max_output_tokens": 2},
+                ],
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(result["active_request_order"], ["a", "a"])
+        self.assertEqual(result["requests"][0]["status"], "completed")
+        self.assertEqual(result["requests"][0]["generated_tokens"], 2)
+        self.assertEqual(result["requests"][1]["status"], "interrupted")
+        self.assertEqual(result["requests"][1]["generated_tokens"], 0)
+        self.assertEqual(result["requests"][1]["stop_reason"], "runtime_session_step_failed")
+
+    def test_qwen_ask_batch_qwen_unavailable_does_not_claim_generated_tokens(self):
+        class UnavailableQwen(FakeQwen):
+            def prepare_decode_session(self, prompt_contract, policy=None):
+                return {
+                    "status": "unavailable",
+                    "source_status": "qwen_unavailable",
+                    "answer": "",
+                    "generated_tokens": 0,
+                    "decode_steps": [],
+                }
+
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = UnavailableQwen()
+        fake_session = FakeRuntimeSession(admission={"request_id": "a", "admitted": True})
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask_batch(
+            {
+                "requests": [{"request_id": "a", "question": "A", "max_output_tokens": 2}],
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["status"], "partial")
+        self.assertFalse(result["runtime_owned_batch_decode"])
+        self.assertEqual(result["requests"][0]["status"], "qwen_unavailable")
+        self.assertEqual(result["requests"][0]["generated_tokens"], 0)
+        self.assertEqual(result["runtime_steps"], 0)
+
+    def test_qwen_ask_batch_summary_and_delete_called_once(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=1)
+        fake_session = FakeRuntimeSession(admission={"request_id": "a", "admitted": True})
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask_batch(
+            {
+                "requests": [{"request_id": "a", "question": "A", "max_output_tokens": 1}],
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["shared_summary"], fake_session.summary)
+        self.assertEqual(fake_session.summary_session_ids, ["sess-test"])
+        self.assertEqual(fake_session.deleted_session_ids, ["sess-test"])
+
+    def test_qwen_ask_batch_runtime_unavailable_does_not_run_qwen_fallback(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=2)
+        runtime.runtime_simulate = FakeRuntimeSession(
+            admission={},
+            create={"status": "unavailable", "source": "heterogeneous-runtime-http"},
+        )
+
+        result = runtime.ask_batch(
+            {
+                "requests": [{"request_id": "a", "question": "A", "max_output_tokens": 2}],
+                "runtime_session_max_steps": 8,
+            }
+        )
+
+        self.assertEqual(result["status"], "runtime_unavailable")
+        self.assertFalse(result["runtime_owned_batch_decode"])
+        self.assertEqual(result["requests"], [])
+        self.assertEqual(runtime.qwen.stepwise_calls, [])
 
 
 class ParseRuntimeSessionPathTest(unittest.TestCase):

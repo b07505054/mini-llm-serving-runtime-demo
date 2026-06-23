@@ -1832,6 +1832,222 @@ class MiniServingRuntime:
             "mismatch_reason": mismatch_reason,
         }
 
+    def ask_batch(self, payload):
+        truth_boundary = (
+            "Runtime owns shared admission and token-boundary scheduling; HF/PyTorch still computes logits and tokens. "
+            "This is not vLLM/SGLang/TensorRT-LLM, and the runtime does not execute Qwen kernels."
+        )
+        rows = payload.get("requests")
+        if not isinstance(rows, list) or not rows:
+            return {
+                "status": "error",
+                "runtime_owned_batch_decode": False,
+                "error": "requests must be a non-empty list",
+                "truth_boundary": truth_boundary,
+            }
+        rows = rows[:8]
+        try:
+            max_runtime_steps = int(payload.get("runtime_session_max_steps", 32))
+        except (TypeError, ValueError):
+            max_runtime_steps = 32
+        max_runtime_steps = max(0, min(32, max_runtime_steps))
+
+        created = self.runtime_simulate.create_session({})
+        if not created or created.get("status") == "unavailable" or created.get("error"):
+            return {
+                "status": "runtime_unavailable",
+                "runtime_owned_batch_decode": False,
+                "shared_session_id": (created or {}).get("session_id"),
+                "request_count": len(rows),
+                "admitted_count": 0,
+                "rejected_count": 0,
+                "runtime_steps": 0,
+                "active_request_order": [],
+                "scheduler_events": [],
+                "shared_summary": None,
+                "requests": [],
+                "error": (created or {}).get("error") or (created or {}).get("last_error") or "runtime_session_create_failed",
+                "truth_boundary": truth_boundary,
+            }
+        session_id = created.get("session_id")
+        if not session_id:
+            return {
+                "status": "runtime_unavailable",
+                "runtime_owned_batch_decode": False,
+                "shared_session_id": None,
+                "request_count": len(rows),
+                "admitted_count": 0,
+                "rejected_count": 0,
+                "runtime_steps": 0,
+                "active_request_order": [],
+                "scheduler_events": [],
+                "shared_summary": None,
+                "requests": [],
+                "error": "runtime_session_missing_session_id",
+                "truth_boundary": truth_boundary,
+            }
+
+        scenario_id = payload.get("scenario_id") or "long_context_summary"
+        scenario = self._scenario_by_id(scenario_id)
+        requests = []
+        active = []
+        admitted_count = 0
+        rejected_count = 0
+        runtime_steps = 0
+        active_request_order = []
+        scheduler_events = []
+        status = "completed"
+
+        for index, row in enumerate(rows):
+            row = row if isinstance(row, dict) else {}
+            llm_mode = row.get("llm_mode") or payload.get("llm_mode") or scenario.get("default_mode") or "combined"
+            question = (
+                row.get("question")
+                or payload.get("question")
+                or scenario.get("default_question")
+                or "Answer this prompt."
+            ).strip()
+            request_id = row.get("request_id") or f"batch_{uuid.uuid4().hex[:8]}"
+            row_payload = {**payload, **row, "question": question, "request_id": request_id}
+            context_items = self._normalize_context_items(row_payload, scenario)
+            prompt_contract = self._prompt_contract(
+                row_payload,
+                scenario,
+                context_items,
+                question,
+                llm_mode,
+            )
+            prompt_tokens = int(row.get("prompt_tokens") or self._estimate_prompt_tokens(prompt_contract))
+            output_tokens = int(
+                row.get("max_output_tokens")
+                or payload.get("max_output_tokens")
+                or self._estimate_output_tokens(question, llm_mode)
+            )
+            request_payload = {
+                "request_id": request_id,
+                "prompt_tokens": prompt_tokens,
+                "max_output_tokens": output_tokens,
+            }
+            admission = self.runtime_simulate.session_request(session_id, request_payload)
+            request_result = {
+                "request_id": request_id,
+                "status": "pending",
+                "answer": "",
+                "generated_tokens": 0,
+                "decode_steps": [],
+                "runtime_steps": 0,
+                "stop_reason": None,
+                "admission": admission,
+            }
+            requests.append(request_result)
+            if not admission or admission.get("status") == "unavailable" or admission.get("error"):
+                request_result["status"] = "interrupted"
+                request_result["stop_reason"] = (admission or {}).get("error") or "runtime_session_request_failed"
+                status = "partial"
+                continue
+            if admission.get("admitted") is False:
+                rejected_count += 1
+                request_result["status"] = "rejected"
+                request_result["stop_reason"] = admission.get("reason") or "runtime_rejected_before_qwen"
+                request_result["reject_reason"] = request_result["stop_reason"]
+                continue
+            if admission.get("admitted") is not True:
+                request_result["status"] = "interrupted"
+                request_result["stop_reason"] = "runtime_admission_missing_authoritative_decision"
+                status = "partial"
+                continue
+
+            admitted_count += 1
+            policy = self._qwen_serving_policies(output_tokens)["optimized"]
+            policy = {**policy, "request_id": request_id}
+            qwen_session = self.qwen.prepare_decode_session(prompt_contract, policy)
+            if isinstance(qwen_session, dict):
+                request_result["status"] = "qwen_unavailable" if qwen_session.get("status") == "unavailable" else "qwen_error"
+                request_result["source_status"] = qwen_session.get("source_status")
+                request_result["stop_reason"] = qwen_session.get("error") or qwen_session.get("source_status")
+                request_result["qwen"] = qwen_session
+                status = "partial"
+                continue
+            active.append(
+                {
+                    "request_id": request_id,
+                    "session": qwen_session,
+                    "result": request_result,
+                }
+            )
+
+        while active and runtime_steps < max_runtime_steps:
+            progressed = False
+            for item in list(active):
+                if runtime_steps >= max_runtime_steps:
+                    break
+                step_result = self.runtime_simulate.session_step(session_id, {})
+                compact = self._compact_runtime_step(runtime_steps + 1, step_result)
+                compact["request_id"] = item["request_id"]
+                scheduler_events.append(compact)
+                if not compact["ok"]:
+                    item["result"]["status"] = "interrupted"
+                    item["result"]["stop_reason"] = compact.get("error") or "runtime_session_step_failed"
+                    active.remove(item)
+                    status = "partial"
+                    continue
+
+                runtime_steps += 1
+                item["result"]["runtime_steps"] += 1
+                active_request_order.append(item["request_id"])
+                self.qwen.decode_one_token(item["session"])
+                progressed = True
+                if item["session"].finished:
+                    qwen_result = self.qwen.finalize_decode_session(item["session"])
+                    item["result"].update(
+                        {
+                            "status": "completed",
+                            "answer": qwen_result.get("answer", ""),
+                            "generated_tokens": int(qwen_result.get("generated_tokens") or 0),
+                            "decode_steps": qwen_result.get("decode_steps", []),
+                            "stop_reason": qwen_result.get("stop_reason"),
+                            "qwen": qwen_result,
+                        }
+                    )
+                    active.remove(item)
+            if not progressed and active:
+                break
+
+        for item in list(active):
+            item["session"].stop_reason = "runtime_step_budget_exhausted"
+            item["session"].finished = True
+            qwen_result = self.qwen.finalize_decode_session(item["session"])
+            item["result"].update(
+                {
+                    "status": "interrupted",
+                    "answer": qwen_result.get("answer", ""),
+                    "generated_tokens": int(qwen_result.get("generated_tokens") or 0),
+                    "decode_steps": qwen_result.get("decode_steps", []),
+                    "stop_reason": "runtime_step_budget_exhausted",
+                    "qwen": qwen_result,
+                }
+            )
+            status = "partial"
+
+        shared_summary = self.runtime_simulate.session_summary(session_id)
+        delete_result = self.runtime_simulate.delete_session(session_id)
+        live_decoded = any((request.get("qwen") or {}).get("status") == "completed" for request in requests)
+        return {
+            "status": status,
+            "runtime_owned_batch_decode": bool(live_decoded),
+            "shared_session_id": session_id,
+            "request_count": len(requests),
+            "admitted_count": admitted_count,
+            "rejected_count": rejected_count,
+            "runtime_steps": runtime_steps,
+            "active_request_order": active_request_order,
+            "scheduler_events": scheduler_events,
+            "shared_summary": shared_summary,
+            "delete_result": delete_result,
+            "requests": requests,
+            "truth_boundary": truth_boundary,
+        }
+
     def ask(self, payload):
         scenario_id = payload.get("scenario_id") or "long_context_summary"
         scenario = self._scenario_by_id(scenario_id)
@@ -2484,6 +2700,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/qwen/ask":
             self._send_json(RUNTIME.ask(self._read_json()))
+            return
+        if path == "/api/qwen/ask_batch":
+            self._send_json(RUNTIME.ask_batch(self._read_json()))
             return
         if path == "/api/batch":
             self._send_json(RUNTIME.run_batch(self._read_json()))
