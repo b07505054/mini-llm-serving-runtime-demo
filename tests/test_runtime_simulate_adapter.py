@@ -25,6 +25,89 @@ class FakeResponse:
         return False
 
 
+class FakeQwen:
+    def __init__(self):
+        self.calls = []
+        self.max_new_tokens = 96
+        self.model_id = "fake-qwen"
+        self.device = "cpu"
+        self.device_setting = "cpu"
+
+    def ask(self, prompt_contract, policy):
+        self.calls.append((prompt_contract, policy))
+        return {
+            "status": "completed",
+            "source_status": "qwen_live",
+            "model_id": self.model_id,
+            "device": self.device,
+            "policy": policy,
+            "answer": "fake answer",
+            "prompt_tokens": 12,
+            "generated_tokens": 4,
+            "max_new_tokens": policy.get("max_new_tokens", 4),
+            "prefill_ms": 1.0,
+            "ttft_ms": 2.0,
+            "tpot_ms": 0.5,
+            "total_latency_ms": 3.0,
+            "tokens_per_second": 10.0,
+            "cache_type": "fake_past_key_values",
+            "compiler_plan": {"artifact_source": "fake"},
+            "runtime_trace": [],
+            "decode_steps": [],
+            "live_qwen_metrics": {
+                "prompt_tokens": 12,
+                "generated_tokens": 4,
+                "total_latency_ms": 3.0,
+                "tpot_ms": 0.5,
+                "tokens_per_second": 10.0,
+                "max_new_tokens": policy.get("max_new_tokens", 4),
+            },
+        }
+
+
+class FakeRuntimeSession:
+    def __init__(self, admission, create=None, summary=None):
+        self.create_response = create or {"session_id": "sess-test", "result_type": "simulated"}
+        self.admission = admission
+        self.summary = summary or {
+            "result_type": "simulated",
+            "resident_request_ids": ["ask-test"],
+            "finished_request_ids": [],
+            "rejected_request_ids": [],
+            "requests_submitted": 1,
+            "ticks_elapsed": 0,
+            "kv_page_lifecycle": {
+                "total_pages": 64,
+                "page_size_tokens": 16,
+                "resident_pages": 2,
+                "allocated_pages": 2,
+            },
+        }
+        self.created_payloads = []
+        self.request_payloads = []
+        self.step_payloads = []
+        self.deleted_session_ids = []
+
+    def create_session(self, payload):
+        self.created_payloads.append(payload)
+        return self.create_response
+
+    def session_request(self, session_id, payload):
+        self.request_payloads.append((session_id, payload))
+        return self.admission
+
+    def session_step(self, session_id, payload):
+        self.step_payloads.append((session_id, payload))
+        return {"result_type": "simulated", "events": []}
+
+    def session_summary(self, session_id):
+        return self.summary
+
+    def delete_session(self, session_id):
+        self.deleted_session_ids.append(session_id)
+        return {"deleted": True, "session_id": session_id, "result_type": "simulated"}
+
+
 class RuntimeSimulateAdapterTest(unittest.TestCase):
     def test_successful_response_passes_through_honest_fields_unchanged(self):
         runtime = server.MiniServingRuntime()
@@ -299,6 +382,152 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
             ask_result = runtime.ask({"question": "What is the capital of France?"})
         self.assertEqual(generate_result["status"], "completed")
         self.assertIn("answer", ask_result)
+
+    def test_qwen_ask_with_runtime_session_admitted_calls_qwen_and_attaches_ownership(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen()
+        fake_session = FakeRuntimeSession(
+            admission={
+                "request_id": "ask-test",
+                "result_type": "simulated",
+                "admitted": True,
+                "reason": "fits_session_kv_budget",
+                "allocated_pages": [0, 1],
+            }
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask(
+            {
+                "request_id": "ask-test",
+                "question": "Explain runtime admission.",
+                "prompt_tokens": 16,
+                "max_output_tokens": 4,
+                "include_runtime_session": True,
+            }
+        )
+
+        self.assertEqual(len(runtime.qwen.calls), 2)
+        self.assertEqual(result["runtime_ownership"]["status"], "completed")
+        self.assertTrue(result["runtime_ownership"]["authoritative"])
+        self.assertEqual(result["runtime_ownership"]["steps_run"], 4)
+        self.assertEqual(result["runtime_ownership"]["admission"]["reason"], "fits_session_kv_budget")
+
+    def test_qwen_ask_with_runtime_session_rejected_does_not_call_qwen_or_mutate_simulator_rejects(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen()
+        before_rejects = runtime.rejected_requests
+        fake_session = FakeRuntimeSession(
+            admission={
+                "request_id": "ask-test",
+                "result_type": "simulated",
+                "admitted": False,
+                "reason": "insufficient_free_kv_pages",
+            },
+            summary={
+                "result_type": "simulated",
+                "resident_request_ids": [],
+                "finished_request_ids": [],
+                "rejected_request_ids": ["ask-test"],
+                "requests_submitted": 1,
+                "ticks_elapsed": 0,
+                "kv_page_lifecycle": {
+                    "total_pages": 2,
+                    "page_size_tokens": 16,
+                    "resident_pages": 0,
+                    "allocated_pages": 0,
+                },
+            },
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask(
+            {
+                "request_id": "ask-test",
+                "question": "This should be rejected.",
+                "prompt_tokens": 1024,
+                "max_output_tokens": 1024,
+                "include_runtime_session": True,
+            }
+        )
+
+        self.assertEqual(runtime.qwen.calls, [])
+        self.assertEqual(result["status"], "runtime_rejected")
+        self.assertEqual(result["answer"], "")
+        self.assertEqual(result["text"], "")
+        self.assertEqual(result["source_status"], "runtime_rejected_before_qwen")
+        self.assertEqual(result["runtime_ownership"]["status"], "rejected")
+        self.assertEqual(result["runtime_ownership"]["reject_count_delta"], 1)
+        self.assertEqual(result["runtime_ownership"]["reject_reason"], "insufficient_free_kv_pages")
+        self.assertEqual(runtime.rejected_requests, before_rejects)
+
+    def test_qwen_ask_with_runtime_session_unavailable_continues_qwen(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen()
+        runtime.runtime_simulate = FakeRuntimeSession(
+            admission={},
+            create={"status": "unavailable", "source": "heterogeneous-runtime-http"},
+        )
+
+        result = runtime.ask(
+            {
+                "request_id": "ask-test",
+                "question": "Continue despite runtime infra failure.",
+                "include_runtime_session": True,
+            }
+        )
+
+        self.assertEqual(len(runtime.qwen.calls), 2)
+        self.assertEqual(result["runtime_ownership"]["status"], "unavailable")
+        self.assertEqual(result["answer"], "fake answer")
+
+    def test_qwen_ask_without_runtime_session_makes_no_session_calls(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen()
+        fake_session = FakeRuntimeSession(admission={"admitted": True})
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask({"request_id": "ask-test", "question": "Normal path."})
+
+        self.assertEqual(len(runtime.qwen.calls), 2)
+        self.assertNotIn("runtime_ownership", result)
+        self.assertEqual(fake_session.created_payloads, [])
+        self.assertEqual(fake_session.request_payloads, [])
+
+    def test_runtime_session_max_steps_is_clamped_to_32_and_allows_zero(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen()
+        fake_session = FakeRuntimeSession(admission={"admitted": True, "reason": "fits_session_kv_budget"})
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask(
+            {
+                "request_id": "ask-test",
+                "question": "Clamp steps.",
+                "prompt_tokens": 16,
+                "max_output_tokens": 64,
+                "include_runtime_session": True,
+                "runtime_session_max_steps": 100,
+            }
+        )
+        self.assertEqual(result["runtime_ownership"]["steps_run"], 32)
+
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen()
+        fake_session = FakeRuntimeSession(admission={"admitted": True, "reason": "fits_session_kv_budget"})
+        runtime.runtime_simulate = fake_session
+        result = runtime.ask(
+            {
+                "request_id": "ask-test-zero",
+                "question": "Zero steps.",
+                "prompt_tokens": 16,
+                "max_output_tokens": 64,
+                "include_runtime_session": True,
+                "runtime_session_max_steps": -5,
+            }
+        )
+        self.assertEqual(result["runtime_ownership"]["steps_run"], 0)
+        self.assertEqual(fake_session.step_payloads, [])
 
 
 class ParseRuntimeSessionPathTest(unittest.TestCase):

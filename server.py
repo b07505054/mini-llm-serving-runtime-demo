@@ -1514,6 +1514,140 @@ class MiniServingRuntime:
             ),
         }
 
+    def _runtime_ownership_for_ask(self, request_id, prompt_tokens, output_tokens, payload):
+        request_payload = {
+            "request_id": request_id,
+            "prompt_tokens": prompt_tokens,
+            "max_output_tokens": output_tokens,
+        }
+        truth_boundary = (
+            "The heterogeneous runtime owns simulated admission/KV lifecycle for this request. "
+            "Rejection happens before Qwen generation. The runtime still does not execute Qwen kernels."
+        )
+        started = time.perf_counter()
+        session_id = None
+
+        def elapsed_ms():
+            return round((time.perf_counter() - started) * 1000, 3)
+
+        def unavailable(error, status="unavailable", extra=None):
+            result = {
+                "status": status,
+                "authoritative": True,
+                "session_id": session_id,
+                "request_payload": request_payload,
+                "error": error,
+                "latency_ms": elapsed_ms(),
+                "truth_boundary": truth_boundary,
+            }
+            if extra:
+                result.update(extra)
+            return result
+
+        def normalize_admission(admission, summary):
+            admission = dict(admission or {})
+            lifecycle = (summary or {}).get("kv_page_lifecycle", {})
+            total_pages = lifecycle.get("total_pages")
+            resident_pages = lifecycle.get("resident_pages")
+            page_size_tokens = lifecycle.get("page_size_tokens")
+            required_pages = None
+            if page_size_tokens:
+                required_pages = math.ceil((prompt_tokens + output_tokens) / page_size_tokens)
+            free_pages = None
+            if total_pages is not None and resident_pages is not None:
+                free_pages = max(0, total_pages - resident_pages)
+            return {
+                **admission,
+                "reason": admission.get("reason"),
+                "required_pages": required_pages,
+                "free_pages": free_pages,
+                "total_pages": total_pages,
+            }
+
+        created = self.runtime_simulate.create_session({})
+        if not created or created.get("status") == "unavailable" or created.get("error"):
+            return unavailable((created or {}).get("error") or (created or {}).get("last_error") or "runtime_session_create_failed")
+
+        session_id = created.get("session_id")
+        if not session_id:
+            return unavailable("runtime_session_missing_session_id", extra={"session_create": created})
+
+        admission = self.runtime_simulate.session_request(session_id, request_payload)
+        if not admission or admission.get("status") == "unavailable":
+            delete_result = self.runtime_simulate.delete_session(session_id)
+            return unavailable(
+                (admission or {}).get("error") or "runtime_session_request_failed",
+                extra={"session_create": created, "admission": admission, "delete_result": delete_result},
+            )
+
+        if admission.get("admitted") is False:
+            summary = self.runtime_simulate.session_summary(session_id)
+            delete_result = self.runtime_simulate.delete_session(session_id)
+            normalized_admission = normalize_admission(admission, summary)
+            return {
+                "status": "rejected",
+                "authoritative": True,
+                "session_id": session_id,
+                "request_payload": request_payload,
+                "admission": normalized_admission,
+                "summary": summary,
+                "delete_result": delete_result,
+                "reject_count_delta": 1,
+                "reject_reason": normalized_admission.get("reason"),
+                "latency_ms": elapsed_ms(),
+                "truth_boundary": truth_boundary,
+            }
+
+        if admission.get("admitted") is not True:
+            delete_result = self.runtime_simulate.delete_session(session_id)
+            return unavailable(
+                "runtime_admission_missing_authoritative_decision",
+                status="partial",
+                extra={"session_create": created, "admission": admission, "delete_result": delete_result},
+            )
+
+        try:
+            requested_steps = int(payload.get("runtime_session_max_steps", 8))
+        except (TypeError, ValueError):
+            requested_steps = 8
+        # Clamp to 0..32. Zero is allowed so callers can request admission-only
+        # ownership without mutating decode lifecycle state.
+        max_steps = max(0, min(32, requested_steps))
+        steps_to_run = min(output_tokens, max_steps)
+        step_results = []
+        status = "completed"
+        error = None
+        for _ in range(steps_to_run):
+            step_result = self.runtime_simulate.session_step(session_id, {})
+            step_results.append(step_result)
+            if not step_result or step_result.get("status") == "unavailable" or step_result.get("error"):
+                status = "partial"
+                error = (step_result or {}).get("error") or "runtime_session_step_failed"
+                break
+
+        summary = self.runtime_simulate.session_summary(session_id)
+        if not summary or summary.get("status") == "unavailable" or summary.get("error"):
+            status = "partial"
+            error = (summary or {}).get("error") or error or "runtime_session_summary_failed"
+        delete_result = self.runtime_simulate.delete_session(session_id)
+        normalized_admission = normalize_admission(admission, summary)
+        result = {
+            "status": status,
+            "authoritative": True,
+            "session_id": session_id,
+            "request_payload": request_payload,
+            "admission": normalized_admission,
+            "steps_run": len([row for row in step_results if row and not row.get("error") and row.get("status") != "unavailable"]),
+            "step_results": step_results,
+            "summary": summary,
+            "delete_result": delete_result,
+            "latency_ms": elapsed_ms(),
+            "truth_boundary": truth_boundary,
+        }
+        if error:
+            result["error"] = error
+        return result
+
     def ask(self, payload):
         scenario_id = payload.get("scenario_id") or "long_context_summary"
         scenario = self._scenario_by_id(scenario_id)
@@ -1551,6 +1685,43 @@ class MiniServingRuntime:
                 "prompt": question,
             }
         )
+        runtime_ownership = None
+        if bool(payload.get("include_runtime_session", False)):
+            runtime_ownership = self._runtime_ownership_for_ask(
+                request_id,
+                prompt_tokens,
+                output_tokens,
+                payload,
+            )
+            if runtime_ownership.get("status") == "rejected":
+                response = {
+                    **runtime_result,
+                    "status": "runtime_rejected",
+                    "answer": "",
+                    "text": "",
+                    "source_status": "runtime_rejected_before_qwen",
+                    "mode": llm_mode,
+                    "scenario_id": scenario_id,
+                    "context_items": [],
+                    "input_metadata": {},
+                    "task_context": {},
+                    "question": question,
+                    "prompt_contract": prompt_contract,
+                    "runtime_ownership": runtime_ownership,
+                }
+                self.latest_llm_answer = response
+                self.latest_qwen_run = {
+                    "source_status": response["source_status"],
+                    "qwen_status": "not_called",
+                    "answer": "",
+                    "prompt_tokens": prompt_tokens,
+                    "generated_tokens": 0,
+                    "runtime_ownership": runtime_ownership,
+                    "error": runtime_ownership.get("reject_reason"),
+                }
+                self.ask_history.append(response)
+                self.ask_history = self.ask_history[-20:]
+                return response
         policies = self._qwen_serving_policies(output_tokens)
         base_prompt_contract = {**prompt_contract, "llm_mode": "base"}
         base_qwen_result = self.qwen.ask(base_prompt_contract, policies["base_model"])
@@ -1631,6 +1802,8 @@ class MiniServingRuntime:
                 "slo_report": "artifacts/validation/slo_report.json",
             },
         }
+        if runtime_ownership is not None:
+            response["runtime_ownership"] = runtime_ownership
         self.latest_llm_answer = response
         self.latest_qwen_run = {
             "source_status": source_status,
@@ -1652,6 +1825,7 @@ class MiniServingRuntime:
             "base_model": base_model,
             "optimized": optimized,
             "improvement": improvement,
+            "runtime_ownership": runtime_ownership,
             "error": optimized_qwen_result.get("error") or (optimized_qwen_result.get("status_detail") or {}).get("last_error"),
         }
         self.ask_history.append(response)
