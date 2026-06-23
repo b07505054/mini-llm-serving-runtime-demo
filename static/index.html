@@ -752,6 +752,21 @@
       </div>
 
       <div class="panel span-12">
+        <h2>Runtime-Owned Batch Decode</h2>
+        <div class="small">
+          Shared runtime session admission plus token-boundary scheduling across multiple decode sessions.
+        </div>
+        <div class="toolbar" style="margin-bottom:10px">
+          <button id="run-batch-decode-demo">Run Batch Decode Demo</button>
+        </div>
+        <div id="batch-decode-demo-metrics">
+          <span class="small">Click "Run Batch Decode Demo" to run a shared-session batch decode smoke test.</span>
+        </div>
+        <div id="batch-decode-demo-requests" style="margin-top:10px"></div>
+        <div class="evidence-note" id="batch-decode-demo-note"></div>
+      </div>
+
+      <div class="panel span-12">
         <h2>Live Compiler Engine</h2>
         <div class="small">
           Backed by ml-graph-compiler-runtime over local HTTP. Artifact generation + validation. Simulated, not benchmarked.
@@ -1364,6 +1379,88 @@
       }
     }
 
+    function renderBatchDecodeDemo(result) {
+      const metricsDiv = document.getElementById("batch-decode-demo-metrics");
+      const requestsDiv = document.getElementById("batch-decode-demo-requests");
+      const noteDiv = document.getElementById("batch-decode-demo-note");
+      const truthBoundary = "Runtime owns shared admission and token-boundary scheduling. " +
+        "HF/PyTorch still computes logits/tokens when available. " +
+        "If deterministic fallback is used, tokens are smoke-test fallback tokens, not Qwen/HF generation. " +
+        "This is not vLLM/SGLang/TensorRT-LLM.";
+
+      noteDiv.textContent = truthBoundary;
+      if (!result || result.status === "unavailable" || result.status === "runtime_unavailable") {
+        metricsDiv.innerHTML = [
+          metric("Status", result && result.status ? result.status : "unavailable", "warn"),
+          metric("Runtime-owned decode", "false", "warn"),
+          metric("Error", (result && result.error) || "runtime session service unavailable", "warn"),
+        ].join("");
+        requestsDiv.innerHTML = "";
+        return;
+      }
+
+      const activeOrder = (result.active_request_order || []).join(" \u2192 ") || "n/a";
+      const decodeSourceTone = result.decode_source === "deterministic_fallback"
+        ? "warn"
+        : result.decode_source === "qwen_live" ? "pass" : "";
+      metricsDiv.innerHTML = [
+        metric("Status", result.status || "n/a", result.status === "completed" ? "pass" : "warn"),
+        metric("Runtime-owned decode", result.runtime_owned_batch_decode ? "true" : "false",
+          result.runtime_owned_batch_decode ? "pass" : "warn"),
+        metric("Decode source", result.decode_source || "n/a", decodeSourceTone),
+        metric("Shared session", result.shared_session_id || "n/a", result.shared_session_id ? "blue" : ""),
+        metric("Requests", fmt(result.request_count)),
+        metric("Admitted", fmt(result.admitted_count), result.admitted_count > 0 ? "pass" : "warn"),
+        metric("Rejected", fmt(result.rejected_count), result.rejected_count > 0 ? "warn" : "pass"),
+        metric("Runtime steps", fmt(result.runtime_steps), result.runtime_steps > 0 ? "pass" : "warn"),
+        metric("Active order", activeOrder, "blue"),
+      ].join("");
+
+      const requestRows = result.requests || [];
+      requestsDiv.innerHTML = requestRows.length
+        ? `<div class="compare">${requestRows.map(request => `
+          <div class="compare-card">
+            <h3>Request ${request.request_id || "n/a"}</h3>
+            ${metric("Status", request.status || "n/a",
+              request.status === "deterministic_fallback" ? "warn" : request.status === "completed" ? "pass" : "")}
+            ${metric("Generated tokens", fmt(request.generated_tokens))}
+            ${metric("Runtime steps", fmt(request.runtime_steps), request.runtime_steps > 0 ? "pass" : "warn")}
+          </div>
+        `).join("")}</div>`
+        : "";
+    }
+
+    async function runBatchDecodeDemo() {
+      document.getElementById("batch-decode-demo-metrics").innerHTML =
+        metric("Status", "Running...", "blue");
+      document.getElementById("batch-decode-demo-requests").innerHTML = "";
+      try {
+        const result = await api("/api/qwen/ask_batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            allow_deterministic_batch_decode: true,
+            runtime_session_max_steps: 8,
+            requests: [
+              {
+                request_id: "a",
+                question: "Explain KV cache briefly.",
+                max_output_tokens: 2,
+              },
+              {
+                request_id: "b",
+                question: "Explain continuous batching briefly.",
+                max_output_tokens: 2,
+              },
+            ],
+          }),
+        });
+        renderBatchDecodeDemo(result);
+      } catch (error) {
+        renderBatchDecodeDemo({ status: "unavailable", error: error.message });
+      }
+    }
+
     function renderCompilerEngine(result) {
       const metricsDiv = document.getElementById("compiler-engine-metrics");
       const passesPre = document.getElementById("compiler-engine-passes");
@@ -1916,6 +2013,7 @@
     });
 
     document.getElementById("run-live-simulation").addEventListener("click", runLiveRuntimeSimulation);
+    document.getElementById("run-batch-decode-demo").addEventListener("click", runBatchDecodeDemo);
     document.getElementById("run-compiler-engine").addEventListener("click", runCompilerEngine);
 
     document.getElementById("ask-llm").addEventListener("click", askCurrentScenario);
