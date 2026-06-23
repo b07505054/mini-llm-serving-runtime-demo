@@ -730,6 +730,20 @@
       </div>
 
       <div class="panel span-12">
+        <h2>Live Simulated Runtime</h2>
+        <div class="small">
+          Backed by heterogeneous-inference-runtime RuntimeScheduler over local HTTP; simulated, not measured GPU inference.
+        </div>
+        <div class="toolbar" style="margin-bottom:10px">
+          <button id="run-live-simulation">Run Live Simulation (batch)</button>
+        </div>
+        <div id="live-runtime-simulate-metrics">
+          <span class="small">Click "Run Live Simulation (batch)" to fetch live simulated runtime metrics.</span>
+        </div>
+        <div class="evidence-note" id="live-runtime-simulate-note"></div>
+      </div>
+
+      <div class="panel span-12">
         <h2>Memory Timeline</h2>
         <div class="compare" style="margin-bottom:10px">
           <div class="compare-card">
@@ -1240,7 +1254,7 @@
         metric("KV blocks", `${fmt(kv.peak_blocks_used)} / ${fmt(kv.trace_total_blocks || kv.total_blocks)}`),
         metric("Block size", fmt(kv.block_size_tokens, " tokens")),
         metric("Utilization", fmt((kv.block_utilization || 0) * 100, "%")),
-        metric("Fragmentation", fmt((kv.fragmentation_ratio || 0) * 100, "%")),
+        metric("Free capacity", fmt((kv.free_capacity_ratio || 0) * 100, "%")),
         metric("Failed allocs", fmt(kv.failed_allocations), kv.failed_allocations === 0 ? "pass" : "fail"),
       ].join("");
 
@@ -1276,6 +1290,50 @@
         metric("Budget", fmt(compiler.memory_budget_mb || budget.memory_budget_mb, " MB")),
         metric("Fits budget", compiler.fits_memory_budget ? "true" : "false", compiler.fits_memory_budget ? "pass" : "fail"),
       ].join("");
+    }
+
+    function renderLiveRuntimeSimulate(result) {
+      const metricsDiv = document.getElementById("live-runtime-simulate-metrics");
+      const noteDiv = document.getElementById("live-runtime-simulate-note");
+      if (!result || result.status === "unavailable") {
+        metricsDiv.innerHTML = metric("Status", "Simulation service unavailable", "warn");
+        noteDiv.textContent = "heterogeneous-inference-runtime /simulate_batch service is not reachable on " +
+          "http://127.0.0.1:8901. Start it locally to see live simulated metrics.";
+        return;
+      }
+      const lifecycle = result.kv_page_lifecycle || {};
+      metricsDiv.innerHTML = [
+        metric("TTFT", fmt(result.ttft_ms, " ms")),
+        metric("TPOT", fmt(result.tpot_ms, " ms")),
+        metric("E2E latency", fmt(result.e2e_latency_ms, " ms")),
+        metric("Requests in batch", fmt(result.request_count)),
+        metric("Rejected", fmt(result.rejected_requests), result.rejected_requests > 0 ? "warn" : "pass"),
+        metric("OOM events", fmt(result.oom_events), result.oom_events > 0 ? "warn" : "pass"),
+        metric("Pressure-skipped prefetches", fmt(lifecycle.pressure_prefetch_skips)),
+        metric("KV internal fragmentation", fmt((lifecycle.kv_internal_fragmentation_ratio || 0) * 100, "%")),
+      ].join("");
+      noteDiv.textContent = "Live simulated runtime (RuntimeScheduler/PagedKVLifecycle) — not measured GPU inference.";
+    }
+
+    async function runLiveRuntimeSimulation() {
+      const requestCount = 24;
+      const requests = Array.from({ length: requestCount }, (_, i) => ({
+        request_id: `panel-${i}`,
+        prompt_tokens: 4096,
+        max_output_tokens: 130,
+        arrival_ms: i * 0.05,
+      }));
+      document.getElementById("live-runtime-simulate-metrics").innerHTML = metric("Status", "Running...", "blue");
+      try {
+        const result = await api("/api/runtime/simulate_batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requests, policy: "inflight_paged_kv_continuous_batching" }),
+        });
+        renderLiveRuntimeSimulate(result);
+      } catch (error) {
+        renderLiveRuntimeSimulate({ status: "unavailable" });
+      }
     }
 
     function renderQwenPath(data) {
@@ -1722,6 +1780,8 @@
         throw error;
       }
     });
+
+    document.getElementById("run-live-simulation").addEventListener("click", runLiveRuntimeSimulation);
 
     document.getElementById("ask-llm").addEventListener("click", askCurrentScenario);
 
