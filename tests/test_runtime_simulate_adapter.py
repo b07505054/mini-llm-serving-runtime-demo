@@ -26,25 +26,70 @@ class FakeResponse:
 
 
 class FakeQwen:
-    def __init__(self):
+    def __init__(self, generated_tokens=4):
         self.calls = []
+        self.ask_calls = []
+        self.stepwise_calls = []
+        self.before_decode_states = []
         self.max_new_tokens = 96
         self.model_id = "fake-qwen"
         self.device = "cpu"
         self.device_setting = "cpu"
+        self.generated_tokens = generated_tokens
 
     def ask(self, prompt_contract, policy):
+        self.ask_calls.append((prompt_contract, policy))
         self.calls.append((prompt_contract, policy))
+        return self._result(policy, self.generated_tokens)
+
+    def ask_stepwise(self, prompt_contract, policy=None, before_decode_step=None):
+        policy = policy or {}
+        self.stepwise_calls.append((prompt_contract, policy, before_decode_step))
+        self.calls.append((prompt_contract, policy))
+        max_tokens = min(self.generated_tokens, int(policy.get("max_new_tokens", self.generated_tokens)))
+        generated = 0
+        stop_reason = "max_new_tokens"
+        decode_steps = []
+        for index in range(max_tokens):
+            state = {
+                "step_index": index + 1,
+                "request_id": policy.get("request_id"),
+                "generated_tokens": generated,
+                "max_new_tokens": max_tokens,
+                "decode_steps": decode_steps,
+            }
+            self.before_decode_states.append(state)
+            if before_decode_step:
+                control = before_decode_step(index + 1, state) or {}
+                if control.get("continue") is False:
+                    stop_reason = control.get("reason") or "runtime_decode_stopped"
+                    break
+            generated += 1
+            decode_steps.append(
+                {
+                    "step": index + 1,
+                    "token_id": index + 100,
+                    "text": f"tok{index + 1}",
+                    "latency_ms": 0.5,
+                    "cumulative_output": " ".join(f"tok{i + 1}" for i in range(generated)),
+                }
+            )
+        return self._result(policy, generated, stop_reason=stop_reason, decode_steps=decode_steps)
+
+    def _result(self, policy, generated_tokens, stop_reason="max_new_tokens", decode_steps=None):
+        decode_steps = decode_steps or []
+        answer = " ".join(f"tok{i + 1}" for i in range(generated_tokens)) or "fake answer"
         return {
             "status": "completed",
             "source_status": "qwen_live",
             "model_id": self.model_id,
             "device": self.device,
             "policy": policy,
-            "answer": "fake answer",
+            "answer": answer,
             "prompt_tokens": 12,
-            "generated_tokens": 4,
+            "generated_tokens": generated_tokens,
             "max_new_tokens": policy.get("max_new_tokens", 4),
+            "stop_reason": stop_reason,
             "prefill_ms": 1.0,
             "ttft_ms": 2.0,
             "tpot_ms": 0.5,
@@ -53,10 +98,10 @@ class FakeQwen:
             "cache_type": "fake_past_key_values",
             "compiler_plan": {"artifact_source": "fake"},
             "runtime_trace": [],
-            "decode_steps": [],
+            "decode_steps": decode_steps,
             "live_qwen_metrics": {
                 "prompt_tokens": 12,
-                "generated_tokens": 4,
+                "generated_tokens": generated_tokens,
                 "total_latency_ms": 3.0,
                 "tpot_ms": 0.5,
                 "tokens_per_second": 10.0,
@@ -66,7 +111,7 @@ class FakeQwen:
 
 
 class FakeRuntimeSession:
-    def __init__(self, admission, create=None, summary=None):
+    def __init__(self, admission, create=None, summary=None, step_results=None):
         self.create_response = create or {"session_id": "sess-test", "result_type": "simulated"}
         self.admission = admission
         self.summary = summary or {
@@ -87,6 +132,7 @@ class FakeRuntimeSession:
         self.request_payloads = []
         self.step_payloads = []
         self.deleted_session_ids = []
+        self.step_results = list(step_results or [])
 
     def create_session(self, payload):
         self.created_payloads.append(payload)
@@ -98,6 +144,8 @@ class FakeRuntimeSession:
 
     def session_step(self, session_id, payload):
         self.step_payloads.append((session_id, payload))
+        if self.step_results:
+            return self.step_results.pop(0)
         return {"result_type": "simulated", "events": []}
 
     def session_summary(self, session_id):
@@ -383,6 +431,62 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
         self.assertEqual(generate_result["status"], "completed")
         self.assertIn("answer", ask_result)
 
+    def test_qwen_runtime_adapter_ask_delegates_to_ask_stepwise(self):
+        adapter = server.QwenRuntimeAdapter.__new__(server.QwenRuntimeAdapter)
+        seen = []
+        expected = {
+            "status": "completed",
+            "answer": "delegated",
+            "decode_steps": [],
+            "generated_tokens": 0,
+        }
+
+        def fake_ask_stepwise(prompt_contract, policy=None, before_decode_step=None):
+            seen.append((prompt_contract, policy, before_decode_step))
+            return expected
+
+        adapter.ask_stepwise = fake_ask_stepwise
+        result = server.QwenRuntimeAdapter.ask(adapter, {"prompt": "hello"}, {"max_new_tokens": 2})
+
+        self.assertIs(result, expected)
+        self.assertEqual(seen, [({"prompt": "hello"}, {"max_new_tokens": 2}, None)])
+
+    def test_fake_qwen_stepwise_callback_called_once_per_generated_token(self):
+        qwen = FakeQwen(generated_tokens=3)
+        callback_steps = []
+
+        def before_decode_step(step_index, session_state):
+            callback_steps.append((step_index, session_state["generated_tokens"]))
+            return {"continue": True}
+
+        result = qwen.ask_stepwise(
+            {"question": "token loop"},
+            {"max_new_tokens": 3},
+            before_decode_step=before_decode_step,
+        )
+
+        self.assertEqual(result["generated_tokens"], 3)
+        self.assertEqual(callback_steps, [(1, 0), (2, 1), (3, 2)])
+        self.assertEqual(len(result["decode_steps"]), 3)
+
+    def test_fake_qwen_stepwise_callback_stop_happens_before_decode(self):
+        qwen = FakeQwen(generated_tokens=4)
+
+        def before_decode_step(step_index, session_state):
+            if step_index == 3:
+                return {"continue": False, "reason": "runtime_step_failed"}
+            return {"continue": True}
+
+        result = qwen.ask_stepwise(
+            {"question": "stop before third token"},
+            {"max_new_tokens": 4},
+            before_decode_step=before_decode_step,
+        )
+
+        self.assertEqual(result["generated_tokens"], 2)
+        self.assertEqual(result["stop_reason"], "runtime_step_failed")
+        self.assertEqual([step["step"] for step in result["decode_steps"]], [1, 2])
+
     def test_qwen_ask_with_runtime_session_admitted_calls_qwen_and_attaches_ownership(self):
         runtime = server.MiniServingRuntime()
         runtime.qwen = FakeQwen()
@@ -408,9 +512,15 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
         )
 
         self.assertEqual(len(runtime.qwen.calls), 2)
+        self.assertEqual(len(runtime.qwen.ask_calls), 1)
+        self.assertEqual(len(runtime.qwen.stepwise_calls), 1)
         self.assertEqual(result["runtime_ownership"]["status"], "completed")
         self.assertTrue(result["runtime_ownership"]["authoritative"])
-        self.assertEqual(result["runtime_ownership"]["steps_run"], 4)
+        self.assertTrue(result["runtime_ownership"]["runtime_owned_decode"])
+        self.assertEqual(result["runtime_ownership"]["runtime_steps"], result["qwen"]["generated_tokens"])
+        self.assertEqual(result["runtime_ownership"]["steps_run"], result["qwen"]["generated_tokens"])
+        self.assertEqual(len(fake_session.step_payloads), result["qwen"]["generated_tokens"])
+        self.assertTrue(result["runtime_ownership"]["runtime_qwen_step_alignment"]["matches"])
         self.assertEqual(result["runtime_ownership"]["admission"]["reason"], "fits_session_kv_budget")
 
     def test_qwen_ask_with_runtime_session_rejected_does_not_call_qwen_or_mutate_simulator_rejects(self):
@@ -452,6 +562,8 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
         )
 
         self.assertEqual(runtime.qwen.calls, [])
+        self.assertEqual(runtime.qwen.ask_calls, [])
+        self.assertEqual(runtime.qwen.stepwise_calls, [])
         self.assertEqual(result["status"], "runtime_rejected")
         self.assertEqual(result["answer"], "")
         self.assertEqual(result["text"], "")
@@ -478,8 +590,11 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
         )
 
         self.assertEqual(len(runtime.qwen.calls), 2)
+        self.assertEqual(len(runtime.qwen.ask_calls), 2)
+        self.assertEqual(runtime.qwen.stepwise_calls, [])
         self.assertEqual(result["runtime_ownership"]["status"], "unavailable")
-        self.assertEqual(result["answer"], "fake answer")
+        self.assertFalse(result["runtime_ownership"]["runtime_owned_decode"])
+        self.assertIn("answer", result)
 
     def test_qwen_ask_without_runtime_session_makes_no_session_calls(self):
         runtime = server.MiniServingRuntime()
@@ -496,7 +611,7 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
 
     def test_runtime_session_max_steps_is_clamped_to_32_and_allows_zero(self):
         runtime = server.MiniServingRuntime()
-        runtime.qwen = FakeQwen()
+        runtime.qwen = FakeQwen(generated_tokens=64)
         fake_session = FakeRuntimeSession(admission={"admitted": True, "reason": "fits_session_kv_budget"})
         runtime.runtime_simulate = fake_session
 
@@ -511,6 +626,7 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
             }
         )
         self.assertEqual(result["runtime_ownership"]["steps_run"], 32)
+        self.assertEqual(result["qwen"]["generated_tokens"], 32)
 
         runtime = server.MiniServingRuntime()
         runtime.qwen = FakeQwen()
@@ -527,7 +643,48 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
             }
         )
         self.assertEqual(result["runtime_ownership"]["steps_run"], 0)
+        self.assertEqual(result["qwen"]["generated_tokens"], 0)
         self.assertEqual(fake_session.step_payloads, [])
+
+    def test_runtime_step_failure_mid_generation_stops_before_next_token(self):
+        runtime = server.MiniServingRuntime()
+        runtime.qwen = FakeQwen(generated_tokens=4)
+        fake_session = FakeRuntimeSession(
+            admission={"admitted": True, "reason": "fits_session_kv_budget"},
+            step_results=[
+                {"result_type": "simulated", "events": []},
+                {"result_type": "simulated", "events": []},
+                {"error": "runtime_session_step_failed", "events": []},
+            ],
+        )
+        runtime.runtime_simulate = fake_session
+
+        result = runtime.ask(
+            {
+                "request_id": "ask-test",
+                "question": "Fail during decode.",
+                "prompt_tokens": 16,
+                "max_output_tokens": 4,
+                "include_runtime_session": True,
+            }
+        )
+
+        ownership = result["runtime_ownership"]
+        self.assertEqual(ownership["status"], "partial")
+        self.assertTrue(ownership["runtime_owned_decode"])
+        self.assertEqual(ownership["runtime_steps"], 2)
+        self.assertEqual(result["qwen"]["generated_tokens"], 2)
+        self.assertEqual(len(fake_session.step_payloads), 3)
+        self.assertEqual(ownership["runtime_decode_stop_reason"], "runtime_session_step_failed")
+        self.assertEqual(
+            ownership["runtime_qwen_step_alignment"],
+            {
+                "runtime_steps": 2,
+                "generated_tokens": 2,
+                "matches": True,
+                "mismatch_reason": None,
+            },
+        )
 
 
 class ParseRuntimeSessionPathTest(unittest.TestCase):

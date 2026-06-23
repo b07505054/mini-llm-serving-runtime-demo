@@ -389,6 +389,13 @@ class QwenRuntimeAdapter:
         }
 
     def ask(self, prompt_contract, policy=None):
+        return self.ask_stepwise(
+            prompt_contract,
+            policy,
+            before_decode_step=None,
+        )
+
+    def ask_stepwise(self, prompt_contract, policy=None, before_decode_step=None):
         policy = policy or {}
         policy = {
             "policy_name": policy.get("policy_name", "Optimized Runtime"),
@@ -449,6 +456,22 @@ class QwenRuntimeAdapter:
                 first_decode_ms = None
                 stop_reason = "max_new_tokens"
                 for index in range(max_tokens):
+                    if before_decode_step:
+                        session_state = {
+                            "step_index": index + 1,
+                            "request_id": policy.get("request_id"),
+                            "prompt_tokens": prompt_tokens,
+                            "generated_tokens": len(generated_ids),
+                            "max_new_tokens": max_tokens,
+                            "decode_steps": decode_steps,
+                            "stop_reason": stop_reason,
+                            "device": self.device,
+                            "model_id": self.model_id,
+                        }
+                        control = before_decode_step(index + 1, session_state) or {}
+                        if control.get("continue") is False:
+                            stop_reason = control.get("reason") or "runtime_decode_stopped"
+                            break
                     step_start = time.perf_counter()
                     token_id = int(next_token.item())
                     generated_ids.append(token_id)
@@ -1514,7 +1537,7 @@ class MiniServingRuntime:
             ),
         }
 
-    def _runtime_ownership_for_ask(self, request_id, prompt_tokens, output_tokens, payload):
+    def _runtime_ownership_for_ask(self, request_id, prompt_tokens, output_tokens, payload, run_bounded_steps=True):
         request_payload = {
             "request_id": request_id,
             "prompt_tokens": prompt_tokens,
@@ -1606,6 +1629,23 @@ class MiniServingRuntime:
                 extra={"session_create": created, "admission": admission, "delete_result": delete_result},
             )
 
+        if not run_bounded_steps:
+            return {
+                "status": "admitted",
+                "authoritative": True,
+                "session_id": session_id,
+                "request_payload": request_payload,
+                "admission": normalize_admission(admission, None),
+                "runtime_owned_decode": True,
+                "runtime_steps": 0,
+                "runtime_step_events": [],
+                "runtime_decode_stop_reason": None,
+                "latency_ms": elapsed_ms(),
+                "truth_boundary": (
+                    "Runtime controls decode progression/token boundaries, but HF/PyTorch still computes logits and tokens."
+                ),
+            }
+
         try:
             requested_steps = int(payload.get("runtime_session_max_steps", 8))
         except (TypeError, ValueError):
@@ -1648,6 +1688,58 @@ class MiniServingRuntime:
             result["error"] = error
         return result
 
+    def _runtime_decode_step_budget(self, payload, qwen_policy):
+        try:
+            requested_steps = int(payload.get("runtime_session_max_steps", 8))
+        except (TypeError, ValueError):
+            requested_steps = 8
+        requested_steps = max(0, min(32, requested_steps))
+        return min(requested_steps, int(qwen_policy.get("max_new_tokens", self.qwen.max_new_tokens)))
+
+    def _compact_runtime_step(self, step_index, step_result):
+        compact = {
+            "step": step_index,
+            "ok": bool(step_result) and step_result.get("status") != "unavailable" and not step_result.get("error"),
+            "event_count": len((step_result or {}).get("events") or []),
+            "events": [],
+        }
+        if not step_result:
+            compact["error"] = "runtime_session_step_failed"
+            return compact
+        if step_result.get("status") == "unavailable":
+            compact["error"] = "runtime_session_step_unavailable"
+            return compact
+        if step_result.get("error"):
+            compact["error"] = step_result.get("error")
+            return compact
+        for event in (step_result.get("events") or []):
+            compact["events"].append(
+                {
+                    key: event.get(key)
+                    for key in (
+                        "request_id",
+                        "event",
+                        "reason",
+                        "memory_pressure",
+                        "pressure_level",
+                    )
+                    if event.get(key) is not None
+                }
+            )
+        return compact
+
+    def _runtime_qwen_step_alignment(self, runtime_steps, generated_tokens, stop_reason):
+        matches = runtime_steps == generated_tokens
+        mismatch_reason = None
+        if not matches:
+            mismatch_reason = stop_reason or "runtime_qwen_step_mismatch"
+        return {
+            "runtime_steps": runtime_steps,
+            "generated_tokens": generated_tokens,
+            "matches": matches,
+            "mismatch_reason": mismatch_reason,
+        }
+
     def ask(self, payload):
         scenario_id = payload.get("scenario_id") or "long_context_summary"
         scenario = self._scenario_by_id(scenario_id)
@@ -1685,6 +1777,8 @@ class MiniServingRuntime:
                 "prompt": question,
             }
         )
+        policies = self._qwen_serving_policies(output_tokens)
+        policies["optimized"] = {**policies["optimized"], "request_id": request_id}
         runtime_ownership = None
         if bool(payload.get("include_runtime_session", False)):
             runtime_ownership = self._runtime_ownership_for_ask(
@@ -1692,6 +1786,7 @@ class MiniServingRuntime:
                 prompt_tokens,
                 output_tokens,
                 payload,
+                run_bounded_steps=False,
             )
             if runtime_ownership.get("status") == "rejected":
                 response = {
@@ -1722,10 +1817,81 @@ class MiniServingRuntime:
                 self.ask_history.append(response)
                 self.ask_history = self.ask_history[-20:]
                 return response
-        policies = self._qwen_serving_policies(output_tokens)
         base_prompt_contract = {**prompt_contract, "llm_mode": "base"}
         base_qwen_result = self.qwen.ask(base_prompt_contract, policies["base_model"])
-        optimized_qwen_result = self.qwen.ask(prompt_contract, policies["optimized"])
+        if runtime_ownership and runtime_ownership.get("status") == "admitted":
+            runtime_steps = 0
+            runtime_step_events = []
+            runtime_decode_stop_reason = None
+            runtime_step_budget = self._runtime_decode_step_budget(payload, policies["optimized"])
+            session_id = runtime_ownership.get("session_id")
+
+            def before_decode_step(step_index, session_state):
+                nonlocal runtime_steps, runtime_decode_stop_reason
+                if runtime_steps >= runtime_step_budget:
+                    runtime_decode_stop_reason = "runtime_step_budget_exhausted"
+                    return {"continue": False, "reason": runtime_decode_stop_reason}
+                step_result = self.runtime_simulate.session_step(session_id, {})
+                compact = self._compact_runtime_step(step_index, step_result)
+                runtime_step_events.append(compact)
+                if not compact["ok"]:
+                    runtime_decode_stop_reason = compact.get("error") or "runtime_step_failed"
+                    return {"continue": False, "reason": runtime_decode_stop_reason}
+                for event in compact.get("events", []):
+                    if (
+                        event.get("request_id") in (None, request_id)
+                        and event.get("event") == "request_rejected"
+                    ):
+                        runtime_decode_stop_reason = event.get("reason") or "runtime_rejected_during_decode"
+                        return {"continue": False, "reason": runtime_decode_stop_reason}
+                runtime_steps += 1
+                return {"continue": True}
+
+            optimized_qwen_result = self.qwen.ask_stepwise(
+                prompt_contract,
+                policies["optimized"],
+                before_decode_step=before_decode_step,
+            )
+            summary = self.runtime_simulate.session_summary(session_id)
+            delete_result = self.runtime_simulate.delete_session(session_id)
+            generated = int(optimized_qwen_result.get("generated_tokens") or 0)
+            stop_reason = runtime_decode_stop_reason or optimized_qwen_result.get("stop_reason")
+            qwen_completed = optimized_qwen_result.get("status") == "completed"
+            runtime_ownership.update(
+                {
+                    "status": (
+                        "partial"
+                        if runtime_decode_stop_reason
+                        and runtime_decode_stop_reason
+                        not in {"runtime_step_budget_exhausted"}
+                        else "completed"
+                    ),
+                    "runtime_owned_decode": bool(qwen_completed),
+                    "runtime_steps": runtime_steps,
+                    "steps_run": runtime_steps,
+                    "runtime_step_events": runtime_step_events,
+                    "runtime_decode_stop_reason": stop_reason,
+                    "runtime_session_summary": summary,
+                    "summary": summary,
+                    "delete_result": delete_result,
+                    "runtime_qwen_step_alignment": self._runtime_qwen_step_alignment(
+                        runtime_steps,
+                        generated,
+                        (
+                            stop_reason
+                            if qwen_completed
+                            else "qwen_unavailable_fallback"
+                        ),
+                    ),
+                    "truth_boundary": (
+                        "Runtime controls decode progression/token boundaries, but HF/PyTorch still computes logits and tokens."
+                    ),
+                }
+            )
+        else:
+            if runtime_ownership is not None:
+                runtime_ownership["runtime_owned_decode"] = False
+            optimized_qwen_result = self.qwen.ask(prompt_contract, policies["optimized"])
         qwen_live = optimized_qwen_result.get("status") == "completed"
         fallback_answer = self._deterministic_answer(prompt_contract, scenario)
         base_fallback_answer = self._deterministic_answer(base_prompt_contract, scenario)
