@@ -1,9 +1,11 @@
 {
   "source": "heterogeneous-inference-runtime/kv_cache_trace.json",
+  "schema_note": "Matches heterogeneous-inference-runtime commit 02c8b9a field schema, which removed the undocumented fragmentation_ratio proxy. free_capacity_ratio and peak_allocation_utilization are honest complements of total_blocks vs peak_blocks_used (headroom and utilization at peak load), not fragmentation. The upstream kv_internal_fragmentation_ratio, contiguous_free_run_ratio, usefulness_score, usefulness_score_ema, adaptive_guard_active, and adaptive_prefetch_skips fields are pending upstream artifact regeneration and are intentionally omitted here rather than fabricated.",
   "total_blocks": 512,
   "peak_blocks_used": 278,
   "block_utilization": 0.543,
-  "fragmentation_ratio": 0.05,
+  "free_capacity_ratio": 0.457,
+  "peak_allocation_utilization": 0.543,
   "peak_kv_cache_mb": 868.75,
   "avg_blocks_per_request": 25.5625,
   "max_blocks_per_request": 72,

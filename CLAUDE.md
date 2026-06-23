@@ -11,6 +11,19 @@ Clearly distinguish these categories in all changes:
 - Simulated: `/generate`, `/api/batch`, deterministic fallback answers, estimated baseline comparisons, prefix-cache latency savings.
 - Not connected: CV camera slot, production vLLM/SGLang/Triton/TensorRT-LLM internals, live PyTorch KV block telemetry.
 
+Portfolio demo positioning:
+
+- Keep this as the default interview demo for compiler, runtime, ML infrastructure, LLM serving, validation, memory planning, and systems roles.
+- Do not describe PocketChef-AI as replacing this demo. Treat the HTML demo and iPhone app as separate front ends for different audiences.
+- This repo is the complete HTML path for explaining compiler/runtime/validation artifacts without depending on CoreML, iPhone availability, Xcode, or live device execution.
+
+High-value artifact-backed evidence includes:
+
+- Distributed serving, load-balancing, fault-tolerance, and gRPC contract reports.
+- Cold-start, prefill/decode, page-prefetch, scheduler, KV, and memory validation artifacts.
+- Serving-framework comparison artifacts for vLLM-style, SGLang-style, Triton Server-style, and TensorRT-style stories.
+- GPU PGO-like RMSNorm and runtime decision validation artifacts imported from the compiler/runtime evidence chain.
+
 Do not invent benchmark numbers. If metrics are estimated, label them estimated.
 
 ## Runtime
@@ -35,7 +48,7 @@ Do not invent benchmark numbers. If metrics are estimated, label them estimated.
 
 - Write tests for non-trivial logic.
 - Run tests after changes.
-- At minimum, run `python3 -m py_compile server.py` after Python changes.
+- At minimum, run `bash scripts/check.sh` after Python changes; it compiles every tracked Python file.
 - Add focused tests for prefix-cache logic, simulator metrics, artifact fallbacks, and API response shapes when changing those areas.
 
 ## Handoff Rules
@@ -90,129 +103,14 @@ curl -X POST http://127.0.0.1:8765/api/qwen/ask \
   -d '{"scenario_id": "long_context_summary", "question": "Summarize this prompt.", "llm_mode": "combined"}'
 ```
 
-## Documentation Hierarchy
+Check optional Qwen dependency/model status:
 
-Truth must flow in the following order:
+```bash
+curl http://127.0.0.1:8765/api/qwen/status
+```
 
-Code
-↓
-Artifacts
-↓
-README.md
-↓
-CLAUDE.md
-↓
-docs/
+Live Qwen metrics are real only when the response reports live Qwen execution. Compiler, scheduler, KV, memory, and serving-framework panels remain artifact-backed even during live Qwen runs.
 
-Lower levels must never contradict higher levels.
+## Portfolio-Level Policy
 
-Documentation must describe reality rather than invent behavior.
-
-If uncertainty exists, trust code and generated artifacts.
-
-Never exaggerate capabilities.
-
-Never claim production behavior unless code and artifacts support it.
-
-## README Contract
-
-README.md exists to answer:
-
-1. What is it?
-2. Why is it interesting?
-3. How do I run it?
-4. What results does it produce?
-
-README should emphasize user-facing understanding.
-
-Avoid implementation details unless necessary.
-
-Avoid maintenance instructions.
-
-## CLAUDE.md Contract
-
-CLAUDE.md exists to answer:
-
-1. How do I maintain it?
-2. What commands are canonical?
-3. Which components are implemented?
-4. Which components are simulated?
-5. Which validation commands must pass?
-6. What files should not be changed casually?
-
-CLAUDE.md is intended for maintainers and future AI agents.
-
-## docs/ Contract
-
-docs/ exists to answer:
-
-1. Why is it designed this way?
-2. What tradeoffs were made?
-3. What is measured versus modeled?
-4. What assumptions exist?
-5. What limitations remain?
-6. What future work is possible?
-
-docs/ explains architecture and rationale rather than usage.
-
-## Documentation Principles
-
-Code > Artifacts > README > CLAUDE.md > docs/
-
-Never reverse this order.
-
-Never infer unsupported features.
-
-Never create claims unsupported by code or artifacts.
-
-Prefer conservative wording.
-
-Call synthetic benchmarks synthetic.
-
-Call simulated systems simulated.
-
-Distinguish measured behavior from modeled behavior.
-
-## Git Authorship Policy
-
-The user is the sole maintainer and owner of this repository.
-
-AI agents may modify files as requested.
-
-AI agents must not add AI authorship metadata.
-
-Never add:
-
-* Co-Authored-By entries
-* Co-authored-by trailers
-* Claude authorship metadata
-* AI signatures
-* Generated-by-AI footers
-* any metadata that makes an AI system appear as a repository contributor
-
-Commit policy:
-
-* By default, do not run git commit.
-* If the user explicitly asks in the current conversation to commit, an AI agent may run git add and git commit.
-* Commits must use the machine's global Git identity (`git config --global user.name` and `git config --global user.email`).
-* Commits created by an AI agent must use the user's configured git author and committer identity.
-* Never set author or committer identity to Claude, Anthropic, or any AI/bot identity.
-* Commit messages must not mention AI authorship unless the user explicitly asks.
-* Before committing, show git status and the staged diff summary when practical.
-
-Push policy:
-
-* By default, do not run git push.
-* Only run git push if the user explicitly asks in the current conversation.
-* Pushes must use the user's machine/account Git authentication, never a Claude/Anthropic/bot identity.
-* Never force-push unless the user explicitly asks for a force push and the reason is explained.
-
-History policy:
-
-* Do not create branches, rewrite history, rebase, reset, or amend commits unless the user explicitly asks in the current conversation.
-* Never rewrite public history without explicit user approval.
-
-Ownership rule:
-
-* The user remains the sole author/maintainer for portfolio presentation purposes.
-* No AI system should appear as a repository contributor.
+When this repository is maintained inside the `systems-portfolio` wrapper, follow the root `CLAUDE.md` for shared documentation hierarchy, benchmark honesty, demo-selection guidance, and Git authorship rules. Keep this file focused on repository-specific capabilities, truth boundaries, and validation commands.
