@@ -171,6 +171,154 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
         self.assertIn("answer", result)
         self.assertIn("source_status", result)
 
+    def test_session_create_passes_through_and_targets_session_base_url(self):
+        runtime = server.MiniServingRuntime()
+        seen = []
+
+        def fake_urlopen(request, timeout=None):
+            seen.append((request.full_url, request.get_method()))
+            return FakeResponse({"session_id": "sess-1", "result_type": "simulated"})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            result = runtime.live_runtime_session_create({"total_pages": 32})
+        self.assertEqual(seen, [(server.RUNTIME_SESSION_BASE_URL, "POST")])
+        self.assertEqual(result["session_id"], "sess-1")
+
+    def test_session_create_unavailable_returns_status_unavailable(self):
+        runtime = server.MiniServingRuntime()
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("connection refused"),
+        ):
+            result = runtime.live_runtime_session_create({})
+        self.assertEqual(
+            result, {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        )
+
+    def test_session_request_targets_correct_path_and_passes_through(self):
+        runtime = server.MiniServingRuntime()
+        seen = []
+
+        def fake_urlopen(request, timeout=None):
+            seen.append((request.full_url, request.get_method()))
+            return FakeResponse({"admitted": True, "result_type": "simulated"})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            result = runtime.live_runtime_session_request(
+                "sess-1", {"prompt_tokens": 256, "max_output_tokens": 32}
+            )
+        self.assertEqual(
+            seen, [(f"{server.RUNTIME_SESSION_BASE_URL}/sess-1/request", "POST")]
+        )
+        self.assertTrue(result["admitted"])
+
+    def test_session_step_targets_correct_path(self):
+        runtime = server.MiniServingRuntime()
+        seen = []
+
+        def fake_urlopen(request, timeout=None):
+            seen.append((request.full_url, request.get_method()))
+            return FakeResponse({"events": [], "result_type": "simulated"})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            runtime.live_runtime_session_step("sess-1", {})
+        self.assertEqual(
+            seen, [(f"{server.RUNTIME_SESSION_BASE_URL}/sess-1/step", "POST")]
+        )
+
+    def test_session_cancel_targets_correct_path(self):
+        runtime = server.MiniServingRuntime()
+        seen = []
+
+        def fake_urlopen(request, timeout=None):
+            seen.append((request.full_url, request.get_method()))
+            return FakeResponse({"cancelled": True, "result_type": "simulated"})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            runtime.live_runtime_session_cancel("sess-1", {"request_id": "r1"})
+        self.assertEqual(
+            seen, [(f"{server.RUNTIME_SESSION_BASE_URL}/sess-1/cancel", "POST")]
+        )
+
+    def test_session_summary_uses_get_method(self):
+        runtime = server.MiniServingRuntime()
+        seen = []
+
+        def fake_urlopen(request, timeout=None):
+            seen.append((request.full_url, request.get_method()))
+            return FakeResponse({"result_type": "simulated", "ticks_elapsed": 0})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            result = runtime.live_runtime_session_summary("sess-1")
+        self.assertEqual(
+            seen, [(f"{server.RUNTIME_SESSION_BASE_URL}/sess-1/summary", "GET")]
+        )
+        self.assertEqual(result["ticks_elapsed"], 0)
+
+    def test_session_delete_uses_delete_method(self):
+        runtime = server.MiniServingRuntime()
+        seen = []
+
+        def fake_urlopen(request, timeout=None):
+            seen.append((request.full_url, request.get_method()))
+            return FakeResponse({"deleted": True, "result_type": "simulated"})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            result = runtime.live_runtime_session_delete("sess-1")
+        self.assertEqual(
+            seen, [(f"{server.RUNTIME_SESSION_BASE_URL}/sess-1", "DELETE")]
+        )
+        self.assertTrue(result["deleted"])
+
+    def test_all_session_methods_unavailable_without_raising(self):
+        runtime = server.MiniServingRuntime()
+        fallback = {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("connection refused"),
+        ):
+            self.assertEqual(runtime.live_runtime_session_create({}), fallback)
+            self.assertEqual(
+                runtime.live_runtime_session_request("sess-1", {"prompt_tokens": 16, "max_output_tokens": 16}),
+                fallback,
+            )
+            self.assertEqual(runtime.live_runtime_session_step("sess-1", {}), fallback)
+            self.assertEqual(
+                runtime.live_runtime_session_cancel("sess-1", {"request_id": "r1"}), fallback
+            )
+            self.assertEqual(runtime.live_runtime_session_summary("sess-1"), fallback)
+            self.assertEqual(runtime.live_runtime_session_delete("sess-1"), fallback)
+
+    def test_generate_and_qwen_ask_unaffected_by_session_bridge(self):
+        runtime = server.MiniServingRuntime()
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("connection refused"),
+        ):
+            generate_result = runtime.generate({"prompt_tokens": 128, "max_output_tokens": 16})
+            ask_result = runtime.ask({"question": "What is the capital of France?"})
+        self.assertEqual(generate_result["status"], "completed")
+        self.assertIn("answer", ask_result)
+
+
+class ParseRuntimeSessionPathTest(unittest.TestCase):
+    def test_id_and_action(self):
+        self.assertEqual(
+            server._parse_runtime_session_path("/api/runtime/session/abc/summary"),
+            ("abc", "summary"),
+        )
+
+    def test_id_only(self):
+        self.assertEqual(
+            server._parse_runtime_session_path("/api/runtime/session/abc"), ("abc", None)
+        )
+
+    def test_bare_session_path_returns_none(self):
+        self.assertIsNone(server._parse_runtime_session_path("/api/runtime/session"))
+
+    def test_unrelated_path_returns_none(self):
+        self.assertIsNone(server._parse_runtime_session_path("/api/runtime/simulate"))
+
 
 if __name__ == "__main__":
     unittest.main()

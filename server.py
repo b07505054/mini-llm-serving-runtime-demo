@@ -38,6 +38,9 @@ RUNTIME_SIMULATE_URL = os.environ.get("RUNTIME_SIMULATE_URL", "http://127.0.0.1:
 RUNTIME_SIMULATE_BATCH_URL = os.environ.get(
     "RUNTIME_SIMULATE_BATCH_URL", "http://127.0.0.1:8901/simulate_batch"
 )
+RUNTIME_SESSION_BASE_URL = os.environ.get(
+    "RUNTIME_SESSION_BASE_URL", "http://127.0.0.1:8901/session"
+)
 
 
 @dataclass
@@ -536,9 +539,10 @@ class RuntimeSimulateAdapter:
     POST /simulate service. Stdlib urllib only; no source code is imported
     across repos. Degrades to unavailable on any connection failure."""
 
-    def __init__(self, url=None, batch_url=None, timeout=2.0):
+    def __init__(self, url=None, batch_url=None, session_base_url=None, timeout=2.0):
         self.url = url or RUNTIME_SIMULATE_URL
         self.batch_url = batch_url or RUNTIME_SIMULATE_BATCH_URL
+        self.session_base_url = session_base_url or RUNTIME_SESSION_BASE_URL
         self.timeout = timeout
         self.last_error = None
 
@@ -584,11 +588,61 @@ class RuntimeSimulateAdapter:
             self.last_error = f"{type(exc).__name__}: {exc}"
             return None
 
+    def _get(self, url):
+        request = urllib.request.Request(url, method="GET")
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                self.last_error = None
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            try:
+                return json.loads(exc.read().decode("utf-8"))
+            except Exception:
+                self.last_error = f"HTTPError: {exc.code}"
+                return None
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return None
+
+    def _delete(self, url):
+        request = urllib.request.Request(url, method="DELETE")
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                self.last_error = None
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            try:
+                return json.loads(exc.read().decode("utf-8"))
+            except Exception:
+                self.last_error = f"HTTPError: {exc.code}"
+                return None
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return None
+
     def simulate(self, payload):
         return self._post(self.url, payload)
 
     def simulate_batch(self, payload):
         return self._post(self.batch_url, payload)
+
+    def create_session(self, payload):
+        return self._post(self.session_base_url, payload)
+
+    def session_request(self, session_id, payload):
+        return self._post(f"{self.session_base_url}/{session_id}/request", payload)
+
+    def session_step(self, session_id, payload):
+        return self._post(f"{self.session_base_url}/{session_id}/step", payload or {})
+
+    def session_cancel(self, session_id, payload):
+        return self._post(f"{self.session_base_url}/{session_id}/cancel", payload)
+
+    def session_summary(self, session_id):
+        return self._get(f"{self.session_base_url}/{session_id}/summary")
+
+    def delete_session(self, session_id):
+        return self._delete(f"{self.session_base_url}/{session_id}")
 
 
 class MiniServingRuntime:
@@ -944,6 +998,46 @@ class MiniServingRuntime:
     def live_runtime_simulate_batch(self, payload):
         payload = payload or {}
         result = self.runtime_simulate.simulate_batch(payload)
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_session_create(self, payload):
+        payload = payload or {}
+        result = self.runtime_simulate.create_session(payload)
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_session_request(self, session_id, payload):
+        payload = payload or {}
+        result = self.runtime_simulate.session_request(session_id, payload)
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_session_step(self, session_id, payload):
+        payload = payload or {}
+        result = self.runtime_simulate.session_step(session_id, payload)
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_session_cancel(self, session_id, payload):
+        payload = payload or {}
+        result = self.runtime_simulate.session_cancel(session_id, payload)
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_session_summary(self, session_id):
+        result = self.runtime_simulate.session_summary(session_id)
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_session_delete(self, session_id):
+        result = self.runtime_simulate.delete_session(session_id)
         if result is None:
             return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
         return result
@@ -1802,6 +1896,25 @@ class MiniServingRuntime:
 RUNTIME = MiniServingRuntime()
 
 
+def _parse_runtime_session_path(path):
+    """Parses '/api/runtime/session/{id}' -> (id, None) or
+    '/api/runtime/session/{id}/{action}' -> (id, action). Returns None for
+    anything else (including bare '/api/runtime/session'). Local
+    reimplementation of the pattern used by
+    heterogeneous-inference-runtime's simulate_service._parse_session_path;
+    no cross-repo source import.
+    """
+    prefix = "/api/runtime/session/"
+    if not path.startswith(prefix):
+        return None
+    parts = path[len(prefix):].split("/")
+    if len(parts) == 1 and parts[0]:
+        return parts[0], None
+    if len(parts) == 2 and parts[0] and parts[1]:
+        return parts[0], parts[1]
+    return None
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):
         body = json.dumps(data, indent=2).encode("utf-8")
@@ -1830,6 +1943,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/qwen/status":
             self._send_json(RUNTIME.qwen_status())
+            return
+        session_action = _parse_runtime_session_path(path)
+        if session_action and session_action[1] == "summary":
+            self._send_json(RUNTIME.live_runtime_session_summary(session_action[0]))
             return
         if path == "/":
             path = "/index.html"
@@ -1881,9 +1998,31 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/runtime/simulate_batch":
             self._send_json(RUNTIME.live_runtime_simulate_batch(self._read_json()))
             return
+        if path == "/api/runtime/session":
+            self._send_json(RUNTIME.live_runtime_session_create(self._read_json()))
+            return
+        session_action = _parse_runtime_session_path(path)
+        if session_action and session_action[1] in ("request", "step", "cancel"):
+            session_id, action = session_action
+            payload = self._read_json()
+            if action == "request":
+                self._send_json(RUNTIME.live_runtime_session_request(session_id, payload))
+            elif action == "step":
+                self._send_json(RUNTIME.live_runtime_session_step(session_id, payload))
+            else:
+                self._send_json(RUNTIME.live_runtime_session_cancel(session_id, payload))
+            return
         if path == "/reset":
             RUNTIME.reset()
             self._send_json({"status": "reset"})
+            return
+        self.send_error(404)
+
+    def do_DELETE(self):
+        path = urlparse(self.path).path
+        session_action = _parse_runtime_session_path(path)
+        if session_action and session_action[1] is None:
+            self._send_json(RUNTIME.live_runtime_session_delete(session_action[0]))
             return
         self.send_error(404)
 
