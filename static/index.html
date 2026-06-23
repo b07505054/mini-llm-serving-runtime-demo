@@ -564,6 +564,14 @@
         <h2 id="answer-panel-title">LLM Answer + Serving Effect</h2>
         <div class="answer-box" id="llm-answer">Choose a scenario and ask the LLM.</div>
         <div id="llm-answer-metrics"></div>
+        <div style="height:10px"></div>
+        <div id="runtime-ownership-section" hidden>
+          <h2>Runtime Ownership</h2>
+          <div id="runtime-ownership-metrics"></div>
+          <div class="evidence-note" id="runtime-ownership-note">
+            Runtime owns simulated admission/KV lifecycle; Qwen text generation remains HF/PyTorch or fallback.
+          </div>
+        </div>
       </div>
 
       <div class="panel">
@@ -1490,10 +1498,49 @@
         improvement.evidence_boundary || "Truth boundary: live Qwen uses HuggingFace tokenizer/model and PyTorch past_key_values prefill/decode when available. Compiler, scheduler, KV, memory, chunked-prefill, and pressure-aware evidence is artifact-backed; no live Qwen KV block telemetry is claimed.";
     }
 
+    function runtimeOwnershipLatencyMs(runtimeOwnership) {
+      const latency = (runtimeOwnership || {}).latency_ms;
+      if (latency && typeof latency === "object" && typeof latency.total_ms === "number") return latency.total_ms;
+      if (typeof latency === "number") return latency;
+      return null;
+    }
+
+    function renderRuntimeOwnership(runtimeOwnership) {
+      const section = document.getElementById("runtime-ownership-section");
+      const metrics = document.getElementById("runtime-ownership-metrics");
+      const note = document.getElementById("runtime-ownership-note");
+      if (!section || !metrics || !note) return;
+      if (!runtimeOwnership) {
+        section.hidden = true;
+        metrics.innerHTML = "";
+        return;
+      }
+
+      const status = runtimeOwnership.status || "n/a";
+      const admission = runtimeOwnership.admission || {};
+      const rejected = status === "rejected";
+      const unavailable = status === "unavailable";
+      const reason = admission.reason || runtimeOwnership.reject_reason || runtimeOwnership.error || "n/a";
+      const latencyMs = runtimeOwnershipLatencyMs(runtimeOwnership);
+
+      section.hidden = false;
+      metrics.innerHTML = [
+        metric("Status", status, rejected ? "fail" : unavailable ? "warn" : "pass"),
+        metric("Authoritative", runtimeOwnership.authoritative ? "true" : "false", runtimeOwnership.authoritative ? "pass" : "warn"),
+        metric("Admission", reason, rejected || unavailable ? "warn" : "pass"),
+        metric("Steps run", fmt(runtimeOwnership.steps_run)),
+        metric("Runtime latency", latencyMs === null ? "n/a" : fmt(latencyMs, " ms")),
+        metric("Rejected before Qwen", rejected ? "yes" : "no", rejected ? "fail" : "pass"),
+        metric("Runtime unavailable", unavailable ? "yes" : "no", unavailable ? "warn" : "pass"),
+      ].join("");
+      note.textContent = "Runtime owns simulated admission/KV lifecycle; Qwen text generation remains HF/PyTorch or fallback.";
+    }
+
     function renderMobileDemo(data) {
       const scenario = selectedScenario(data);
       const latest = data.live.latest_llm_answer || {};
       const qwen = data.live.latest_qwen_run || {};
+      const runtimeOwnership = latest.runtime_ownership || qwen.runtime_ownership || null;
       document.getElementById("input-source-label").textContent = scenario.input_source_label || "Live camera / CV detection slot";
 
       if (activeSystemTab === "cv") {
@@ -1512,6 +1559,7 @@
           metric("Live input", "not active"),
           metric("Runtime evidence", "LLM artifacts only"),
         ].join("");
+        renderRuntimeOwnership(null);
         return;
       }
 
@@ -1546,6 +1594,15 @@
       }
 
       if (!latest.answer) {
+        if (latest.status === "runtime_rejected") {
+          document.getElementById("llm-answer").textContent = "Runtime admission rejected this request before Qwen generation.";
+          document.getElementById("llm-answer-metrics").innerHTML = [
+            metric("Source", latest.source_status || "runtime_rejected_before_qwen", "warn"),
+            metric("Mode", latest.mode || "combined", "blue"),
+          ].join("");
+          renderRuntimeOwnership(runtimeOwnership);
+          return;
+        }
         document.getElementById("llm-answer").textContent = "Choose a scenario and ask the LLM.";
         document.getElementById("llm-answer-metrics").innerHTML = [
           metric("Qwen path", (data.live.qwen_status || {}).status || "checking"),
@@ -1553,6 +1610,7 @@
           metric("TTFT", "n/a"),
           metric("Tokens/sec", "n/a"),
         ].join("");
+        renderRuntimeOwnership(null);
         return;
       }
 
@@ -1574,6 +1632,7 @@
         metric("SLO", validation.slo_passed ? "passed" : "n/a", validation.slo_passed ? "pass" : "warn"),
         metric("Correctness", validation.correctness_passed ? "passed" : "n/a", validation.correctness_passed ? "pass" : "warn"),
       ].join("");
+      renderRuntimeOwnership(runtimeOwnership);
     }
 
     function renderStage(data) {
@@ -1700,6 +1759,8 @@
         scenario_id: scenario.id || currentScenarioId,
         question,
         llm_mode: llmMode,
+        include_runtime_session: true,
+        runtime_session_max_steps: 4,
       };
       return api("/api/qwen/ask", {
         method: "POST",
