@@ -156,6 +156,120 @@ class FakeRuntimeSession:
         return {"deleted": True, "session_id": session_id, "result_type": "simulated"}
 
 
+class FakeTensor:
+    def __init__(self, value=None, shape=(1, 1), dtype="int64", device="cpu"):
+        self.value = value
+        self.shape = shape
+        self.dtype = dtype
+        self.device = device
+
+    def to(self, device):
+        self.device = device
+        return self
+
+    def item(self):
+        return self.value
+
+
+class FakeLogits:
+    def __init__(self, token_id):
+        self.token_id = token_id
+
+    def __getitem__(self, _key):
+        return self
+
+
+class FakeTorch:
+    class _InferenceMode:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def inference_mode(self):
+        return self._InferenceMode()
+
+    def argmax(self, logits, dim=-1, keepdim=True):
+        return FakeTensor(logits.token_id, shape=(1, 1))
+
+    def ones(self, shape, device=None, dtype=None):
+        return FakeTensor(1, shape=shape, dtype=dtype or "int64", device=device or "cpu")
+
+    def cat(self, tensors, dim=-1):
+        left = tensors[0]
+        right = tensors[1]
+        if dim == -1 and len(left.shape) == 2 and len(right.shape) == 2:
+            return FakeTensor(shape=(left.shape[0], left.shape[1] + right.shape[1]), dtype=left.dtype, device=left.device)
+        return left
+
+
+class FakeTokenizer:
+    eos_token_id = None
+
+    def __call__(self, prompt_text, return_tensors="pt"):
+        return {
+            "input_ids": FakeTensor(shape=(1, 2)),
+            "attention_mask": FakeTensor(shape=(1, 2)),
+        }
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        return "\n".join(message["content"] for message in messages)
+
+    def decode(self, token_ids, skip_special_tokens=True):
+        return " ".join(f"tok{token_id}" for token_id in token_ids)
+
+
+class FakeModelOutputs:
+    def __init__(self, token_id, past_key_values):
+        self.logits = FakeLogits(token_id)
+        self.past_key_values = past_key_values
+
+
+class FakeModel:
+    def __init__(self, token_ids):
+        self.token_ids = list(token_ids)
+        self.calls = []
+        self.next_index = 0
+        self.config = type(
+            "FakeConfig",
+            (),
+            {
+                "num_hidden_layers": 1,
+                "hidden_size": 4,
+                "num_attention_heads": 1,
+                "num_key_value_heads": 1,
+                "intermediate_size": 8,
+                "vocab_size": 1000,
+            },
+        )()
+
+    def __call__(self, **kwargs):
+        self.calls.append(kwargs)
+        token_id = self.token_ids[min(self.next_index, len(self.token_ids) - 1)]
+        self.next_index += 1
+        return FakeModelOutputs(token_id, object())
+
+    def parameters(self):
+        return iter([])
+
+
+def make_fake_qwen_adapter(token_ids=(101, 102, 103, 104)):
+    adapter = server.QwenRuntimeAdapter.__new__(server.QwenRuntimeAdapter)
+    adapter.model_id = "fake-qwen"
+    adapter.device_setting = "cpu"
+    adapter.max_new_tokens = 96
+    adapter.torch = FakeTorch()
+    adapter.tokenizer = FakeTokenizer()
+    adapter.model = FakeModel(token_ids)
+    adapter.device = "cpu"
+    adapter.last_error = None
+    adapter.last_status = {"ready": True}
+    adapter.status = lambda load_model=True: {"ready": True, "status": "ready"}
+    adapter._sync = lambda: None
+    return adapter
+
+
 class RuntimeSimulateAdapterTest(unittest.TestCase):
     def test_successful_response_passes_through_honest_fields_unchanged(self):
         runtime = server.MiniServingRuntime()
@@ -450,6 +564,126 @@ class RuntimeSimulateAdapterTest(unittest.TestCase):
 
         self.assertIs(result, expected)
         self.assertEqual(seen, [({"prompt": "hello"}, {"max_new_tokens": 2}, None)])
+
+    def test_qwen_runtime_adapter_stepwise_callback_called_once_per_token(self):
+        adapter = make_fake_qwen_adapter((101, 102, 103, 104))
+        callback_steps = []
+
+        def before_decode_step(step_index, session_state):
+            callback_steps.append((step_index, session_state["generated_tokens"]))
+            return {"continue": True}
+
+        result = adapter.ask_stepwise(
+            {"question": "token loop", "system_rules": []},
+            {"max_new_tokens": 3},
+            before_decode_step=before_decode_step,
+        )
+
+        self.assertEqual(result["generated_tokens"], 3)
+        self.assertEqual(callback_steps, [(1, 0), (2, 1), (3, 2)])
+        self.assertEqual([step["token_id"] for step in result["decode_steps"]], [101, 102, 103])
+
+    def test_qwen_runtime_adapter_stepwise_callback_stop_happens_before_decode(self):
+        adapter = make_fake_qwen_adapter((101, 102, 103, 104))
+
+        def before_decode_step(step_index, session_state):
+            if step_index == 3:
+                return {"continue": False, "reason": "runtime_step_failed"}
+            return {"continue": True}
+
+        result = adapter.ask_stepwise(
+            {"question": "stop before third token", "system_rules": []},
+            {"max_new_tokens": 4},
+            before_decode_step=before_decode_step,
+        )
+
+        self.assertEqual(result["generated_tokens"], 2)
+        self.assertEqual(result["stop_reason"], "runtime_step_failed")
+        self.assertEqual([step["token_id"] for step in result["decode_steps"]], [101, 102])
+
+    def test_qwen_decode_one_token_advances_exactly_one_token(self):
+        adapter = make_fake_qwen_adapter((101, 102, 103))
+        session = adapter.prepare_decode_session(
+            {"question": "one token", "system_rules": []},
+            {"max_new_tokens": 3},
+        )
+
+        result = adapter.decode_one_token(session)
+
+        self.assertTrue(result["decoded"])
+        self.assertEqual(result["generated_tokens"], 1)
+        self.assertEqual(session.generated_ids, [101])
+        self.assertEqual(len(session.decode_steps), 1)
+        self.assertFalse(session.finished)
+
+    def test_qwen_decode_sessions_are_independent(self):
+        adapter = make_fake_qwen_adapter((101, 102, 103, 104))
+        first = adapter.prepare_decode_session(
+            {"question": "first", "system_rules": []},
+            {"max_new_tokens": 2},
+        )
+        second = adapter.prepare_decode_session(
+            {"question": "second", "system_rules": []},
+            {"max_new_tokens": 2},
+        )
+
+        adapter.decode_one_token(first)
+
+        self.assertEqual(len(first.generated_ids), 1)
+        self.assertEqual(second.generated_ids, [])
+        self.assertEqual(second.decode_steps, [])
+        self.assertIsNot(first.generated_ids, second.generated_ids)
+        self.assertIsNot(first.decode_steps, second.decode_steps)
+
+        adapter.decode_one_token(second)
+
+        self.assertEqual(len(first.generated_ids), 1)
+        self.assertEqual(len(second.generated_ids), 1)
+        self.assertEqual(len(first.decode_steps), 1)
+        self.assertEqual(len(second.decode_steps), 1)
+
+    def test_qwen_finalize_decode_session_matches_ask_stepwise_shape(self):
+        helper_adapter = make_fake_qwen_adapter((101, 102, 103))
+        session = helper_adapter.prepare_decode_session(
+            {"question": "shape", "system_rules": []},
+            {"max_new_tokens": 2},
+        )
+        while not session.finished:
+            helper_adapter.decode_one_token(session)
+        helper_result = helper_adapter.finalize_decode_session(session)
+
+        stepwise_adapter = make_fake_qwen_adapter((101, 102, 103))
+        stepwise_result = stepwise_adapter.ask_stepwise(
+            {"question": "shape", "system_rules": []},
+            {"max_new_tokens": 2},
+        )
+
+        expected_keys = {
+            "status",
+            "source_status",
+            "model_id",
+            "device",
+            "policy",
+            "answer",
+            "prompt_tokens",
+            "generated_tokens",
+            "max_new_tokens",
+            "prefill_ms",
+            "ttft_ms",
+            "tpot_ms",
+            "total_latency_ms",
+            "tokens_per_second",
+            "cache_type",
+            "stop_reason",
+            "compiler_plan",
+            "runtime_trace",
+            "decode_steps",
+            "live_qwen_metrics",
+        }
+        self.assertEqual(set(helper_result), expected_keys)
+        self.assertEqual(set(helper_result), set(stepwise_result))
+        self.assertEqual(helper_result["generated_tokens"], stepwise_result["generated_tokens"])
+        self.assertEqual(helper_result["stop_reason"], stepwise_result["stop_reason"])
 
     def test_fake_qwen_stepwise_callback_called_once_per_generated_token(self):
         qwen = FakeQwen(generated_tokens=3)

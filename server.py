@@ -153,6 +153,27 @@ def load_text(path: Path, fallback=""):
         return fallback
 
 
+@dataclass
+class QwenDecodeSession:
+    policy: dict
+    prompt_text: str
+    encoded: dict
+    prompt_tokens: int
+    compiler_plan: dict
+    attention_mask: object
+    past: object
+    next_token: object
+    eos_ids: set
+    generated_ids: list
+    decode_steps: list
+    prefill_ms: float
+    first_decode_ms: object
+    started: float
+    stop_reason: str
+    max_tokens: int
+    finished: bool = False
+
+
 class QwenRuntimeAdapter:
     def __init__(self, model_id=HF_QWEN_MODEL, device=QWEN_DEVICE, max_new_tokens=QWEN_MAX_NEW_TOKENS):
         self.model_id = model_id
@@ -395,9 +416,9 @@ class QwenRuntimeAdapter:
             before_decode_step=None,
         )
 
-    def ask_stepwise(self, prompt_contract, policy=None, before_decode_step=None):
+    def _normalize_decode_policy(self, policy=None):
         policy = policy or {}
-        policy = {
+        return {
             "policy_name": policy.get("policy_name", "Optimized Runtime"),
             "max_new_tokens": int(policy.get("max_new_tokens", self.max_new_tokens)),
             "prompt_lowering": bool(policy.get("prompt_lowering", True)),
@@ -406,28 +427,51 @@ class QwenRuntimeAdapter:
             "prompt_mode": policy.get("prompt_mode", "compact_lowered_prompt"),
             "compiler_plan_source": policy.get("compiler_plan_source", "qwen_live_huggingface_config"),
         }
+
+    def _unavailable_decode_result(self, policy, status):
+        result = {
+            "status": "unavailable",
+            "source_status": "qwen_unavailable",
+            "status_detail": status,
+            "answer": "",
+            "policy": self._policy_summary(policy),
+            "compiler_plan": (
+                {
+                    "artifact_source": "disabled_for_basemodel",
+                    "reason": "BASEMODEL compiler/runtime policy is disabled."
+                }
+                if policy.get("compiler_plan_source") == "disabled_for_basemodel"
+                else None
+            ),
+            "runtime_trace": [],
+            "decode_steps": [],
+            "max_new_tokens": policy["max_new_tokens"],
+        }
+        result["live_qwen_metrics"] = self._live_metrics(result)
+        return result
+
+    def _error_decode_result(self, policy, compiler_plan, max_tokens, exc):
+        self.last_error = f"{type(exc).__name__}: {exc}"
+        result = {
+            "status": "error",
+            "source_status": "qwen_error",
+            "status_detail": self.status(load_model=False),
+            "answer": "",
+            "error": self.last_error,
+            "policy": self._policy_summary(policy),
+            "max_new_tokens": max_tokens,
+            "compiler_plan": compiler_plan,
+            "runtime_trace": [],
+            "decode_steps": [],
+        }
+        result["live_qwen_metrics"] = self._live_metrics(result)
+        return result
+
+    def prepare_decode_session(self, prompt_contract, policy=None):
+        policy = self._normalize_decode_policy(policy)
         status = self.status(load_model=True)
         if not status.get("ready"):
-            result = {
-                "status": "unavailable",
-                "source_status": "qwen_unavailable",
-                "status_detail": status,
-                "answer": "",
-                "policy": self._policy_summary(policy),
-                "compiler_plan": (
-                    {
-                        "artifact_source": "disabled_for_basemodel",
-                        "reason": "BASEMODEL compiler/runtime policy is disabled."
-                    }
-                    if policy.get("compiler_plan_source") == "disabled_for_basemodel"
-                    else None
-                ),
-                "runtime_trace": [],
-                "decode_steps": [],
-                "max_new_tokens": policy["max_new_tokens"],
-            }
-            result["live_qwen_metrics"] = self._live_metrics(result)
-            return result
+            return self._unavailable_decode_result(policy, status)
 
         max_tokens = int(policy.get("max_new_tokens", self.max_new_tokens))
         torch = self.torch
@@ -453,111 +497,159 @@ class QwenRuntimeAdapter:
                 eos_ids = set()
                 if self.tokenizer.eos_token_id is not None:
                     eos_ids.add(int(self.tokenizer.eos_token_id))
-                first_decode_ms = None
-                stop_reason = "max_new_tokens"
-                for index in range(max_tokens):
-                    if before_decode_step:
-                        session_state = {
-                            "step_index": index + 1,
-                            "request_id": policy.get("request_id"),
-                            "prompt_tokens": prompt_tokens,
-                            "generated_tokens": len(generated_ids),
-                            "max_new_tokens": max_tokens,
-                            "decode_steps": decode_steps,
-                            "stop_reason": stop_reason,
-                            "device": self.device,
-                            "model_id": self.model_id,
-                        }
-                        control = before_decode_step(index + 1, session_state) or {}
-                        if control.get("continue") is False:
-                            stop_reason = control.get("reason") or "runtime_decode_stopped"
-                            break
-                    step_start = time.perf_counter()
-                    token_id = int(next_token.item())
-                    generated_ids.append(token_id)
-                    if attention_mask is not None:
-                        attention_mask = torch.cat(
-                            [attention_mask, torch.ones((attention_mask.shape[0], 1), device=self.device, dtype=attention_mask.dtype)],
-                            dim=-1,
-                        )
-                    try:
-                        outputs = self.model(input_ids=next_token, past_key_values=past, use_cache=True)
-                    except TypeError:
-                        outputs = self.model(
-                            input_ids=next_token,
-                            attention_mask=attention_mask,
-                            past_key_values=past,
-                            use_cache=True,
-                        )
-                    self._sync()
-                    latency_ms = (time.perf_counter() - step_start) * 1000
-                    if first_decode_ms is None:
-                        first_decode_ms = latency_ms
-                    fragment = self.tokenizer.decode([token_id], skip_special_tokens=True)
-                    cumulative = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-                    decode_steps.append(
-                        {
-                            "step": index + 1,
-                            "token_id": token_id,
-                            "text": fragment,
-                            "latency_ms": round(latency_ms, 3),
-                            "cumulative_output": cumulative,
-                        }
-                    )
-                    if token_id in eos_ids:
-                        stop_reason = "eos_token"
-                        break
-                    past = outputs.past_key_values
-                    logits = outputs.logits[:, -1, :]
-                    next_token = torch.argmax(logits, dim=-1, keepdim=True)
-            total_ms = (time.perf_counter() - started) * 1000
-            answer = self.tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
-            decode_latencies = [step["latency_ms"] for step in decode_steps]
-            tpot_ms = round(sum(decode_latencies) / len(decode_latencies), 3) if decode_latencies else 0
-            generated_tokens = len(generated_ids)
-            tokens_per_second = round((generated_tokens / (total_ms / 1000)), 3) if total_ms else 0
-            result = {
-                "status": "completed",
-                "source_status": "qwen_live",
-                "model_id": self.model_id,
-                "device": self.device,
-                "policy": self._policy_summary(policy),
-                "answer": answer,
-                "prompt_tokens": prompt_tokens,
-                "generated_tokens": generated_tokens,
-                "max_new_tokens": max_tokens,
-                "prefill_ms": round(prefill_ms, 3),
-                "ttft_ms": round(prefill_ms + (first_decode_ms or 0), 3),
-                "tpot_ms": tpot_ms,
-                "total_latency_ms": round(total_ms, 3),
-                "tokens_per_second": tokens_per_second,
-                "cache_type": "PyTorch past_key_values",
-                "stop_reason": stop_reason,
-                "compiler_plan": compiler_plan,
-                "runtime_trace": {
-                    "prefill": {"latency_ms": round(prefill_ms, 3), "use_cache": True},
-                    "decode_loop": decode_steps,
-                },
-                "decode_steps": decode_steps,
-            }
-            result["live_qwen_metrics"] = self._live_metrics(result)
-            return result
         except Exception as exc:
-            self.last_error = f"{type(exc).__name__}: {exc}"
-            result = {
-                "status": "error",
-                "source_status": "qwen_error",
-                "status_detail": self.status(load_model=False),
-                "answer": "",
-                "error": self.last_error,
-                "policy": self._policy_summary(policy),
-                "max_new_tokens": max_tokens,
-                "compiler_plan": compiler_plan,
-                "runtime_trace": [],
-                "decode_steps": [],
+            return self._error_decode_result(policy, compiler_plan, max_tokens, exc)
+        return QwenDecodeSession(
+            policy=policy,
+            prompt_text=prompt_text,
+            encoded=encoded,
+            prompt_tokens=prompt_tokens,
+            compiler_plan=compiler_plan,
+            attention_mask=attention_mask,
+            past=past,
+            next_token=next_token,
+            eos_ids=eos_ids,
+            generated_ids=generated_ids,
+            decode_steps=decode_steps,
+            prefill_ms=prefill_ms,
+            first_decode_ms=None,
+            started=started,
+            stop_reason="max_new_tokens",
+            max_tokens=max_tokens,
+        )
+
+    def decode_one_token(self, session):
+        if session.finished:
+            return {
+                "decoded": False,
+                "finished": True,
+                "stop_reason": session.stop_reason,
+                "generated_tokens": len(session.generated_ids),
             }
-            result["live_qwen_metrics"] = self._live_metrics(result)
-            return result
+        torch = self.torch
+        with torch.inference_mode():
+            step_start = time.perf_counter()
+            token_id = int(session.next_token.item())
+            session.generated_ids.append(token_id)
+            if session.attention_mask is not None:
+                session.attention_mask = torch.cat(
+                    [
+                        session.attention_mask,
+                        torch.ones(
+                            (session.attention_mask.shape[0], 1),
+                            device=self.device,
+                            dtype=session.attention_mask.dtype,
+                        ),
+                    ],
+                    dim=-1,
+                )
+            try:
+                outputs = self.model(
+                    input_ids=session.next_token,
+                    past_key_values=session.past,
+                    use_cache=True,
+                )
+            except TypeError:
+                outputs = self.model(
+                    input_ids=session.next_token,
+                    attention_mask=session.attention_mask,
+                    past_key_values=session.past,
+                    use_cache=True,
+                )
+            self._sync()
+            latency_ms = (time.perf_counter() - step_start) * 1000
+            if session.first_decode_ms is None:
+                session.first_decode_ms = latency_ms
+            fragment = self.tokenizer.decode([token_id], skip_special_tokens=True)
+            cumulative = self.tokenizer.decode(session.generated_ids, skip_special_tokens=True)
+            session.decode_steps.append(
+                {
+                    "step": len(session.generated_ids),
+                    "token_id": token_id,
+                    "text": fragment,
+                    "latency_ms": round(latency_ms, 3),
+                    "cumulative_output": cumulative,
+                }
+            )
+            if token_id in session.eos_ids:
+                session.stop_reason = "eos_token"
+                session.finished = True
+            elif len(session.generated_ids) >= session.max_tokens:
+                session.stop_reason = "max_new_tokens"
+                session.finished = True
+            else:
+                session.past = outputs.past_key_values
+                logits = outputs.logits[:, -1, :]
+                session.next_token = torch.argmax(logits, dim=-1, keepdim=True)
+        return {
+            "decoded": True,
+            "finished": session.finished,
+            "stop_reason": session.stop_reason,
+            "generated_tokens": len(session.generated_ids),
+        }
+
+    def finalize_decode_session(self, session):
+        total_ms = (time.perf_counter() - session.started) * 1000
+        answer = self.tokenizer.decode(session.generated_ids, skip_special_tokens=True).strip()
+        decode_latencies = [step["latency_ms"] for step in session.decode_steps]
+        tpot_ms = round(sum(decode_latencies) / len(decode_latencies), 3) if decode_latencies else 0
+        generated_tokens = len(session.generated_ids)
+        tokens_per_second = round((generated_tokens / (total_ms / 1000)), 3) if total_ms else 0
+        result = {
+            "status": "completed",
+            "source_status": "qwen_live",
+            "model_id": self.model_id,
+            "device": self.device,
+            "policy": self._policy_summary(session.policy),
+            "answer": answer,
+            "prompt_tokens": session.prompt_tokens,
+            "generated_tokens": generated_tokens,
+            "max_new_tokens": session.max_tokens,
+            "prefill_ms": round(session.prefill_ms, 3),
+            "ttft_ms": round(session.prefill_ms + (session.first_decode_ms or 0), 3),
+            "tpot_ms": tpot_ms,
+            "total_latency_ms": round(total_ms, 3),
+            "tokens_per_second": tokens_per_second,
+            "cache_type": "PyTorch past_key_values",
+            "stop_reason": session.stop_reason,
+            "compiler_plan": session.compiler_plan,
+            "runtime_trace": {
+                "prefill": {"latency_ms": round(session.prefill_ms, 3), "use_cache": True},
+                "decode_loop": session.decode_steps,
+            },
+            "decode_steps": session.decode_steps,
+        }
+        result["live_qwen_metrics"] = self._live_metrics(result)
+        return result
+
+    def ask_stepwise(self, prompt_contract, policy=None, before_decode_step=None):
+        session = self.prepare_decode_session(prompt_contract, policy)
+        if isinstance(session, dict):
+            return session
+        try:
+            while not session.finished:
+                if before_decode_step:
+                    step_index = len(session.generated_ids) + 1
+                    session_state = {
+                        "step_index": step_index,
+                        "request_id": session.policy.get("request_id"),
+                        "prompt_tokens": session.prompt_tokens,
+                        "generated_tokens": len(session.generated_ids),
+                        "max_new_tokens": session.max_tokens,
+                        "decode_steps": session.decode_steps,
+                        "stop_reason": session.stop_reason,
+                        "device": self.device,
+                        "model_id": self.model_id,
+                    }
+                    control = before_decode_step(step_index, session_state) or {}
+                    if control.get("continue") is False:
+                        session.stop_reason = control.get("reason") or "runtime_decode_stopped"
+                        session.finished = True
+                        break
+                self.decode_one_token(session)
+            return self.finalize_decode_session(session)
+        except Exception as exc:
+            return self._error_decode_result(session.policy, session.compiler_plan, session.max_tokens, exc)
 
 
 class RuntimeSimulateAdapter:
