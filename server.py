@@ -41,6 +41,9 @@ RUNTIME_SIMULATE_BATCH_URL = os.environ.get(
 RUNTIME_SESSION_BASE_URL = os.environ.get(
     "RUNTIME_SESSION_BASE_URL", "http://127.0.0.1:8901/session"
 )
+COMPILE_SERVICE_URL = os.environ.get(
+    "COMPILE_SERVICE_URL", "http://127.0.0.1:8902/compile"
+)
 
 
 @dataclass
@@ -645,6 +648,62 @@ class RuntimeSimulateAdapter:
         return self._delete(f"{self.session_base_url}/{session_id}")
 
 
+class CompilerAdapter:
+    """Thin HTTP client for ml-graph-compiler-runtime's optional local
+    POST /compile service. Stdlib urllib only; no source code is imported
+    across repos. Degrades to unavailable on any connection failure."""
+
+    def __init__(self, url=None, timeout=2.0):
+        self.url = url or COMPILE_SERVICE_URL
+        self.timeout = timeout
+        self.last_error = None
+
+    def status(self):
+        host_port = urlparse(self.url).netloc
+        if not host_port:
+            self.last_error = "invalid_compile_service_url"
+            return {"ready": False, "url": self.url, "last_error": self.last_error}
+        host, _, port = host_port.partition(":")
+        try:
+            import socket
+
+            with socket.create_connection((host, int(port or 80)), timeout=self.timeout):
+                pass
+            self.last_error = None
+            return {"ready": True, "url": self.url, "last_error": None}
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return {"ready": False, "url": self.url, "last_error": self.last_error}
+
+    def available(self):
+        return bool(self.status().get("ready"))
+
+    def _post(self, payload):
+        body = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            self.url,
+            data=body,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                self.last_error = None
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            try:
+                return json.loads(exc.read().decode("utf-8"))
+            except Exception:
+                self.last_error = f"HTTPError: {exc.code}"
+                return None
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"
+            return None
+
+    def compile(self, payload):
+        return self._post(payload)
+
+
 class MiniServingRuntime:
     def __init__(self):
         self.compiler = {
@@ -719,6 +778,7 @@ class MiniServingRuntime:
         )
         self.qwen = QwenRuntimeAdapter()
         self.runtime_simulate = RuntimeSimulateAdapter()
+        self.compiler_engine = CompilerAdapter()
         self.reset()
 
     def reset(self):
@@ -1040,6 +1100,13 @@ class MiniServingRuntime:
         result = self.runtime_simulate.delete_session(session_id)
         if result is None:
             return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_compile(self, payload):
+        payload = payload or {}
+        result = self.compiler_engine.compile(payload)
+        if result is None:
+            return {"status": "unavailable", "source": "ml-graph-compiler-runtime-http"}
         return result
 
     def run_batch(self, payload=None):
@@ -2011,6 +2078,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(RUNTIME.live_runtime_session_step(session_id, payload))
             else:
                 self._send_json(RUNTIME.live_runtime_session_cancel(session_id, payload))
+            return
+        if path == "/api/compiler/compile":
+            self._send_json(RUNTIME.live_compile(self._read_json()))
             return
         if path == "/reset":
             RUNTIME.reset()
