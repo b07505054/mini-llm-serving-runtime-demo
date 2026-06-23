@@ -35,6 +35,9 @@ QWEN_DEVICE = os.environ.get("QWEN_DEVICE", "auto")
 QWEN_MAX_NEW_TOKENS = int(os.environ.get("QWEN_MAX_NEW_TOKENS", "96"))
 BASEMODEL_MAX_NEW_TOKENS = int(os.environ.get("BASEMODEL_MAX_NEW_TOKENS", "180"))
 RUNTIME_SIMULATE_URL = os.environ.get("RUNTIME_SIMULATE_URL", "http://127.0.0.1:8901/simulate")
+RUNTIME_SIMULATE_BATCH_URL = os.environ.get(
+    "RUNTIME_SIMULATE_BATCH_URL", "http://127.0.0.1:8901/simulate_batch"
+)
 
 
 @dataclass
@@ -533,8 +536,9 @@ class RuntimeSimulateAdapter:
     POST /simulate service. Stdlib urllib only; no source code is imported
     across repos. Degrades to unavailable on any connection failure."""
 
-    def __init__(self, url=None, timeout=2.0):
+    def __init__(self, url=None, batch_url=None, timeout=2.0):
         self.url = url or RUNTIME_SIMULATE_URL
+        self.batch_url = batch_url or RUNTIME_SIMULATE_BATCH_URL
         self.timeout = timeout
         self.last_error = None
 
@@ -558,10 +562,10 @@ class RuntimeSimulateAdapter:
     def available(self):
         return bool(self.status().get("ready"))
 
-    def simulate(self, payload):
+    def _post(self, url, payload):
         body = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
-            self.url,
+            url,
             data=body,
             method="POST",
             headers={"Content-Type": "application/json"},
@@ -579,6 +583,12 @@ class RuntimeSimulateAdapter:
         except Exception as exc:
             self.last_error = f"{type(exc).__name__}: {exc}"
             return None
+
+    def simulate(self, payload):
+        return self._post(self.url, payload)
+
+    def simulate_batch(self, payload):
+        return self._post(self.batch_url, payload)
 
 
 class MiniServingRuntime:
@@ -927,6 +937,13 @@ class MiniServingRuntime:
                 "max_output_tokens": int(payload.get("max_output_tokens", 64)),
             }
         )
+        if result is None:
+            return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
+        return result
+
+    def live_runtime_simulate_batch(self, payload):
+        payload = payload or {}
+        result = self.runtime_simulate.simulate_batch(payload)
         if result is None:
             return {"status": "unavailable", "source": "heterogeneous-runtime-http"}
         return result
@@ -1860,6 +1877,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/runtime/simulate":
             self._send_json(RUNTIME.live_runtime_simulate(self._read_json()))
+            return
+        if path == "/api/runtime/simulate_batch":
+            self._send_json(RUNTIME.live_runtime_simulate_batch(self._read_json()))
             return
         if path == "/reset":
             RUNTIME.reset()
