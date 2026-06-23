@@ -744,6 +744,26 @@
       </div>
 
       <div class="panel span-12">
+        <h2>Live Compiler Engine</h2>
+        <div class="small">
+          Backed by ml-graph-compiler-runtime over local HTTP. Artifact generation + validation. Simulated, not benchmarked.
+        </div>
+        <div class="toolbar" style="margin-bottom:10px">
+          <button id="run-compiler-engine">Run Compiler</button>
+        </div>
+        <div id="compiler-engine-metrics">
+          <span class="small">Click "Run Compiler" to compile the tiny_gpt_serving demo graph.</span>
+        </div>
+        <div class="small" style="margin-top:10px">Pass pipeline</div>
+        <pre id="compiler-engine-passes"></pre>
+        <div class="small">Fusion decisions</div>
+        <pre id="compiler-engine-fusion"></pre>
+        <div class="small">Memory plan summary</div>
+        <pre id="compiler-engine-memory"></pre>
+        <div class="evidence-note" id="compiler-engine-note"></div>
+      </div>
+
+      <div class="panel span-12">
         <h2>Memory Timeline</h2>
         <div class="compare" style="margin-bottom:10px">
           <div class="compare-card">
@@ -1336,6 +1356,59 @@
       }
     }
 
+    function renderCompilerEngine(result) {
+      const metricsDiv = document.getElementById("compiler-engine-metrics");
+      const passesPre = document.getElementById("compiler-engine-passes");
+      const fusionPre = document.getElementById("compiler-engine-fusion");
+      const memoryPre = document.getElementById("compiler-engine-memory");
+      const noteDiv = document.getElementById("compiler-engine-note");
+
+      if (!result || result.status === "unavailable") {
+        metricsDiv.innerHTML = metric("Status", "Compiler engine unavailable", "warn");
+        passesPre.textContent = "";
+        fusionPre.textContent = "";
+        memoryPre.textContent = "";
+        noteDiv.textContent = "ml-graph-compiler-runtime /compile service is not reachable on " +
+          "http://127.0.0.1:8902. Start it locally to see live compiler artifacts.";
+        return;
+      }
+
+      const graph = result.graph_summary || {};
+      const model = graph.model || {};
+      const validation = result.validation || {};
+
+      metricsDiv.innerHTML = [
+        metric("Result type", result.result_type || "n/a", result.result_type === "compiled_artifact" ? "pass" : "warn"),
+        metric("Graph name", result.graph_name || "n/a"),
+        metric("Hidden size", fmt(model.hidden_size)),
+        metric("Attention heads", fmt(model.num_heads)),
+        metric("KV cache required", graph.kv_cache_required ? "true" : "false", graph.kv_cache_required ? "pass" : ""),
+        metric("Validation", `${validation.status || "n/a"} (${fmt(validation.passed)}/${fmt(validation.total)})`,
+          validation.status === "passed" ? "pass" : validation.status === "failed" ? "fail" : ""),
+        metric("Git commit", result.git_commit || "n/a"),
+      ].join("");
+
+      passesPre.textContent = displayJson(result.selected_passes || []);
+      fusionPre.textContent = displayJson(result.fusion_decisions || []);
+      memoryPre.textContent = displayJson(result.memory_plan_summary || {});
+
+      noteDiv.textContent = "Live artifact generation and validation. No GPU execution. No benchmarking. Pass pipeline is fixed.";
+    }
+
+    async function runCompilerEngine() {
+      document.getElementById("compiler-engine-metrics").innerHTML = metric("Status", "Running...", "blue");
+      try {
+        const result = await api("/api/compiler/compile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ graph_name: "tiny_gpt_serving" }),
+        });
+        renderCompilerEngine(result);
+      } catch (error) {
+        renderCompilerEngine({ status: "unavailable" });
+      }
+    }
+
     function renderQwenPath(data) {
       const status = data.live.qwen_status || {};
       const latest = data.live.latest_qwen_run || {};
@@ -1782,6 +1855,7 @@
     });
 
     document.getElementById("run-live-simulation").addEventListener("click", runLiveRuntimeSimulation);
+    document.getElementById("run-compiler-engine").addEventListener("click", runCompilerEngine);
 
     document.getElementById("ask-llm").addEventListener("click", askCurrentScenario);
 
