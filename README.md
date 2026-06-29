@@ -30,6 +30,23 @@ User prompt
 There is also a neutral future input slot labeled `Live camera / CV detection
 slot`. It is not connected in this demo.
 
+## Recent Updates
+
+- Added live runtime simulation and batch simulation adapters backed by the
+  sibling runtime service.
+- Added a compiler engine adapter and dashboard panel for inspecting compiler
+  service output from the workbench.
+- Gated Qwen ask flows through runtime session ownership so BASEMODEL and
+  optimized decode traces are coordinated with runtime step state.
+- Added runtime-owned Qwen batch decode endpoint, deterministic fallback, and a
+  dashboard panel for batch decode.
+
+Truth boundary: the workbench is the HTML demo surface for artifact-backed
+compiler/runtime/validation evidence and optional local Qwen execution. Runtime
+session ownership is implemented in the demo server, but production
+vLLM/SGLang/Triton/TensorRT internals and the future CV camera slot are not
+connected.
+
 ## Project Layout
 
 ```text
